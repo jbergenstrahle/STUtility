@@ -1,0 +1,23 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1559977264251.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "0",
+    "id" : "8A8619BC",
+    "lastKnownWriteTime" : 1560095844,
+    "last_content_update" : 1560095844106,
+    "path" : "F:/JoeDocs/PhD/STUtility/STutility/vignettes/my-vignette.Rmd",
+    "project_path" : "vignettes/my-vignette.Rmd",
+    "properties" : {
+        "cursorPosition" : "10,29",
+        "last_setup_crc32" : "D8348694252fe365",
+        "scrollLine" : "3"
+    },
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}

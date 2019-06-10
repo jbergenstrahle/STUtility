@@ -1,0 +1,5 @@
+samples;type;z;patient;subtype
+inst/exdata/counts/BC1.csv;BC;100;1;lumA
+inst/exdata/counts/BC2.csv;BC;120;1;lumA
+inst/exdata/counts/BC3.csv;BC;130;2;lumB
+inst/exdata/counts/BC4.csv;BC;140;2;lumB
