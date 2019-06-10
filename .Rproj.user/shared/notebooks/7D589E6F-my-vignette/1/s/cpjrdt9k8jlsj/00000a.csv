@@ -1,5 +1,0 @@
-"0","infoTable <- read.table(""data/metaData.csv"", sep="";"", header=T)
-"
-"2","cannot open file 'data/metaData.csv': No such file or directory"
-"2","Error in file(file, ""rt"") : cannot open the connection
-"

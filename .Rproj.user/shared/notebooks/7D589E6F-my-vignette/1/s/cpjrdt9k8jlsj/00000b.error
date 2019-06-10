@@ -1,1 +1,0 @@
-{"frames":[{"character_number":0,"end_character_number":0,"end_line_number":0,"file":"","func":"read.table(\"data/metaData.csv\", sep = \";\", header = T)","line_number":0},{"character_number":0,"end_character_number":0,"end_line_number":0,"file":"","func":"file(file, \"rt\")","line_number":0}],"message":"Error in file(file, \"rt\") : cannot open the connection\n"}
