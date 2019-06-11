@@ -39,7 +39,7 @@ In this example, we use an info.table sheet to load in our samples togheter with
 
 ```{r, echo=FALSE}
 
-abs.path<-system.file("extdata", package = "STutility")
+abs.path <- system.file("extdata", package = "STutility")
 
 ```
 
