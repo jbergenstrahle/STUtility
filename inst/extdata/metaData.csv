@@ -1,5 +1,5 @@
-samples;type;z;patient;subtype
-inst/exdata/counts/BC1.csv;BC;100;1;lumA
-inst/exdata/counts/BC2.csv;BC;120;1;lumA
-inst/exdata/counts/BC3.csv;BC;130;2;lumB
-inst/exdata/counts/BC4.csv;BC;140;2;lumB
+samples;type;z;individual;spotfiles;imgs
+inst/exdata/counts/MOB1.tsv;Mouse;100;1;alignment_table_MOB1;MOB1.jpg
+inst/exdata/counts/MOB2.tsv;Mouse;120;1;alignment_table_MOB2;MOB2.jpg
+inst/exdata/counts/MOB3.tsv;Mouse;130;2;alignment_table_MOB3;MOB3.jpg
+inst/exdata/counts/MOB4.tsv;Mouse;140;2;alignment_table_MOB4;MOB4.jpg

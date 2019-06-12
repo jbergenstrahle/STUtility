@@ -32,10 +32,15 @@ Introduction
 STUtility is an Rpackage which includes various R-functions for interaction and analysis of Spatial Transcriptomics (ST) data. During the years of internal development of the ST method, the research group at SciLifeLab has used a vast array of R functions in their daily work. As the method is becoming widely adopted 
 
 
-Usage example
+Pre-process and read in data
 =============
 
-In this example, we use an info.table sheet to load in our samples togheter with meta data. The table looks like this:
+STUtility provides two approached for reading in data and creating the S4 object. 
+
+### Method 1
+
+Info.table sheet to load in our samples togheter with meta data. 
+The table looks like this:
 
 ```{r, echo=FALSE}
 
@@ -50,19 +55,28 @@ infoTable <- read.table(paste(abs.path, "metaData.csv", sep="/"), sep=";", heade
 head(infoTable)
 ```
 
-Paths to the samples in the first column, and any number of additional (optional) metadata in the following columns.
+The `samples` are the only mandatory column. However, if spotfiles and images are provided, the column headers of `spotfiles` and `imgs` also need to be named accordingly. 
 
 With the info table as input, we create the S4 object which contains all the samples as well as meta data. 
 
 ```{r, echo=FALSE}
-fix <-list.files(system.file("extdata/counts/", package = "STutility"), full.names = T)
+fix <-list.files(system.file("extdata/counts", package = "STutility"), full.names = T)
+fixCounts <- fix[grep(fix, pattern = "[^_]MOB[1-9].tsv")]
+fixSpotfiles <- fix[grep(fix, pattern = "alignment")]
+fixImgs <- fix[grep(fix, pattern = ".jpg")]
 
-infoTable[,1] <- fix
+infoTable[,1] <- fixCounts
+infoTable[,5] <- fixSpotfiles
+infoTable[,6] <- fixImgs
+
 ```
 
 ```{r}
 
-cm <- prepare.counts(sampleTable=infoTable, transpose=T, topN=0, th.gene=0, th.spot=0, type="Seurat")
+cm <- prep.from.table(sampleTable=infoTable, 
+                      transpose=T, 
+                      topN=0, th.gene=0, th.spot=0, 
+                      type="Seurat")
 
 ```
 
@@ -74,6 +88,8 @@ cm
 
 ```
 
+
+### Method 2
 
 
 
