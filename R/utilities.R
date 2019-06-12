@@ -11,7 +11,7 @@ GetCoords <- function(spotnames, delim = "x") {
   }
   coords <- do.call(rbind, strsplit(spotnames, split = delim))
   if (ncol(coords) == 3) {
-    coords <- setNames(data.frame(coords, stringsAsFactors = F), nm = c("sampleID", "x", "y"))
+    coords <- setNames(data.frame(coords, stringsAsFactors = F), nm = c("x", "y", "sampleID"))
   } else if (ncol(coords) == 2) {
     coords <- setNames(data.frame(coords, stringsAsFactors = F), nm = c("x", "y"))
   } else {
