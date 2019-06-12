@@ -8,7 +8,6 @@
 #' @importFrom Seurat CreateSeuratObject
 "_PACKAGE"
 
-
 #' Palette selection
 #'
 #' @param palette Palette choice for plotting spatial expression histology heatmap
