@@ -4,14 +4,14 @@
 \alias{qcSamples}
 \title{Quality metrics for samples}
 \usage{
-qcSamples(exprMat, delim = "x", labels = NULL)
+qcSamples(object, delim = "x", labels = NULL)
 }
 \arguments{
-\item{exprMat}{expression matrix with spots in columns and genes in rows}
+\item{object}{expression matrix with spots in columns and genes in rows or Seurat object}
 
 \item{delim}{delimiter}
 
-\item{labels}{character vector with labels corresponding to datasets in merged expression matrix}
+\item{labels}{character vector with labels corresponding to dataset IDs in merged expression matrix [optional]}
 }
 \value{
 data.frame with quality metrics per sample
