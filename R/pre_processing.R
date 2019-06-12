@@ -1,4 +1,5 @@
 #' @importFrom data.table fread
+#' @import Matrix
 "_PACKAGE"
 
 #' load count files
@@ -8,7 +9,8 @@
 #' @param row.names set column as row.names
 #' @keywords internal
 
-st.load.matrix.2 = function(path, delim="\t", row.names=1, ...) {
+st.load.matrix = function(path, delim="\t", row.names=1, ...) {
+  stopifnot(file.exists(path))
   x = c()
   tmp = suppressWarnings({try({x = data.frame(fread(input = path, integer64 = "character",
                                    sep = delim),
@@ -32,29 +34,39 @@ st.load.matrix.2 = function(path, delim="\t", row.names=1, ...) {
 #' @param exp.list list of expression matrices
 #' @param delim delimiter used to separate coordinates in expression matrix headers
 #' @param labels labels to use as suffix for the headers of each expression matrix
+#' @param sparse.matrix.fmt return mergedexpression matrix in dgCMatrix format to save memory
+#' @return merged expression matrix
 
-expr.merger <- function(exp.list, delim = "_", labels = NULL) {
+Merger <- function(
+  exp.list,
+  delim = "x",
+  labels = NULL,
+  sparse.matrix.fmt = F
+) {
+
   # Check labels
   if (!is.null(labels)) {
     stopifnot(length(labels) == length(ls) & class(labels) == "character")
   }
 
-  # collect all unique genes
-  genes <- unique(unlist(lapply(exp.list, rownames)))
+  # List all genes
+  genes <- Reduce(union, lapply(exp.list, rownames))
 
-  # Obtain
-  cols <- unlist(lapply(exp.list, colnames))
+  matrix.list <- lapply(seq_along(exp.list), function(i) {
+    count <- exp.list[[i]]
+    nspots <- ncol(count)
+    curgenes <- rownames(count)
+    m <- matrix(0, nrow=length(genes), ncol=nspots)
+    rownames(m) <- genes
+    m[curgenes,] <- count
+    colnames(m) <- paste(ifelse(!is.null(labels), labels[i], i), colnames(count), sep = delim)
 
-  merged_exprMat <- do.call(cbind, lapply(seq_along(exp.list), function(i) {
-    exprMat <- exp.list[[i]]
-    A <- as.data.frame(exprMat)
-    A <- A[genes, ]
-    rownames(A) <- genes
-    A[is.na(A)] <- 0
-    colnames(A) <- paste(ifelse(is.null(labels), i, labels[i]), colnames(A), sep = delim)
-    as(as.matrix(A), "dgCMatrix")
-  }))
-  return(merged_exprMat)
+    # Save in sparse format?
+    if (sparse.matrix.fmt) {
+      m <- as(m, "dgCMatrix")
+    }
+    return(m)
+  })
+  return(do.call(cbind, matrix.list))
 }
-
 
