@@ -8,27 +8,6 @@
 #' @importFrom Seurat CreateSeuratObject
 "_PACKAGE"
 
-#' load count files
-#'
-#' @param path Path to count files
-#' @param suffix add suffix to path
-#' @param row.names set column as row.names
-#' @keywords internal
-
-st.load.matrix = function(path, suffix="", row.names=1, ...) {
-  x = c()
-  tmp = try({ x = read.delim(paste(path, suffix, sep=""),
-                             header=T,
-                             row.names=row.names,
-                             sep=",",
-                             check.names=F,
-                             ...)})
-  if(inherits(tmp, 'try-error')) {
-    return(as.matrix(c()))
-  } else {
-    return(as.matrix(x))
-  }
-}
 
 #' Create S4 object
 #'
