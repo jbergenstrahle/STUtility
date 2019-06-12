@@ -9,22 +9,6 @@
 #' @param row.names set column as row.names
 #' @keywords internal
 
-st.load.matrix = function(path, suffix="", row.names=1, ...) {
-  # OBS probably transition to st.load.matrix.2 instead - remove this if so
-  x = c()
-  tmp = try({ x = read.delim(paste(path, suffix, sep=""),
-                             header=T,
-                             row.names=row.names,
-                             sep=",",
-                             check.names=F,
-                             ...)})
-  if(inherits(tmp, 'try-error')) {
-    return(as.matrix(c()))
-  } else {
-    return(as.matrix(x))
-  }
-}
-
 #' Parse the output from the ST spot detector tool
 #'
 #' @param path Path to spot files
@@ -71,8 +55,8 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
   for(path in countPaths) {
     cat(paste0("Loading ", path, "\n"))
     if(transpose==FALSE){
-      counts[[path]] <- st.load.matrix.2(path)
-    }else{counts[[path]] <- t(st.load.matrix.2(path))}
+      counts[[path]] <- st.load.matrix(path)
+    }else{counts[[path]] <- t(st.load.matrix(path))}
 
     if(spot.file != FALSE){ #Remove spots outside of tissue
       spotsData <- as.data.frame(parse.spot.file(sampleTable[which(sampleTable$samples==path), "spotfiles"]))
