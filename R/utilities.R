@@ -2,7 +2,7 @@
 #'
 #' @param spotnames x, y coordinates separated by delimiter (default "x")
 #' @param delim delimiter
-#' @return data.frame with x, y coordinates and optionally a sampleID column 
+#' @return data.frame with x, y coordinates and optionally a sampleID column
 
 GetCoords <- function(spotnames, delim = "x") {
   stopifnot(class(spotnames) == "character")
