@@ -44,10 +44,10 @@ qcGenes <- function(
   }
 
   qc.table <- data.frame(gene = rownames(object))
-  if ("sampleID" %in% colnames(coords)) {
-    samples <- unique(coords$sampleID)
+  if ("sample" %in% colnames(coords)) {
+    samples <- unique(coords$sample)
     for (i in seq_along(samples)) {
-      qc.table[, ifelse(!is.null(labels), labels[i], samples[i])] <- rowSums(exprMat[, coords$sampleID == samples[i]])
+      qc.table[, ifelse(!is.null(labels), labels[i], samples[i])] <- rowSums(exprMat[, coords$sample == samples[i]])
     }
   } else {
     qc.table[, "count"] <- rowSums(exprMat)
@@ -86,9 +86,9 @@ qcSamples <- function(
                              max.nFeature_RNA = max(nFeature_RNA),
                              min.nFeature_RNA = min(nFeature_RNA)) %>% as.data.frame()
   }
-  if ("sampleID" %in% colnames(qc.table)) {
+  if ("sample" %in% colnames(qc.table)) {
     qc.table <- qc.table %>%
-      group_by(sampleID) %>%
+      group_by(sample) %>%
       summarize_fkn
   } else {
     qc.table <- qc.table %>%

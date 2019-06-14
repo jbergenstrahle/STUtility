@@ -82,7 +82,32 @@ cm <- prep.from.table(sampleTable=infoTable,
 
 ```{r}
 
-cm
+cm <- ScaleData(cm, vars.to.regress = c("nFeature_RNA", "sample"), verbose = T)
+cm <- FindVariableFeatures(cm)
+cm <- RunPCA(cm, ndims.print = 1, nfeatures.print = 5)
+cm <- RunICA(cm, ndims.print = 1, nfeatures.print = 5)
+
+```
+
+```{r, fig.width = 10, fig.height = 12}
+
+cm <- SetIdent(cm, value = "sample")
+DimPlot(object = cm, dims = 1:2)
+
+```
+
+
+```{r, fig.width = 10, fig.height = 20}
+
+ST.DimPlot(object = cm, 
+           reduction = "pca",
+           dims = 1:8, 
+           group.by = "sample", 
+           delim = "x|_", 
+           palette = "RdBu",
+           rev.cols = T,
+           pt.size = 0.2,
+           dark.theme = T, ncol = 4, grid.ncol = 1)
 
 ```
 
