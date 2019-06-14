@@ -32,7 +32,6 @@ qcGenes <- function(
   delim = "x",
   labels = NULL
 ) {
-
   stopifnot(class(object) %in% c("matrix", "data.frame", "Seurat"))
 
   if (class(object) == "Seurat") {
