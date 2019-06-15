@@ -81,6 +81,8 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
   rownames(cnt) <- genes
   pixelx <- c()
   pixely <- c()
+  adj_x <- c()
+  adj_y <- c()
 
   idx <- 1
   for(count in counts) {
@@ -94,6 +96,8 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
     samples <- c(samples, rep(paste0(idx), nspots))
     pixelx <- c(pixelx, spotFileData[[idx]]$pixel_x)
     pixely <- c(pixely, spotFileData[[idx]]$pixel_y)
+    adj_x <- c(adj_x, spotFileData[[idx]]$new_x)
+    adj_y <- c(adj_y, spotFileData[[idx]]$new_y)
     idx <- idx + 1
   }
 
@@ -107,6 +111,8 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
   m$sample <- samples
   m$pixel_x <- pixelx
   m$pixel_y <- pixely
+  m$ads_x <- adj_x
+  m$ads_y <- adj_y
 
   #Filter top genes
   if (topN > 0){

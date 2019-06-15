@@ -115,6 +115,20 @@ ST.DimPlot(object = cm,
 ```
 
 
+
+## QC 
+
+```{r}
+qcGenes(cm)
+
+
+
+```
+
+
+
+
+
 ### Method 2
 
 

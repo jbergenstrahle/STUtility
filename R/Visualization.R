@@ -160,3 +160,29 @@ dark_theme <- function() {
         legend.title = element_text(colour = "white"),
         legend.text = element_text(colour = "white"))
 }
+
+#' QC histograms on the number of unqiue transcripts and genes per spot
+#'
+#' @param se S4 object
+#' @export
+
+qc.hist <- function(se, metric="transcripts"){
+
+  #OBS OBS ADD NON.SEURAT ALTERNATIVE
+  par(mfrow=c(1,2))
+  hist(cm$nCount_RNA, main="Unique transcripts per spot", xlab="nr of transcripts", breaks="FD")
+  hist(cm$nFeature_RNA, main="Unique genes per spot", xlab="nr of genes", breaks="FD")
+
+}
+
+#' Correlation plots between all samples
+#'
+#' @param se S4 object
+#' @export
+
+qc.corr <- function(se, metric="transcripts"){
+
+  #OBS OBS ADD NON.SEURAT ALTERNATIVE
+
+
+}
