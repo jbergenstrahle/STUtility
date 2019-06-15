@@ -78,7 +78,7 @@ cm <- prep.from.table(sampleTable=infoTable,
 
 ```
 
-
+With the Seurat object created, we can proceed with the regular Seurat workflow to scale data, find variable features and conduct dimensionallity reductions:
 
 ```{r}
 
@@ -89,6 +89,8 @@ cm <- RunICA(cm, ndims.print = 1, nfeatures.print = 5)
 
 ```
 
+For other alternatives, see the Seurat vignettes at https://satijalab.org/seurat/ . Every output is saved into the Seurat object. Visualization can be performed in the usual manner:
+
 ```{r, fig.width = 10, fig.height = 12}
 
 cm <- SetIdent(cm, value = "sample")
@@ -96,12 +98,13 @@ DimPlot(object = cm, dims = 1:2)
 
 ```
 
+Or, we can use the prefix "ST", if instead we would like to visualize the output onto the spatial array:
 
 ```{r, fig.width = 10, fig.height = 20}
 
 ST.DimPlot(object = cm, 
            reduction = "pca",
-           dims = 1:8, 
+           dims = 1:4, 
            group.by = "sample", 
            delim = "x|_", 
            palette = "RdBu",

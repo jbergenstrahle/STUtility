@@ -31,7 +31,8 @@
 #' @return A ggplot object
 #'
 #' @importFrom rlang !!
-#' @importFrom ggplot2 facet_wrap vars sym
+#' @importFrom ggplot2 ggplot facet_wrap vars sym
+#' @importFrom viridis magma
 #'
 #' @export
 

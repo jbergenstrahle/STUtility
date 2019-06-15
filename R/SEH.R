@@ -8,187 +8,7 @@
 #' @importFrom Seurat CreateSeuratObject
 "_PACKAGE"
 
-#' Palette selection
-#'
-#' @param palette Palette choice for plotting spatial expression histology heatmap
-#' @keywords internal
-
-palette.select <- function(palette) {
-  palettes <- list(
-    GnBu = colorRampPalette(brewer.pal(9,"GnBu")),
-    the.cols = colorRampPalette(c(rgb(255,255,217, maxColorValue=255),
-                           rgb(65,182,196, maxColorValue=255),
-                           rgb(8, 29, 88, maxColorValue=255)),
-                         space="Lab"),
-    spectral = colorRampPalette(brewer.pal(9,"Spectral")),
-    offwhite.to.black = colorRampPalette(c(rgb(220,220,220, maxColorValue=255),
-                                    rgb(0, 0, 0, maxColorValue=255)),
-                                  space="Lab"),
-    viridis = colorRampPalette(viridis(9)),
-    cividis = colorRampPalette(cividis(9)),
-    magma = colorRampPalette(magma(9)),
-    plasma = colorRampPalette(plasma(9)),
-    heat = colorRampPalette(c("dark blue", "cyan", "yellow", "red")),
-    RdBu = colorRampPalette(brewer.pal(9,"RdBu")),
-    MaYl = colorRampPalette(c("#FF00FF", "black", "#FFFF00"))
-  )
-  return(palettes[[palette]])
-}
-
-#' Plot spatial expression histology heatmap
-#'
-#' @param se Summarized experiment.
-#' @param filename Name of output file.
-#' @param bg Backsampound color.
-#' @param col.scale.cluster Colors will be scaled per gene cluster across all samples.
-#' @param disable.voronoi Plot points instead of voronoi
-#' @param marBot Bottom plot margin
-#' @param marLeft Left plot margin
-#' @param marRight Right plot margin
-#' @param marTop Top plot margin
-#' @export
-
-seh.plot <- function(se, filename, bg="black", col.scale.cluster=TRUE, disable.voronoi=FALSE, marBot=0, marLeft=0, marRight=0, marTop=0){
-
-  print(paste("Creating factor images based on:"))
-  print(paste(dim(se)[[1]], " genes and", dim(se)[[2]], " spots"))
-
-  ns = length(unique(colData(se)$X))
-  ncol = length(unique(colData(se)))-1 # number of clusters saved in SE object
-
-  plot.asp = (ns + 2) / (ncol + 2)
-  filename <- paste(filename, "_expressionHeatmap.pdf", sep="")
-  pdf(file = filename, width = 6*ncol, height = 6*ns*plot.asp)
-
-  par(mfrow=c(ns, ncol), mar=c(marBot,marLeft,marTop,marRight), bg=bg)
-
-  pal <- palette.select("spectral")
-  cols <- rev(rgb(pal(seq(0, 1, length.out = 9)), maxColorValue = 255))
-
-  #Sort by total factor precence
-  sums <- NULL
-  for(cluster in unique(sort(rowData(se)$cluster))){
-    clusterName = paste("c-", cluster, sep="")
-    cSum <- sum(as.data.frame(colData(se)[clusterName]))
-    cSum <- as.data.frame(cbind(sum=cSum, cluster = cluster))
-    sums <- rbind(sums, cSum)
-  }
-  clusterOrder <- order(sums[, 1], decreasing=TRUE)
-  print("The clusters are printed in order of overall contribution, in order: ")
-  print(clusterOrder)
-  for(samp in unique(sort(colData(se)$X))){
-
-    for(cluster in clusterOrder) {
-      spotNames <- colnames(se[,colData(se)$X==samp])
-      spotNames <- sapply(strsplit(spotNames, "_"), "[[", 1)
-      xcoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 1))
-      ycoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 2))
-      coord_df = as.data.frame(cbind(x=xcoord, y=ycoord))
-
-      clusterName = paste("c-", cluster, sep="")
-      if(col.scale.cluster==TRUE){
-        factorS <- as.data.frame(colData(se)[clusterName])
-        factorS$sample <- colData(se)$X
-        factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
-        factorS <- factorS %>% filter(sample==samp)
-
-      }else{
-        factorS <- as.data.frame(colData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])[clusterName])
-        factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
-      }
-
-      if(disable.voronoi==FALSE){
-        vtess <- deldir(xcoord, ycoord)
-        pts <- cbind(x=xcoord, y=ycoord)
-        hull <- ahull(pts, alpha=5)
-        indx=hull$arcs[,"end1"]
-        the.hull <- list(x = xcoord[indx], y = ycoord[indx])
-        tiles <- tile.list(vtess)
-
-        plotJ(tiles, verbose = FALSE, close = FALSE, pch = 1,
-              fillcol = factorS$colorRamp, col.pts=NULL,
-              col.num=NULL,border=NULL, lwd=5,
-              add = FALSE, asp = 1, xlab = "",
-              ylab = "", main = paste(cluster), warn=FALSE,
-              number=FALSE,adj=NULL,
-              showpoints=FALSE,
-              clipp=the.hull)
-      }else{
-        factorS <- as.data.frame(colData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])[clusterName])
-        factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
-        plot(x=xcoord, y=ycoord, col=factorS$colorRamp, lwd=5, asp=1,
-             ylab="", xlab="", pch=7,
-             xaxt="n", yaxt="n", bty="n")
-      }
-    }
-  }
-  dev.off()
-
-}
-
-#' Create tSNE based on spatial expression histology
-#'
-#' @param se s4 object
-#' @param perpelxity perplexity paramter tSNE
-#' @param priorPCA use PCA as input to tSNE
-#' @param bg plot background color
-#' @export
-
-seh.tsne <- function(se, filename, perplexity=30, priorPCA=FALSE, bg="black"){
-
-  ns = length(unique(colData(se)$X))
-  ncol = 5
-
-  plot.asp = (ns + 2) / (ncol + 2)
-  pdf(file = paste(filename, "_tSNE.pdf",sep=""), width = 6*ncol, height = 6*ns*plot.asp)
-
-  par(mfrow=c(ns, ncol), mar=c(0,0,0,0), bg=bg)
-
-  tsneDf = as.data.frame(colData(se)["c-1"])
-
-  for(cluster in 2:length(unique(sort(rowData(se)$cluster)))){
-    clusterName = paste("c-", cluster, sep="")
-    tsneDf = cbind(tsneDf, colData(se)[clusterName])
-  }
-
-  tsne <- Rtsne(as.matrix(tsneDf), dims=3, pca=priorPCA, perplexity=perplexity)
-  range01 <- function(x){(x-min(x))/(max(x)-min(x))}
-  newVals <- round(range01(tsne$Y) * 255,0)
-  rgbs <- as.factor(rgb(newVals, maxColorValue = 255))
-  colData(se)$rgbs <- rgbs
-
-  for(samp in unique(sort(colData(se)$X))){ #plot per sample
-    spotNames <- colnames(se[,colData(se)$X==samp])
-    spotNames <- sapply(strsplit(spotNames, "_"), "[[", 1)
-    xcoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 1))
-    ycoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 2))
-    coord_df = as.data.frame(cbind(x=xcoord, y=ycoord))
-    vtess <- deldir(xcoord, ycoord)
-    pts <- cbind(x=xcoord, y=ycoord)
-    hull <- ahull(pts, alpha=5)
-    indx=hull$arcs[,"end1"]
-    the.hull <- list(x = xcoord[indx], y=ycoord[indx])
-
-    clusterName = paste("c-", cluster, sep="")
-
-    colors <- colData(se[, colData(se)$X==samp])$rgbs
-    tiles <- tile.list(vtess)
-    plotJ(tiles, verbose = FALSE, close = FALSE, pch = 1,
-          fillcol = colors, col.pts=NULL,
-          col.num=NULL,border=NULL, lwd=5,
-          add = FALSE, asp = 1, xlab = "",
-          ylab = "", main = "", warn=FALSE,
-          number=FALSE,adj=NULL,
-          showpoints=FALSE,
-          clipp=the.hull)
-
-  }
-
-  dev.off()
-
-}
-
-#' Spatial Expression Histology
+#'  ==============  Spatial Expression Histology ====================================
 #'
 #' @param se s4 object
 #' @param n.clust number of clusters
@@ -302,6 +122,160 @@ runSEH <- function(se, n.clust=10, sample.wise.z = FALSE, global.z = FALSE, m.va
 }
 
 
+#' Plot spatial expression histology heatmap
+#'
+#' @param se Summarized experiment.
+#' @param filename Name of output file.
+#' @param bg Backsampound color.
+#' @param col.scale.cluster Colors will be scaled per gene cluster across all samples.
+#' @param disable.voronoi Plot points instead of voronoi
+#' @param marBot Bottom plot margin
+#' @param marLeft Left plot margin
+#' @param marRight Right plot margin
+#' @param marTop Top plot margin
+#' @export
+
+seh.plot <- function(se, filename, bg="black", col.scale.cluster=TRUE, disable.voronoi=FALSE, marBot=0, marLeft=0, marRight=0, marTop=0){
+
+  print(paste("Creating factor images based on:"))
+  print(paste(dim(se)[[1]], " genes and", dim(se)[[2]], " spots"))
+
+  ns = length(unique(colData(se)$X))
+  ncol = length(unique(colData(se)))-1 # number of clusters saved in SE object
+
+  plot.asp = (ns + 2) / (ncol + 2)
+  filename <- paste(filename, "_expressionHeatmap.pdf", sep="")
+  pdf(file = filename, width = 6*ncol, height = 6*ns*plot.asp)
+
+  par(mfrow=c(ns, ncol), mar=c(marBot,marLeft,marTop,marRight), bg=bg)
+
+  pal <- palette.select("spectral")
+  cols <- rev(rgb(pal(seq(0, 1, length.out = 9)), maxColorValue = 255))
+
+  #Sort by total factor precence
+  sums <- NULL
+  for(cluster in unique(sort(rowData(se)$cluster))){
+    clusterName = paste("c-", cluster, sep="")
+    cSum <- sum(as.data.frame(colData(se)[clusterName]))
+    cSum <- as.data.frame(cbind(sum=cSum, cluster = cluster))
+    sums <- rbind(sums, cSum)
+  }
+  clusterOrder <- order(sums[, 1], decreasing=TRUE)
+  print("The clusters are printed in order of overall contribution, in order: ")
+  print(clusterOrder)
+  for(samp in unique(sort(colData(se)$X))){
+
+    for(cluster in clusterOrder) {
+      spotNames <- colnames(se[,colData(se)$X==samp])
+      spotNames <- sapply(strsplit(spotNames, "_"), "[[", 1)
+      xcoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 1))
+      ycoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 2))
+      coord_df = as.data.frame(cbind(x=xcoord, y=ycoord))
+
+      clusterName = paste("c-", cluster, sep="")
+      if(col.scale.cluster==TRUE){
+        factorS <- as.data.frame(colData(se)[clusterName])
+        factorS$sample <- colData(se)$X
+        factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
+        factorS <- factorS %>% filter(sample==samp)
+
+      }else{
+        factorS <- as.data.frame(colData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])[clusterName])
+        factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
+      }
+
+      if(disable.voronoi==FALSE){
+        vtess <- deldir(xcoord, ycoord)
+        pts <- cbind(x=xcoord, y=ycoord)
+        hull <- ahull(pts, alpha=5)
+        indx=hull$arcs[,"end1"]
+        the.hull <- list(x = xcoord[indx], y = ycoord[indx])
+        tiles <- tile.list(vtess)
+
+        plotJ(tiles, verbose = FALSE, close = FALSE, pch = 1,
+              fillcol = factorS$colorRamp, col.pts=NULL,
+              col.num=NULL,border=NULL, lwd=5,
+              add = FALSE, asp = 1, xlab = "",
+              ylab = "", main = paste(cluster), warn=FALSE,
+              number=FALSE,adj=NULL,
+              showpoints=FALSE,
+              clipp=the.hull)
+      }else{
+        factorS <- as.data.frame(colData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])[clusterName])
+        factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
+        plot(x=xcoord, y=ycoord, col=factorS$colorRamp, lwd=5, asp=1,
+             ylab="", xlab="", pch=7,
+             xaxt="n", yaxt="n", bty="n")
+      }
+    }
+  }
+  dev.off()
+
+}
+
+
+#' Create tSNE based on spatial expression histology
+#'
+#' @param se s4 object
+#' @param perpelxity perplexity paramter tSNE
+#' @param priorPCA use PCA as input to tSNE
+#' @param bg plot background color
+#' @export
+
+seh.tsne <- function(se, filename, perplexity=30, priorPCA=FALSE, bg="black"){
+
+  ns = length(unique(colData(se)$X))
+  ncol = 5
+
+  plot.asp = (ns + 2) / (ncol + 2)
+  pdf(file = paste(filename, "_tSNE.pdf",sep=""), width = 6*ncol, height = 6*ns*plot.asp)
+
+  par(mfrow=c(ns, ncol), mar=c(0,0,0,0), bg=bg)
+
+  tsneDf = as.data.frame(colData(se)["c-1"])
+
+  for(cluster in 2:length(unique(sort(rowData(se)$cluster)))){
+    clusterName = paste("c-", cluster, sep="")
+    tsneDf = cbind(tsneDf, colData(se)[clusterName])
+  }
+
+  tsne <- Rtsne(as.matrix(tsneDf), dims=3, pca=priorPCA, perplexity=perplexity)
+  range01 <- function(x){(x-min(x))/(max(x)-min(x))}
+  newVals <- round(range01(tsne$Y) * 255,0)
+  rgbs <- as.factor(rgb(newVals, maxColorValue = 255))
+  colData(se)$rgbs <- rgbs
+
+  for(samp in unique(sort(colData(se)$X))){ #plot per sample
+    spotNames <- colnames(se[,colData(se)$X==samp])
+    spotNames <- sapply(strsplit(spotNames, "_"), "[[", 1)
+    xcoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 1))
+    ycoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 2))
+    coord_df = as.data.frame(cbind(x=xcoord, y=ycoord))
+    vtess <- deldir(xcoord, ycoord)
+    pts <- cbind(x=xcoord, y=ycoord)
+    hull <- ahull(pts, alpha=5)
+    indx=hull$arcs[,"end1"]
+    the.hull <- list(x = xcoord[indx], y=ycoord[indx])
+
+    clusterName = paste("c-", cluster, sep="")
+
+    colors <- colData(se[, colData(se)$X==samp])$rgbs
+    tiles <- tile.list(vtess)
+    plotJ(tiles, verbose = FALSE, close = FALSE, pch = 1,
+          fillcol = colors, col.pts=NULL,
+          col.num=NULL,border=NULL, lwd=5,
+          add = FALSE, asp = 1, xlab = "",
+          ylab = "", main = "", warn=FALSE,
+          number=FALSE,adj=NULL,
+          showpoints=FALSE,
+          clipp=the.hull)
+
+  }
+
+  dev.off()
+
+}
+
 #' Gene cluster tables
 #'
 #' Creates tables of the gene clusters, both with raw count data,
@@ -360,7 +334,8 @@ save.table <- function(se, filename){
 
 }
 
-#' plot tile list for voronoi
+#' ======================================= INTERNAL ====================================
+#'  plot tile list for voronoi
 #'
 #' @keywords internal
 
@@ -489,6 +464,7 @@ plotJ <- function (x, verbose = FALSE, close = FALSE, pch = 1, fillcol = getCol(
          adj = Adj, ...)
   invisible()
 }
+
 
 
 
