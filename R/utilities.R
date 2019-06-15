@@ -85,3 +85,30 @@ FilterObjects <- function(object, classes.keep = c('Assay', 'DimReduc')) {
   object.classes <- object.classes[object.classes %in% classes.keep]
   return(names(x = object.classes))
 }
+
+#' Palette selection
+#'
+#' @param palette Palette choice for plotting spatial expression histology heatmap
+#' @keywords internal
+
+palette.select <- function(palette) {
+  palettes <- list(
+    GnBu = colorRampPalette(brewer.pal(9,"GnBu")),
+    the.cols = colorRampPalette(c(rgb(255,255,217, maxColorValue=255),
+                                  rgb(65,182,196, maxColorValue=255),
+                                  rgb(8, 29, 88, maxColorValue=255)),
+                                space="Lab"),
+    spectral = colorRampPalette(brewer.pal(9,"Spectral")),
+    offwhite.to.black = colorRampPalette(c(rgb(220,220,220, maxColorValue=255),
+                                           rgb(0, 0, 0, maxColorValue=255)),
+                                         space="Lab"),
+    viridis = colorRampPalette(viridis(9)),
+    cividis = colorRampPalette(cividis(9)),
+    magma = colorRampPalette(magma(9)),
+    plasma = colorRampPalette(plasma(9)),
+    heat = colorRampPalette(c("dark blue", "cyan", "yellow", "red")),
+    RdBu = colorRampPalette(brewer.pal(9,"RdBu")),
+    MaYl = colorRampPalette(c("#FF00FF", "black", "#FFFF00"))
+  )
+  return(palettes[[palette]])
+}
