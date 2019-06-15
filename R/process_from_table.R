@@ -91,7 +91,7 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
     m[curgenes,] <- count
     colnames(m) <- paste(colnames(count), "_", idx, sep="")
     cnt <- cbind(cnt, m)
-    samples <- c(samples, rep(idx, nspots))
+    samples <- c(samples, rep(paste0(idx), nspots))
     pixelx <- c(pixelx, spotFileData[[idx]]$pixel_x)
     pixely <- c(pixely, spotFileData[[idx]]$pixel_y)
     idx <- idx + 1
