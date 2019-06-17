@@ -101,8 +101,6 @@ ST.DimPlot <- function(
                    ncol,
                    ...)
 
-<<<<<<< HEAD
-=======
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -238,7 +236,6 @@ ST.FeaturePlot <- function(
                    rev.cols,
                    ncol)
 
->>>>>>> visualization
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -253,16 +250,13 @@ ST.FeaturePlot <- function(
 }
 
 
-<<<<<<< HEAD
 #' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
 #'
 #' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
-=======
 #' Graphs ST spots colored by numeric variable, e.g. dimensional reduction vector or a character
 #'
 #' @param data data.frame containing (x, y) coordinates, a group vector and feature vectors of class
 #' numeric/character
->>>>>>> visualization
 #' @param group.by specifies column to facet the plots by, e.g. sampleID
 #' @param variable name of continuous variable
 #' @param pt.size point size of each ST spot
@@ -281,7 +275,6 @@ STPlot <- function(
   ncol = NULL,
   ...
 ) {
-<<<<<<< HEAD
   cols <- palette.select(palette)(3)
   if (rev.cols) {
     cols <- rev(cols)
@@ -307,7 +300,6 @@ STPlot <- function(
     }
     p <- p +
       labs(title = variable, color = "value") +
->>>>>>> visualization
       scale_color_gradientn(colours = cols)
   } else if (class(data[, variable, drop = T]) %in% c("character", "factor")) {
     p <- p +
@@ -316,8 +308,6 @@ STPlot <- function(
   return(p)
 }
 
-<<<<<<< HEAD
-=======
 
 #' Find the quantile of a data
 #'
@@ -410,7 +400,6 @@ feature.scaler <- function(
   return(data)
 }
 
->>>>>>> visualization
 
 #' Generates a dark theme for STPlot
 
