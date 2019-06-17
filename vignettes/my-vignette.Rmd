@@ -116,7 +116,7 @@ ST.DimPlot(object = cm,
 
 
 
-## QC 
+### QC 
 
 ```{r}
 qcGenes(cm)
@@ -129,7 +129,34 @@ qcGenes(cm)
 
 
 
-### Method 2
+## Method 2
 
 
+
+
+
+
+
+## Spatial Expression Histology (SEH)
+
+
+```{r}
+
+
+seh <- runSEH(cm, n.clust=10,
+              n.start=10, 
+              m.iter=10,
+              log.freq = T)
+
+
+ST.DimPlot(object = seh, 
+           reduction = "SEH",
+           dims = 1:4, 
+           group.by = "sample", 
+           delim = "x|_", 
+           palette = "RdBu",
+           rev.cols = T,
+           pt.size = 0.2,
+           dark.theme = T, ncol = 4, grid.ncol = 1)
+```
 
