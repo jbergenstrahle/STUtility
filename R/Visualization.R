@@ -286,13 +286,6 @@ STPlot <- function(
       theme_void() +
       facet_wrap(as.formula(paste("~", group.by)), ncol = ncol) +
       labs(title = variable, color = "") +
-=======
-  p <- ggplot() +
-    geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable), size = pt.size, ...) +
-    scale_x_continuous(limits = c(0, 67)) +
-    scale_y_continuous(limits = c(0, 64)) +
-    theme_void() +
-    facet_wrap(as.formula(paste("~", group.by)), ncol = ncol)
   if (class(data[, variable, drop = T]) == "numeric") {
     cols <- palette.select(palette)(3)
     if (rev.cols) {
