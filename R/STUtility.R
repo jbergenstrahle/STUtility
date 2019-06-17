@@ -11,16 +11,15 @@
 #' Palette selection
 #'
 #' @param palette Palette choice for plotting spatial expression histology heatmap
-#' @keywords internal
+#' @export
 
-palette.select <- function(palette) {
+palette.select <- function(palette, info = F) {
   palettes <- list(
     GnBu = colorRampPalette(brewer.pal(9,"GnBu")),
     the.cols = colorRampPalette(c(rgb(255,255,217, maxColorValue=255),
                            rgb(65,182,196, maxColorValue=255),
                            rgb(8, 29, 88, maxColorValue=255)),
                          space="Lab"),
-    spectral = colorRampPalette(brewer.pal(9,"Spectral")),
     offwhite.to.black = colorRampPalette(c(rgb(220,220,220, maxColorValue=255),
                                     rgb(0, 0, 0, maxColorValue=255)),
                                   space="Lab"),
@@ -29,10 +28,14 @@ palette.select <- function(palette) {
     magma = colorRampPalette(magma(9)),
     plasma = colorRampPalette(plasma(9)),
     heat = colorRampPalette(c("dark blue", "cyan", "yellow", "red")),
+    spectral = colorRampPalette(brewer.pal(9,"Spectral")),
     RdBu = colorRampPalette(brewer.pal(9,"RdBu")),
     MaYl = colorRampPalette(c("#FF00FF", "black", "#FFFF00")),
     RdYlBu = colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))
   )
+  if (info) {
+    return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div")))
+  }
   if (!palette %in% names(palettes)) {
     stop("Invalid palette name: ", palette, call. = FALSE)
   }
