@@ -10,6 +10,8 @@
 
 #'  ==============  Spatial Expression Histology ====================================
 #'
+#' Covariance based spatial expression Histology
+#'
 #' @param se s4 object
 #' @param n.clust number of clusters
 #' @param sample.wise.z sample wize z-score calculation
@@ -21,102 +23,68 @@
 #' @param m.iter number of iterations kMeans
 #' @export
 
-runSEH <- function(se, n.clust=10, sample.wise.z = FALSE, global.z = FALSE, m.var=0,
-                   log.freq=TRUE, use.cov = TRUE, n.start=10, m.iter=10,
-                   db.scan = FALSE, db.sca.eps = 0.15, db.scan.MinPts = 5) {
+runSEH <- function(se, n.clust=10,
+                   log.freq=TRUE, n.start=10, m.iter=10,
+                   ...) {
 
   # --------------- OBS OBS ----- TAnk pa TOP genes EJ SORTED BY DEFAULT HAR
+  # OBS only seurat work atm - add to include singlecellExp also
 
-  if(sample.wise.z){
-    useCov=FALSE
-  }
-  if(global.z){
-    useCov=FALSE
-  }
-  # ---- filter out most variable
-  #mostVar: e.g. 0.25 would give top 25% variable
-  if(m.var>0){
-    #Convert to log counts
-    logX <- log(assays(se)$counts+1)
-    #Calculate coefficient of variation
-    compute_cv <- function(x) sd(x) / mean(x)
-    cv <- apply(logX, 1, compute_cv)
-    #Selection of genes with highest CV.
-    cutoff <- m.var
-    variable <- logX[rank(cv) / length(cv) > 1 - cutoff, ]
-    se <- se[rownames(variable), ]
-  }
+  rnaAssay <- se[["RNA"]]@counts
+  rnaAssay <- rnaAssay[order(Matrix::rowSums(rnaAssay), decreasing = T), ]
 
   #  ----- logarithms of relative frequencies in the spots
   if(log.freq==TRUE){
-    print("Relative frequences of log")
-    assays(se)$y <- prop.table(log(1 + assays(se)$counts, 2))
+    print("Calculating relative frequences of log(1+counts)")
+    rnaAssay<- prop.table(log(1 + rnaAssay, 2))
   }else{
-    print("Log of counts")
-    assays(se)$y <- log(1 + assays(se)$counts)
-  }
-
-  myscale = function(x) {
-    cm <- colMeans(x)
-    y <- t(t(x) - cm)
-    sds <- apply(y, 2, sd)
-    sds[sds==0] = 1
-    t(t(y)/sds)
-  }
-
-  if(use.cov==TRUE){
-    #Covariance
-    print("Using Covariance matrix for clustering")
-    y <- cov(x=t(assays(se)$y))
-    metadata(se)$cov <- y
-
-  }else{
-
-    if(sample.wise.z){
-      print("Performing sample wise zscore calculations")
-      # z-transform the genes across the spots within the samples
-      for(samp in unique(sort(colData(se)$X))) { # Per sample
-        assays(se[, colData(se)$X==samp])$y <- myscale(assays(se[, colData(se)$X==samp])$y)
-      }
-      y <- assays(se)$y
-      metadata(se)$y <- y
-    }else {
-      print("Performing global zscore calculation")
-      assays(se)$y <- myscale(assays(se)$y)
-      y <- assays(se)$y
-      metadata(se)$y <- y
-    }
+    print("Calculating lo(1+counts)")
+    rnaAssay <- log(1 + rnaAssay)
   }
 
 
-  #if(db.scan == FALSE){
+  #Covariance
+  print("Calculating Covariance for clustering")
+  rnaCov <- cov(x=t(Matrix::as.matrix(rnaAssay)))
+
+
+  #kMeans clustering
   print("kMeans clustering ...")
-  km <- kmeans(y, centers = n.clust, iter.max=m.iter, nstart=n.start)
-  rowData(se)$cluster <- km$cluster
-  #}else{
-  #  print("DBSCAN clustering ...")
-  #  db <- fpc::dbscan(y, eps=db.scan.eps, MinPts = db.scan.MinPts)
-  #}
+  km <- kmeans(rnaCov, centers = n.clust, iter.max=m.iter, nstart=n.start)
+  clusters <- km$cluster
+  #Save this in s4 obj
+  se@assays$cluster <- clusters
 
-  for(cluster in unique(sort(rowData(se)$cluster))){
+
+  for(cluster in unique(sort(clusters))){
     name = paste("c-", cluster, sep="")
-    colData(se)[name] = 0
+    se@meta.data[[name]] <- 0
   }
 
-  rowData(se)$geneContribution <- 0 #Storage for indivudal gene contribution to cluster
+ # se@assays$geneContribution <- rep(0, length(rownames(se[["RNA"]]))) #Storage for indivudal gene contribution to cluster
+ #instead of subsettting - doing this now:
+  plotValues <- matrix(0, ncol=length(unique(clusters)), nrow=dim(se)[[2]])
+  colnames(plotValues) <- unique(sort(clusters))
+  rownames(plotValues) <- sapply(strsplit(colnames(se), "_"), "[[", 2)
 
-  print("Preparing data for vizualisation")
-  for(samp in unique(sort(colData(se)$X))) { # Per sample
-    x <- se[, colData(se)$X==samp]
-    assays(x)$counts <- prop.table(assays(x)$counts, 2)
-    for(cluster in unique(sort(rowData(se)$cluster))) { #Per gene cluster
+  for(samp in unique(sort(cm$sample))) { # Per sample
+    x <- se[, cm$sample==samp]
+    x[["RNA"]]@counts <- prop.table(Matrix::as.matrix(x[["RNA"]]@counts), 2)
+    for(cluster in unique(sort(x@assays$cluster))) { #Per gene cluster
       clusterName = paste("c-", cluster, sep="")
-      z <- x[rowData(x)$cluster==cluster, ]
-      rowData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])$geneContribution <- rowSums(assays(z)$counts)
-      colData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])[clusterName] <- colSums(assays(z)$counts) #values for plots
-
+      z <- x[x@assays$cluster == cluster, ]
+     # se[se@assays$cluster == cluster,
+      #   se$sample == samp]@assays$geneContribution <- Matrix::rowSums(z[["RNA"]]@counts)
+      #se[se@assays$cluster == cluster,
+       #  se$sample == samp]@meta.data[[clusterName]] <- Matrix::colSums(z[["RNA"]]@counts) #values for plots
+        # -------------
+        plotValues[which(rownames(plotValues)==samp)  , cluster] <- Matrix::colSums(z[["RNA"]]@counts)
     }
   }
+
+  rownames(plotValues) <- colnames(se)
+  se[["SEH"]] <- CreateDimReducObject(embeddings  = plotValues, key = "Cluster_", assay="RNA")
+
   print("Completed")
   return(se)
 }
@@ -129,7 +97,7 @@ runSEH <- function(se, n.clust=10, sample.wise.z = FALSE, global.z = FALSE, m.va
 #' @param bg Backsampound color.
 #' @param col.scale.cluster Colors will be scaled per gene cluster across all samples.
 #' @param disable.voronoi Plot points instead of voronoi
-#' @param marBot Bottom plot margin
+#' @param marBot Bottom plot margindfsdfdsf
 #' @param marLeft Left plot margin
 #' @param marRight Right plot margin
 #' @param marTop Top plot margin
