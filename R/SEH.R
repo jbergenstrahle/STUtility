@@ -76,7 +76,7 @@ ST.seh <- function(se, n.clust=10,
   if(log.freq==TRUE){
     print("Calculating relative frequences of log(1+counts)")
     rnaAssay<- prop.table(log(1 + rnaAssay, 2))
-  }else{
+  } else {
     print("Calculating lo(1+counts)")
     rnaAssay <- log(1 + rnaAssay)
   }
@@ -109,6 +109,7 @@ ST.seh <- function(se, n.clust=10,
   colnames(plotValues) <- unique(sort(clusters))
   rownames(plotValues) <- sapply(strsplit(colnames(se), "_"), "[[", 2)
 
+<<<<<<< HEAD
   print("Obtaining SEH values...")
 
   if(use.moduleScore!=TRUE){
@@ -128,6 +129,20 @@ ST.seh <- function(se, n.clust=10,
         }
 
       }
+=======
+  for(samp in unique(sort(cm$sample))) { # Per sample
+    x <- se[, cm$sample==samp]
+    x[["RNA"]]@counts <- prop.table(Matrix::as.matrix(x[["RNA"]]@counts), 2)
+    for(cluster in unique(sort(x@assays$cluster))) { #Per gene cluster
+      clusterName = paste("c-", cluster, sep="")
+      z <- x[x@assays$cluster == cluster, ]
+     # se[se@assays$cluster == cluster,
+      #   se$sample == samp]@assays$geneContribution <- Matrix::rowSums(z[["RNA"]]@counts)
+      #se[se@assays$cluster == cluster,
+       #  se$sample == samp]@meta.data[[clusterName]] <- Matrix::colSums(z[["RNA"]]@counts) #values for plots
+        # -------------
+      plotValues[which(rownames(plotValues)==samp)  , cluster] <- Matrix::colSums(z[["RNA"]]@counts)
+>>>>>>> origin/master
     }
   }else{ # ---------- Using Seurats AddModuleScore
     features <- split(names(clusters), clusters)
