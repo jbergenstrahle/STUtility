@@ -13,7 +13,7 @@
 #' @param object Seurat object
 #' @param dims Dimensions to plot, must numeric vectoir specifying number of dimensions to plot
 #' @param spots Vector of spots to plot (default is all spots)
-#' @param blend Scale and blend expression values to visualize coexpression of two features
+#' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param pt.size Adjust point size for plotting
@@ -99,8 +99,8 @@ ST.DimPlot <- function(
   }
 
   # Obtain array coordinates
-  if (all(c("adj_x", "adj_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("adj_x", "adj_y")]], nm = c("x", "y")))
+  if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
   } else {
     if(is.null(delim)) {
       stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
@@ -114,7 +114,7 @@ ST.DimPlot <- function(
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
-    spot.colors <- ColorBlender(data, channels.use)
+    spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- STPlot(data,
                    data.type = "numeric",
@@ -128,6 +128,9 @@ ST.DimPlot <- function(
                    spot.colors,
                    center.zero,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "))
+    if (dark.theme) {
+      plot <- plot + dark_theme()
+    }
     return(plot)
   } else {
     spot.colors <- NULL
@@ -180,7 +183,7 @@ ST.DimPlot <- function(
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param slot Which slot to pull expression data from?
-#' @param blend Scale and blend expression values to visualize coexpression of two features
+#' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param pt.size Adjust point size for plotting
 #' @param group.by Name of a metadata column to facet plot by (deault is sampleID)
 #' @param shape.by If NULL, all points are circles (default). You can specify any
@@ -193,7 +196,7 @@ ST.DimPlot <- function(
 #'
 #' @inheritParams STPlot
 #' @importFrom cowplot plot_grid
-#' @importFrom scales recale
+#' @importFrom scales rescale
 #'
 #' @return A ggplot object
 #' @export
@@ -259,8 +262,8 @@ ST.FeaturePlot <- function(
   }
 
   # Obtain array coordinates
-  if (all(c("adj_x", "adj_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("adj_x", "adj_y")]], nm = c("x", "y")))
+  if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
   } else {
     if(is.null(delim)) {
       stop("adjusted coordinates are not present in meta data and delimiter is missing ...", call. = FALSE)
@@ -284,7 +287,7 @@ ST.FeaturePlot <- function(
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
-    spot.colors <- ColorBlender(data, channels.use)
+    spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- STPlot(data,
                    data.type,
@@ -298,6 +301,9 @@ ST.FeaturePlot <- function(
                    spot.colors,
                    center.zero,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "))
+    if (dark.theme) {
+      plot <- plot + dark_theme()
+    }
     return(plot)
   } else {
     spot.colors <- NULL
@@ -341,9 +347,8 @@ ColorBlender <- function(
   channels.use = NULL
 ) {
   rgb.order <- setNames(1:3, c("red", "green", "blue"))
-
-  if (!length(channels.use) == ncol(colored.data)) {
-    stop(paste0("channels.use must be same length as number of features"))
+  if (!length(channels.use) == ncol(data)) {
+    stop(paste0("channels.use must be same length as number of features or dimensions "))
   } else if (!all(channels.use %in% names(rgb.order))) {
     stop("Invalid color names")
   } else if (sum(duplicated(channels.use))){
@@ -351,14 +356,14 @@ ColorBlender <- function(
   }
   col.order <- rgb.order[channels.use]
 
-  if (ncol(colored.data) == 2) {
-    colored.data <- cbind(colored.data, rep(0, nrow(colored.data)))
+  if (ncol(data) == 2) {
+    data <- cbind(data, rep(0, nrow(data)))
     col.order <- c(col.order, setdiff(1:3, col.order))
-    colored.data <- colored.data[, col.order]
-  } else if (ncol(colored.data) == 3) {
-    colored.data <- colored.data[, col.order]
+    data <- data[, col.order]
+  } else if (ncol(data) == 3) {
+    data <- data[, col.order]
   }
-  color.codes <- rgb(colored.data)
+  color.codes <- rgb(data)
 }
 
 
