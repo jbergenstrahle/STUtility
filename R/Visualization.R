@@ -13,6 +13,7 @@
 #' @param object Seurat object
 #' @param dims Dimensions to plot, must numeric vectoir specifying number of dimensions to plot
 #' @param spots Vector of spots to plot (default is all spots)
+#' @param blend Scale and blend expression values to visualize coexpression of two features
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param pt.size Adjust point size for plotting
@@ -21,13 +22,13 @@
 #' @param shape.by If NULL, all points are circles (default). You can specify any
 #' cell attribute (that can be pulled with FetchData) allowing for both
 #' different colors and different shapes on cells
-#' @param palette color palette to use for heatmap, see \code{\link{palette.select}}
-#' @param rev.cols logical specifying whether colorscale should be reversed
-#' @param ncol Number of columns for display of samples for each dimensionality reduction vector
 #' @param delim delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data
 #' @param return.plot.list should the plots be returned as a list? By default, the plots are arranged into a grid
 #' @param grid.ncol Number of columns for display when combining plots
+#'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
+#'
+#' @inheritParams STPlot
 #'
 #' @return A ggplot object
 #'
@@ -41,6 +42,7 @@ ST.DimPlot <- function(
   object,
   dims = c(1, 2),
   spots = NULL,
+  blend = FALSE,
   min.cutoff = NA,
   max.cutoff = NA,
   pt.size = 1,
@@ -54,6 +56,8 @@ ST.DimPlot <- function(
   delim = NULL,
   return.plot.list = F,
   grid.ncol = NULL,
+  center.zero = T,
+  channels.use = NULL,
   ...
 ) {
   reduction <- reduction %||% {
@@ -71,6 +75,10 @@ ST.DimPlot <- function(
   palette.info <- palette.select(info = T)
   palette <- palette %||% {
     palette <- subset(palette.info, category == "div")$palette[1]
+  }
+
+  if (!blend && length(x = dims) %in% c(2, 3)) {
+    stop("Blending feature plots only works with two or three dimensions")
   }
 
   if (!is.null(x = group.by)) {
@@ -103,8 +111,11 @@ ST.DimPlot <- function(
 
   data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
 
-  # Create plots
-  plots <- lapply(X = dims, FUN = function(d) {
+  if (blend) {
+    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
+    channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
+    spot.colors <- ColorBlender(data, channels.use)
+    data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- STPlot(data,
                    data.type = "numeric",
                    group.by,
@@ -113,21 +124,40 @@ ST.DimPlot <- function(
                    pt.size,
                    palette,
                    rev.cols,
-                   ncol)
-
-    if (dark.theme) {
-      plot <- plot + dark_theme()
-    }
+                   ncol,
+                   spot.colors,
+                   center.zero,
+                   plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "))
     return(plot)
-  })
-
-  if (return.plot.list) {
-    return(plots)
   } else {
-    cowplot::plot_grid(plotlist = plots, ncol = grid.ncol)
+    spot.colors <- NULL
+    # Create plots
+    plots <- lapply(X = dims, FUN = function(d) {
+      plot <- STPlot(data,
+                     data.type,
+                     group.by,
+                     shape.by,
+                     d,
+                     pt.size,
+                     palette,
+                     rev.cols,
+                     ncol,
+                     spot.colors,
+                     center.zero)
+
+      if (dark.theme) {
+        plot <- plot + dark_theme()
+      }
+      return(plot)
+    })
+
+    if (return.plot.list) {
+      return(plots)
+    } else {
+      plot_grid(plotlist = plots, ncol = grid.ncol)
+    }
   }
 }
-
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Feature plots
@@ -151,22 +181,19 @@ ST.DimPlot <- function(
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param slot Which slot to pull expression data from?
 #' @param blend Scale and blend expression values to visualize coexpression of two features
-#' @param blend.threshold The color cutoff from weak signal to strong signal; ranges from 0 to 1.
 #' @param pt.size Adjust point size for plotting
 #' @param group.by Name of a metadata column to facet plot by (deault is sampleID)
 #' @param shape.by If NULL, all points are circles (default). You can specify any
 #' cell attribute (that can be pulled with FetchData) allowing for both
 #' different colors and different shapes on cells
-#' @param palette color palette to use for heatmap (only relevant for numeric variables, e.g. gene expression), see \code{\link{palette.select}}
-#' @param rev.cols logical specifying whether colorscale should be reversed
-#' @param combine Combine plots into a single gg object; note that if TRUE; themeing will not work when plotting multiple features
-#' @param ncol Number of columns for display of samples for each dimensionality reduction vector
 #' @param delim delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data
 #' @param return.plot.list should the plots be returned as a list? By default, the plots are arranged into a grid
 #' @param grid.ncol Number of columns for display when combining plots
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
+#' @inheritParams STPlot
 #' @importFrom cowplot plot_grid
+#' @importFrom scales recale
 #'
 #' @return A ggplot object
 #' @export
@@ -179,7 +206,6 @@ ST.FeaturePlot <- function(
   max.cutoff = NA,
   slot = "scale.data",
   blend = FALSE,
-  blend.threshold = 0.5,
   pt.size = 1,
   group.by = NULL,
   shape.by = NULL,
@@ -190,6 +216,8 @@ ST.FeaturePlot <- function(
   delim = NULL,
   return.plot.list = F,
   grid.ncol = NULL,
+  center.zero = F,
+  channels.use = NULL,
   ...
 ) {
   spots <- spots %||% colnames(x = object)
@@ -201,25 +229,18 @@ ST.FeaturePlot <- function(
 
   data.type <- unique(sapply(data, class))
 
-  if (length(data.type) > 1) {
+  if (length(data.type) > 1 & !all(data.type %in% c("numeric", "integer"))) {
     stop("Mixed classes (", paste(unique(sapply(data, class)), collapse = ", "), ") are not allowed in features ... ")
   }
 
-  # Select colorscale
-  if (!is.null(palette)) {
-    if (data.type == "numeric") {
-      stopifnot(palette %in% subset(palette.info, category == "div")$palette)
-    } else if (data.type == "integer") {
-      stopifnot(palette %in% subset(palette.info, category == "seq")$palette)
-    }
+  if (!blend && length(x = features) %in% c(2, 3) & !all(data.type %in% c("numeric", "integer"))) {
+    stop("Blending feature plots only works with two or three numeric features")
   }
+
+  # Select colorscale
   palette.info <- palette.select(info = T)
   palette <- palette %||% {
-    if (data.type == "numeric") {
-      palette <- subset(palette.info, category == "div")$palette[1]
-    } else if (data.type == "integer") {
-      palette <- subset(palette.info, category == "seq")$palette[1]
-    }
+    palette <- subset(palette.info, category == "seq")$palette[1]
   }
 
   if (!is.null(x = group.by)) {
@@ -260,8 +281,11 @@ ST.FeaturePlot <- function(
     data <- feature.scaler(data, min.cutoff, max.cutoff, spots)
   }
 
-  # Create plots
-  plots <- lapply(X = features, FUN = function(d) {
+  if (blend) {
+    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
+    channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
+    spot.colors <- ColorBlender(data, channels.use)
+    data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- STPlot(data,
                    data.type,
                    group.by,
@@ -270,26 +294,77 @@ ST.FeaturePlot <- function(
                    pt.size,
                    palette,
                    rev.cols,
-                   ncol)
-
-    if (dark.theme) {
-      plot <- plot + dark_theme()
-    }
+                   ncol,
+                   spot.colors,
+                   center.zero,
+                   plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "))
     return(plot)
-  })
-
-  if (return.plot.list) {
-    return(plots)
   } else {
-    plot_grid(plotlist = plots, ncol = grid.ncol)
+    spot.colors <- NULL
+    # Create plots
+    plots <- lapply(X = features, FUN = function(d) {
+      plot <- STPlot(data,
+                     data.type,
+                     group.by,
+                     shape.by,
+                     d,
+                     pt.size,
+                     palette,
+                     rev.cols,
+                     ncol,
+                     spot.colors,
+                     center.zero)
+
+      if (dark.theme) {
+        plot <- plot + dark_theme()
+      }
+      return(plot)
+    })
+
+    if (return.plot.list) {
+      return(plots)
+    } else {
+      plot_grid(plotlist = plots, ncol = grid.ncol)
+    }
   }
+}
+
+
+#' Squeeze 2 or 3 column feature data into the unit cube and converts into RGB space
+#'
+#' @param data data.frame containing feature values and coordinates
+#' @param channels.use Select channels to use for blending. Default is red, green and blue but the order can be shuffled.
+#' For 2 features, the default is red and green. (options: "red", "green" and "blue")
+
+ColorBlender <- function(
+  data,
+  channels.use = NULL
+) {
+  rgb.order <- setNames(1:3, c("red", "green", "blue"))
+
+  if (!length(channels.use) == ncol(colored.data)) {
+    stop(paste0("channels.use must be same length as number of features"))
+  } else if (!all(channels.use %in% names(rgb.order))) {
+    stop("Invalid color names")
+  } else if (sum(duplicated(channels.use))){
+    stop("Duplicate color names not allowed")
+  }
+  col.order <- rgb.order[channels.use]
+
+  if (ncol(colored.data) == 2) {
+    colored.data <- cbind(colored.data, rep(0, nrow(colored.data)))
+    col.order <- c(col.order, setdiff(1:3, col.order))
+    colored.data <- colored.data[, col.order]
+  } else if (ncol(colored.data) == 3) {
+    colored.data <- colored.data[, col.order]
+  }
+  color.codes <- rgb(colored.data)
 }
 
 
 #' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
 #'
 #' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
-#' Graphs ST spots colored by numeric variable, e.g. dimensional reduction vector or a character
 #' @param data.type type of data, e.g. numeric or integer
 #' @param group.by specifies column to facet the plots by, e.g. sampleID
 #' @param shape.by specifies column to shape points by, e.g. morphological region
@@ -297,6 +372,9 @@ ST.FeaturePlot <- function(
 #' @param pt.size point size of each ST spot
 #' @param palette color palette used for spatial heatmap
 #' @param rev.cols logical specifying whether colorscale should be reversed
+#' @param ncol number of columns in \code{facet_wrap}
+#' @param spot.colors character vector woth color names that overrides default coloring with ggplot2
+#' @param center.zero should the colorscale be centered around 0? Set to TRUE for scaled data
 #' @param ... parameters passed to geom_point()
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn
@@ -313,39 +391,47 @@ STPlot <- function(
   palette = "MaYl",
   rev.cols = F,
   ncol = NULL,
+  spot.colors = NULL,
+  center.zero = T,
+  plot.title = NULL,
   ...
 ) {
+
   cols <- palette.select(palette)(3)
   if (rev.cols) {
     cols <- rev(cols)
   }
 
   p <- ggplot()
-  if (!is.null(shape.by)) {
-    p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable, shape = shape.by), size = pt.size)
+  if (length(spot.colors) > 0) {
+    if (!is.null(shape.by)) {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", shape = shape.by), color = spot.colors, size = pt.size)
+    } else {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y"), color = spot.colors, size = pt.size)
+    }
   } else {
-    p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable), size = pt.size)
+    if (!is.null(shape.by)) {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable, shape = shape.by), size = pt.size)
+    } else {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable), size = pt.size)
+    }
   }
+
   p <- p +
       scale_x_continuous(limits = c(0, 67)) +
       scale_y_continuous(limits = c(0, 64)) +
       theme_void() +
       facet_wrap(as.formula(paste("~", group.by)), ncol = ncol) +
-      labs(title = variable, color = "")
-  if (data.type == "numeric") {
-    cols <- palette.select(palette)(3)
-    if (rev.cols) {
-      cols <- rev(cols)
-    }
+      labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+  if (center.zero) {
     p <- p +
-      labs(title = variable, color = "value") +
       scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
-  } else if (data.type == "integer") {
-    p <- p + labs(title = variable, color = "value") +
-      scale_color_gradientn(colours = cols)
   } else if (data.type %in% c("character", "factor")) {
     p <- p +
       labs(color = variable)
+  } else {
+    p <- p +
+      scale_color_gradientn(colours = cols)
   }
   return(p)
 }
