@@ -1,0 +1,163 @@
+---
+title: "A comprehensive guide to Spatial Transcriptomics data analysis"
+author:
+- Joseph Bergenstråhle, Royal Institute of Technology (KTH)
+- Ludvig Larsson, Royal Institute of Technology (KTH)
+date: ''
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Using STUtility for multiple sample analysis
+
+As with all biological data, using multiple samples add power to the analysis and is a necessity to enable comprehensive insight which otherwise suffers from stochastic uncertainty. In this example tutorial, we display how you can input multiple samples, look for aggravating circumstainces like batch effects and missing data, apply methods to correct such if present, get a holistic picture of your data as well as conduct more in depth analysis in various ways. 
+
+Along the different subsections, references to publications are given to display examples of how the different strategies have been applied previously on ST data.
+
+## Short background of the Spatial Transcriptomics method 
+
+---
+
+The tutorial aims to lay the fundation of best practice for ST data analysis. At such, the user is probably already familiar with the underlaying method and a detailed description is therefore found elseseware. Interested readers are pointed to the orginial publication from 2016 (https://science.sciencemag.org/content/353/6294/78). 
+
+[STmethod overview](F:\JoeDocs\PhD\STUtility\STutility\inst\extdata/st_method_1.png)
+
+In short, there are two main output components from an ST experiment; (i) the gene expression data and (ii) the image data. 
+All the steps explained in this guide could be performed with only the expression data. However, the image data, apart from being fundamental to the biological interpretation, is used to filter out capture-spots that lies directly under the tissue. This filtering removes the large amount of unwanted data points, lowering the memory burden of the data objects created as well as removing informational noise.    
+
+### Alignment
+
+Beskriv alignment
+
+### fddfdfdfdf
+
+1. Count files
+2. Spot detector output0
+3. H&E image
+
+
+## Input multiple samples
+
+---
+
+The different methods for data input are described in the [insert vignette link]. Here, we will go directly onto loading a data set via the sampletable method. To follow along this tutorial, download the test data set at [insert test data set link]. The downloadable content consists of count files, output from our spot detector tool and H&E stained images. 
+
+```{r}
+
+#Load data from sample table
+infoTable <- read.table(paste(new,"STutility/inst/extdata", "testmetaData.csv", sep="/"), sep=";", header=T)
+
+```
+
+We have exteansivly tried different methods and workflows for handling ST data. While all roads lead to Rome, as of the date of this writing, we find the Seurat approach [https://satijalab.org/seurat/] to be the most suited for the data that we produce. Seurat is an R package designed for single-cell RNAseq data. Obviosly, this deviates from the data that the ST technology currently produce, as the resolution on the array implies that each capture-spot consists of transcripts originating from multiple cells. Nevertheless, the characteristics of the data has been found to in large resemble that of a typical single-cell RNAseq experiment (har skulle man vilja ha en jamforelse? som del i pek?).   
+
+
+```{r}
+
+
+```
+
+(ska vi inkludera MT check? https://www.nature.com/articles/s12276-018-0071-8 "Clustering is another useful method to detect low-quality cells by specifically identifying clusters that are enriched in mitochondrial (mt) genes. This approach is based on a study suggesting that mtDNA genes are upregulated65 and cytoplasmic RNA is lost when the cell membrane is ruptured." )
+
+```{r}
+
+#Create Seurat
+se <- prep.from.table(sampleTable=infoTable,
+                      spot.file=FALSE,
+                      transpose=F,
+                      topN=0, th.gene=50, th.spot=50,
+                      type="Seurat")
+
+
+```
+
+
+## Seurat transformation
+
+---
+
+Following the rationale expressed above, we transform the data according to the Seurat workflow. 
+
+```{r}
+# store mitochondrial percentage in object meta data
+se <- PercentageFeatureSet(se, pattern = "^MT-", col.name = "percent.mt")
+# run sctransform
+se <- SCTransform(se, vars.to.regress = "percent.mt", verbose = FALSE)
+
+```
+
+
+## QC
+
+---
+
+We recommend to do create some general plots and statistical views of the data before diving furhter into analysis. This will act as a sanity check on the obtained data, and can imidiatly reveal eventual artifacts as batch effects or missing data.
+
+### Scatter plots
+
+By looking at ...
+
+
+```{r}
+
+Idents(se) <- "sample"
+avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
+pairs(avg.exp$SCT)
+
+```
+
+### Mitocondrial gene counts
+
+```{r}
+
+ST.FeaturePlot(object=se,
+               features="percent.mt",
+               delim = "x|_",
+               dims = 1:4, 
+               group.by = "sample",
+               palette = "RdBu",
+               rev.cols = T,
+               pt.size = 0.2,
+               dark.theme = T, ncol = 4, grid.ncol = 1)
+
+```
+
+
+
+## Holistic view via Spatial Expression Histology
+
+---
+
+
+
+## Batch effects and how to act
+
+---
+
+## Clustering of regions - an overivew
+
+---
+
+
+## DEA analysis - How to find spatial relevant patterns
+
+---
+
+
+## Regional analysis - Supervised DEA
+
+---
+
+
+## General  
+
+### Plotting and saving of images 
+
+### Writing tables of data
+
+

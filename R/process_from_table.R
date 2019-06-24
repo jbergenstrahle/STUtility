@@ -94,10 +94,12 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
     colnames(m) <- paste(colnames(count), "_", idx, sep="")
     cnt <- cbind(cnt, m)
     samples <- c(samples, rep(paste0(idx), nspots))
-    pixelx <- c(pixelx, spotFileData[[idx]]$pixel_x)
-    pixely <- c(pixely, spotFileData[[idx]]$pixel_y)
-    adj_x <- c(adj_x, spotFileData[[idx]]$new_x)
-    adj_y <- c(adj_y, spotFileData[[idx]]$new_y)
+    if(spot.file != FALSE){
+      pixelx <- c(pixelx, spotFileData[[idx]]$pixel_x)
+      pixely <- c(pixely, spotFileData[[idx]]$pixel_y)
+      adj_x <- c(adj_x, spotFileData[[idx]]$new_x)
+      adj_y <- c(adj_y, spotFileData[[idx]]$new_y)
+    }
     idx <- idx + 1
   }
 
@@ -109,10 +111,12 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
 
   #add meta
   m$sample <- samples
-  m$pixel_x <- pixelx
-  m$pixel_y <- pixely
-  m$ads_x <- adj_x
-  m$ads_y <- adj_y
+  if(spot.file != FALSE){
+    m$pixel_x <- pixelx
+    m$pixel_y <- pixely
+    m$ads_x <- adj_x
+    m$ads_y <- adj_y
+  }
 
   #Filter top genes
   if (topN > 0){

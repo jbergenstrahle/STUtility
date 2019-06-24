@@ -1,12 +1,43 @@
 #' @importFrom alphahull ahull
 #' @importFrom dplyr filter %>%
 #' @importFrom deldir deldir tile.list mid.in
-#' @importFrom viridis cividis viridis
+#' @importFrom viridis viridis cividis plasma magma
 #' @importFrom RColorBrewer brewer.pal
 #' @importFrom Rtsne Rtsne
 #' @importFrom SingleCellExperiment SingleCellExperiment
-#' @importFrom Seurat CreateSeuratObject
+#' @importFrom Seurat CreateSeuratObject CreateDimReducObject
 "_PACKAGE"
+
+#' Palette selection
+#'
+#' @param palette Palette choice for plotting spatial expression histology heatmap
+#' @keywords internal
+
+palette.select <- function(palette) {
+  palettes <- list(
+    GnBu = colorRampPalette(RColorBrewer::brewer.pal(9,"GnBu")),
+    the.cols = colorRampPalette(c(rgb(255,255,217, maxColorValue=255),
+                                  rgb(65,182,196, maxColorValue=255),
+                                  rgb(8, 29, 88, maxColorValue=255)),
+                                space="Lab"),
+    spectral = colorRampPalette(RColorBrewer::brewer.pal(9,"Spectral")),
+    offwhite.to.black = colorRampPalette(c(rgb(220,220,220, maxColorValue=255),
+                                           rgb(0, 0, 0, maxColorValue=255)),
+                                         space="Lab"),
+    viridis = colorRampPalette(viridis::viridis(9)),
+    cividis = colorRampPalette(viridis::cividis(9)),
+    magma = colorRampPalette(viridis::magma(9)),
+    plasma = colorRampPalette(viridis::plasma(9)),
+    heat = colorRampPalette(c("dark blue", "cyan", "yellow", "red")),
+    RdBu = colorRampPalette(RColorBrewer::brewer.pal(9,"RdBu")),
+    MaYl = colorRampPalette(c("#FF00FF", "black", "#FFFF00")),
+    RdYlBu = colorRampPalette(rev(RColorBrewer::brewer.pal(n = 9, name = "RdYlBu")))
+  )
+  if (!palette %in% names(palettes)) {
+    stop("Invalid palette name: ", palette, call. = FALSE)
+  }
+  return(palettes[[palette]])
+}
 
 #'  ==============  Spatial Expression Histology ====================================
 #'
@@ -23,15 +54,23 @@
 #' @param m.iter number of iterations kMeans
 #' @export
 
-runSEH <- function(se, n.clust=10,
-                   log.freq=TRUE, n.start=10, m.iter=10,
+ST.seh <- function(se, n.clust=10,
+                   n.top = 0,
+                   log.freq=TRUE, n.start=10, n.iter=10, use.moduleScore=FALSE, use.scale=TRUE
                    ...) {
 
-  # --------------- OBS OBS ----- TAnk pa TOP genes EJ SORTED BY DEFAULT HAR
   # OBS only seurat work atm - add to include singlecellExp also
+
+  # ================================= Clustering of relative counts =======================================
 
   rnaAssay <- se[["RNA"]]@counts
   rnaAssay <- rnaAssay[order(Matrix::rowSums(rnaAssay), decreasing = T), ]
+
+  if(n.top>0){
+    se[["RNA"]]@counts <- se[["RNA"]]@counts[order(Matrix::rowSums(se[["RNA"]]@counts), decreasing = T), ]
+    se <- se[1:n.top, ]
+    rnaAssay <- se[["RNA"]]@counts
+  }
 
   #  ----- logarithms of relative frequencies in the spots
   if(log.freq==TRUE){
@@ -50,41 +89,54 @@ runSEH <- function(se, n.clust=10,
 
   #kMeans clustering
   print("kMeans clustering ...")
-  km <- kmeans(rnaCov, centers = n.clust, iter.max=m.iter, nstart=n.start)
+  km <- kmeans(rnaCov, centers = n.clust, iter.max=n.iter, nstart=n.start)
   clusters <- km$cluster
   #Save this in s4 obj
   se@assays$cluster <- clusters
 
+  # =============================== Using clusters to sum relative counts ================================
 
-  for(cluster in unique(sort(clusters))){
-    name = paste("c-", cluster, sep="")
-    se@meta.data[[name]] <- 0
-  }
+ # for(cluster in unique(sort(clusters))){ #can this be removed?
+  #  name = paste("c_", cluster, sep="")
+  #  se@meta.data[[name]] <- 0
+  #}
 
  # se@assays$geneContribution <- rep(0, length(rownames(se[["RNA"]]))) #Storage for indivudal gene contribution to cluster
  #instead of subsettting - doing this now:
+
+
   plotValues <- matrix(0, ncol=length(unique(clusters)), nrow=dim(se)[[2]])
   colnames(plotValues) <- unique(sort(clusters))
   rownames(plotValues) <- sapply(strsplit(colnames(se), "_"), "[[", 2)
 
-  for(samp in unique(sort(cm$sample))) { # Per sample
-    x <- se[, cm$sample==samp]
-    x[["RNA"]]@counts <- prop.table(Matrix::as.matrix(x[["RNA"]]@counts), 2)
-    for(cluster in unique(sort(x@assays$cluster))) { #Per gene cluster
-      clusterName = paste("c-", cluster, sep="")
-      z <- x[x@assays$cluster == cluster, ]
-     # se[se@assays$cluster == cluster,
-      #   se$sample == samp]@assays$geneContribution <- Matrix::rowSums(z[["RNA"]]@counts)
-      #se[se@assays$cluster == cluster,
-       #  se$sample == samp]@meta.data[[clusterName]] <- Matrix::colSums(z[["RNA"]]@counts) #values for plots
-        # -------------
-        plotValues[which(rownames(plotValues)==samp)  , cluster] <- Matrix::colSums(z[["RNA"]]@counts)
+  print("Obtaining SEH values...")
+
+  if(use.moduleScore!=TRUE){
+    for(samp in unique(sort(se$sample))) { # Per sample
+        x <- se[, se$sample==samp]
+        x[["RNA"]]@counts <- prop.table(Matrix::as.matrix(x[["RNA"]]@counts), 2)
+
+      for(cluster in unique(sort(x@assays$cluster))) { #Per gene cluster
+        clusterName = paste("c_", cluster, sep="")
+        z <- x[x@assays$cluster == cluster, ]
+        if(use.scale==TRUE){
+          plotValues[which(rownames(plotValues)==samp),
+                     cluster] <- scale(Matrix::colSums(z[["RNA"]]@counts), scale=FALSE)
+        }else{
+          plotValues[which(rownames(plotValues)==samp),
+                     cluster] <- Matrix::colSums(z[["RNA"]]@counts)
+        }
+
+      }
     }
-  }
+  }else{ # ---------- Using Seurats AddModuleScore
+    features <- split(names(clusters), clusters)
+    clusterScore <- AddModuleScore(se, features=features, assay="RNA", name="CovClusters")
+
+    }
 
   rownames(plotValues) <- colnames(se)
-  se[["SEH"]] <- CreateDimReducObject(embeddings  = plotValues, key = "Cluster_", assay="RNA")
-
+  se[["SEH"]] <- CreateDimReducObject(embeddings  = plotValues, key = "c_", assay="RNA")
   print("Completed")
   return(se)
 }
@@ -103,13 +155,14 @@ runSEH <- function(se, n.clust=10,
 #' @param marTop Top plot margin
 #' @export
 
-seh.plot <- function(se, filename, bg="black", col.scale.cluster=TRUE, disable.voronoi=FALSE, marBot=0, marLeft=0, marRight=0, marTop=0){
+seh.plot <- function(se, filename, bg="black", col.scale.cluster=TRUE,
+                     disable.voronoi=FALSE, marBot=0, marLeft=0, marRight=0, marTop=0){
 
   print(paste("Creating factor images based on:"))
   print(paste(dim(se)[[1]], " genes and", dim(se)[[2]], " spots"))
 
-  ns = length(unique(colData(se)$X))
-  ncol = length(unique(colData(se)))-1 # number of clusters saved in SE object
+  ns = length(unique(se$sample))
+  ncol = length(grep(colnames(se@meta.data), pattern = "c_")) # number of clusters saved in SE object
 
   plot.asp = (ns + 2) / (ncol + 2)
   filename <- paste(filename, "_expressionHeatmap.pdf", sep="")
@@ -117,38 +170,41 @@ seh.plot <- function(se, filename, bg="black", col.scale.cluster=TRUE, disable.v
 
   par(mfrow=c(ns, ncol), mar=c(marBot,marLeft,marTop,marRight), bg=bg)
 
-  pal <- palette.select("spectral")
-  cols <- rev(rgb(pal(seq(0, 1, length.out = 9)), maxColorValue = 255))
+  #pal <- palette.select("spectral")(9)
+  #cols <- rev(rgb(pal(seq(0, 1, length.out = 9)), maxColorValue = 255))
+
+  #cols <- RColorBrewer::brewer.pal(9,"Spectral")
+  cols <- palette.select("spectral")(9)
 
   #Sort by total factor precence
   sums <- NULL
-  for(cluster in unique(sort(rowData(se)$cluster))){
-    clusterName = paste("c-", cluster, sep="")
-    cSum <- sum(as.data.frame(colData(se)[clusterName]))
+  for(cluster in unique(sort(se@assays$cluster))){
+    clusterName = paste("c_", cluster, sep="")
+    cSum <- sum(as.data.frame(se[["SEH"]]@cell.embeddings[clusterName]))
     cSum <- as.data.frame(cbind(sum=cSum, cluster = cluster))
     sums <- rbind(sums, cSum)
   }
   clusterOrder <- order(sums[, 1], decreasing=TRUE)
   print("The clusters are printed in order of overall contribution, in order: ")
   print(clusterOrder)
-  for(samp in unique(sort(colData(se)$X))){
+  for(samp in unique(unique(se$sample))){
 
     for(cluster in clusterOrder) {
-      spotNames <- colnames(se[,colData(se)$X==samp])
+      spotNames <- colnames(se[,se$sample==samp])
       spotNames <- sapply(strsplit(spotNames, "_"), "[[", 1)
       xcoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 1))
       ycoord = as.numeric(sapply(strsplit(spotNames, "x"), "[[", 2))
       coord_df = as.data.frame(cbind(x=xcoord, y=ycoord))
 
-      clusterName = paste("c-", cluster, sep="")
+      clusterName = paste("c_", cluster, sep="")
       if(col.scale.cluster==TRUE){
-        factorS <- as.data.frame(colData(se)[clusterName])
-        factorS$sample <- colData(se)$X
+        factorS <- as.data.frame(se[["SEH"]]@cell.embeddings[,clusterName])
+        factorS$sample <- se$sample
         factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
         factorS <- factorS %>% filter(sample==samp)
 
       }else{
-        factorS <- as.data.frame(colData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])[clusterName])
+        factorS <- as.data.frame(se[se[["SEH"]]@cell.embeddings==cluster, se$sample==samp]@meta.data[clusterName])
         factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
       }
 
@@ -169,7 +225,7 @@ seh.plot <- function(se, filename, bg="black", col.scale.cluster=TRUE, disable.v
               showpoints=FALSE,
               clipp=the.hull)
       }else{
-        factorS <- as.data.frame(colData(se[rowData(se)$cluster==cluster, colData(se)$X==samp])[clusterName])
+        factorS <- as.data.frame(se[se[["SEH"]]@cell.embeddings, se$sample==samp]@meta.data[clusterName])
         factorS$colorRamp <- colorRampPalette(cols)(nrow(factorS))[rank(factorS[, 1])]
         plot(x=xcoord, y=ycoord, col=factorS$colorRamp, lwd=5, asp=1,
              ylab="", xlab="", pch=7,
