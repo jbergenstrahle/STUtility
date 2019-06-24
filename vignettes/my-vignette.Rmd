@@ -58,7 +58,7 @@ The `samples` are the only mandatory column. However, if spotfiles and images ar
 With the info table as input, we create the S4 object which contains all the samples as well as meta data. 
 
 ```{r, echo=FALSE}
-fix <-list.files(system.file("extdata/counts", package = "STutility"), full.names = T)
+fix <- list.files(system.file("extdata/counts", package = "STutility"), full.names = T)
 fixCounts <- fix[grep(fix, pattern = "[^_]MOB[1-9].tsv")]
 fixSpotfiles <- fix[grep(fix, pattern = "alignment")]
 fixImgs <- fix[grep(fix, pattern = ".jpg")]
@@ -76,6 +76,16 @@ cm <- prep.from.table(sampleTable=infoTable,
                       topN=0, th.gene=0, th.spot=0, 
                       type="Seurat")
 
+```
+
+```{r change genes ids}
+
+ensids <- read.table(file = list.files(system.file("extdata", package = "STutility"), full.names = T, pattern = "mouse_genes"), header = T, sep = "\t", stringsAsFactors = F)
+rownames(ensids) <- ensids$gene_id
+cm@assays$RNA@counts@Dimnames[[1]] <- ensids[cm@assays$RNA@counts@Dimnames[[1]], ]$gene_name
+cm@assays$RNA@data@Dimnames[[1]] <- ensids[cm@assays$RNA@data@Dimnames[[1]], ]$gene_name
+rownames(cm@assays$RNA@meta.features) <- ensids[rownames(cm@assays$RNA@meta.features), ]$gene_name
+#rownames(cm@assays$RNA@scale.data) <- ensids[rownames(cm@assays$RNA@scale.data), ]$gene_name
 ```
 
 With the Seurat object created, we can proceed with the regular Seurat workflow to scale data, find variable features and conduct dimensionallity reductions:
@@ -106,28 +116,29 @@ DimPlot(object = cm, dims = 1:2)
 
 Or, we can use the prefix "ST", if instead we would like to visualize the output onto the spatial array:
 
-```{r, fig.width = 10, fig.height = 20}
+```{r, fig.width = 10, fig.height = 3}
 
 ST.DimPlot(object = cm, 
-           reduction = "pca",
-           dims = 1:4, 
+           reduction = "ica",
+           dims = 1:3, 
            group.by = "sample", 
            delim = "x|_", 
-           palette = "RdBu",
-           rev.cols = T,
-           pt.size = 0.2,
-           dark.theme = T, ncol = 4, grid.ncol = 1)
+           rev.cols = F,
+           pt.size = 1,
+           dark.theme = T, 
+           ncol = 4, 
+           grid.ncol = 1, 
+           blend = T)
 
 ```
 
 
 
-### QC 
+### 
 
-```{r}
-qcGenes(cm)
+```{r, fig.width = 10, fig.height = 3}
 
-
+<<<<<<< HEAD
 ```
 
 ```{r}
@@ -136,6 +147,18 @@ Idents(se) <- "sample"
 avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
 pairs(avg.exp$SCT)
 
+=======
+ST.FeaturePlot(object = cm, 
+               features = c("Nrgn", "Penk", "Cck"), 
+               group.by = "sample", 
+               delim = "x|_", 
+               center.zero = F, 
+               rev.cols = T, 
+               dark.theme = T,
+               ncol = 4, 
+               grid.ncol = 1, 
+               blend = T)
+>>>>>>> origin/master
 
 ```
 
@@ -154,14 +177,15 @@ pairs(avg.exp$SCT)
 ## Spatial Expression Histology (SEH)
 
 
-```{r}
+```{r, fig.width = 10, fig.height = 21}
 
+#seh <- runSEH(cm, n.clust=10,
+#              n.start=10, 
+#              m.iter=10,
+#              log.freq = T)
+cm <- seh
 
-seh <- runSEH(cm, n.clust=10,
-              n.start=10, 
-              m.iter=10,
-              log.freq = T)
-
+<<<<<<< HEAD
 
 
 #Test to add correlation gene-matrix to guide user to choose k...
@@ -173,14 +197,20 @@ seh <- runSEH(cm, n.clust=10,
 ```{r}
 
 ST.DimPlot(object = seh, 
+=======
+ST.DimPlot(object = cm, 
+>>>>>>> origin/master
            reduction = "SEH",
-           dims = 1:4, 
+           dims = 1:7, 
            group.by = "sample", 
            delim = "x|_", 
-           palette = "RdBu",
-           rev.cols = T,
-           pt.size = 0.2,
-           dark.theme = T, ncol = 4, grid.ncol = 1)
+           palette = "viridis",
+           rev.cols = F,
+           pt.size = 1,
+           dark.theme = T, 
+           ncol = 4, 
+           grid.ncol = 1, 
+           center.zero = F)
 ```
 
 
