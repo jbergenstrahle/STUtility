@@ -81,11 +81,17 @@ cm <- prep.from.table(sampleTable=infoTable,
 With the Seurat object created, we can proceed with the regular Seurat workflow to scale data, find variable features and conduct dimensionallity reductions:
 
 ```{r}
+library(Seurat)
+# store mitochondrial percentage in object meta data
+cm <- PercentageFeatureSet(cm, pattern = "^MT-", col.name = "percent.mt")
+# run sctransform
+cm <- SCTransform(cm, vars.to.regress = "percent.mt", verbose = FALSE)
+# These are now standard steps in the Seurat workflow for visualization and clustering
+cm <- RunPCA(cm, verbose = FALSE)
+cm <- RunUMAP(cm, dims = 1:30, verbose = FALSE)
 
-cm <- ScaleData(cm, vars.to.regress = c("nFeature_RNA", "sample"), verbose = T)
-cm <- FindVariableFeatures(cm)
-cm <- RunPCA(cm, ndims.print = 1, nfeatures.print = 5)
-cm <- RunICA(cm, ndims.print = 1, nfeatures.print = 5)
+cm <- FindNeighbors(cm, dims = 1:30, verbose = FALSE)
+cm <- FindClusters(cm, verbose = FALSE)
 
 ```
 
@@ -122,6 +128,14 @@ ST.DimPlot(object = cm,
 qcGenes(cm)
 
 
+```
+
+```{r}
+
+Idents(se) <- "sample"
+avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
+pairs(avg.exp$SCT)
+
 
 ```
 
@@ -149,6 +163,15 @@ seh <- runSEH(cm, n.clust=10,
               log.freq = T)
 
 
+
+#Test to add correlation gene-matrix to guide user to choose k...
+# SAVE ALL THESE CHANGES TO A "SEH" BRANCH ! 
+
+
+```
+
+```{r}
+
 ST.DimPlot(object = seh, 
            reduction = "SEH",
            dims = 1:4, 
@@ -158,5 +181,54 @@ ST.DimPlot(object = seh,
            rev.cols = T,
            pt.size = 0.2,
            dark.theme = T, ncol = 4, grid.ncol = 1)
+```
+
+
+
+
+```{r}
+
+
+bigcov <- function(x, nblocks = 10, verbose = TRUE, ...)
+{
+library(ff, quietly = TRUE)
+NCOL <- ncol(x)
+ 
+## test if ncol(x) %% nblocks gives remainder 0
+if (NCOL %% nblocks != 0) stop("Choose different 'nblocks' so that ncol(x) %% nblocks = 0!")
+ 
+## preallocate square matrix of dimension
+## ncol(x) in 'ff' single format
+corMAT <- ff(vmode = "single", dim = c(NCOL, NCOL))
+ 
+## split column numbers into 'nblocks' groups
+SPLIT <- split(1:NCOL, rep(1:nblocks, each = NCOL/nblocks))
+ 
+## create all unique combinations of blocks
+COMBS <- expand.grid(1:length(SPLIT), 1:length(SPLIT))
+COMBS <- t(apply(COMBS, 1, sort))
+COMBS <- unique(COMBS)
+ 
+## iterate through each block combination, calculate correlation matrix
+## between blocks and store them in the preallocated matrix on both
+## symmetric sides of the diagonal
+for (i in 1:nrow(COMBS)) {
+COMB <- COMBS[i, ]
+G1 <- SPLIT[[COMB[1]]]
+G2 <- SPLIT[[COMB[2]]]
+if (verbose) cat("Block", COMB[1], "with Block", COMB[2], "\n")
+flush.console()
+COV <- cov(x[, G1], x[, G2], ...)
+corMAT[G1, G2] <- COV
+corMAT[G2, G1] <- t(COV)
+COV <- NULL
+}
+ 
+gc()
+return(corMAT)
+}
+
+library(superheat)
+superheat(res)
 ```
 
