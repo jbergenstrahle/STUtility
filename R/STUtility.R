@@ -1,6 +1,3 @@
-
-
-
 #' Create tSNE based on spatial expression histology
 #'
 #' @param se s4 object
