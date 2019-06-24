@@ -95,8 +95,8 @@ With the Seurat object created, we can proceed with the regular Seurat workflow 
 cm <- NormalizeData(cm, normalization.method = "LogNormalize")
 cm <- ScaleData(cm, vars.to.regress = c("nFeature_RNA", "sample"), verbose = T)
 cm <- FindVariableFeatures(cm)
-cm <- RunPCA(cm, ndims.print = 1, nfeatures.print = 5)
-cm <- RunICA(cm, ndims.print = 1, nfeatures.print = 5)
+cm <- RunPCA(cm, ndims.print = 3, nfeatures.print = 5)
+cm <- RunICA(cm, ndims.print = 3, nfeatures.print = 5)
 
 ```
 
@@ -111,28 +111,38 @@ DimPlot(object = cm, dims = 1:2)
 
 Or, we can use the prefix "ST", if instead we would like to visualize the output onto the spatial array:
 
-```{r, fig.width = 10, fig.height = 21}
+```{r, fig.width = 10, fig.height = 3}
 
 ST.DimPlot(object = cm, 
-           reduction = "pca",
-           dims = 1:7, 
-           palette = "MaYl",
+           reduction = "ica",
+           dims = 1:3, 
            group.by = "sample", 
            delim = "x|_", 
            rev.cols = F,
            pt.size = 1,
            dark.theme = T, 
            ncol = 4, 
-           grid.ncol = 1)
+           grid.ncol = 1, 
+           blend = T)
 
 ```
 
 
 
-### QC 
+### 
 
-```{r}
+```{r, fig.width = 10, fig.height = 3}
 
+ST.FeaturePlot(object = cm, 
+               features = c("Nrgn", "Penk", "Cck"), 
+               group.by = "sample", 
+               delim = "x|_", 
+               center.zero = F, 
+               rev.cols = T, 
+               dark.theme = T,
+               ncol = 4, 
+               grid.ncol = 1, 
+               blend = T)
 
 ```
 
@@ -151,7 +161,7 @@ ST.DimPlot(object = cm,
 ## Spatial Expression Histology (SEH)
 
 
-```{r}
+```{r, fig.width = 10, fig.height = 21}
 
 #seh <- runSEH(cm, n.clust=10,
 #              n.start=10, 
@@ -161,14 +171,15 @@ cm <- seh
 
 ST.DimPlot(object = cm, 
            reduction = "SEH",
-           dims = 1:4, 
+           dims = 1:7, 
            group.by = "sample", 
            delim = "x|_", 
-           palette = "spectral",
-           rev.cols = T,
-           pt.size = 0.2,
+           palette = "viridis",
+           rev.cols = F,
+           pt.size = 1,
            dark.theme = T, 
            ncol = 4, 
-           grid.ncol = 1)
+           grid.ncol = 1, 
+           center.zero = F)
 ```
 
