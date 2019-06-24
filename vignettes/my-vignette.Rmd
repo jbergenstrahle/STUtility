@@ -58,7 +58,7 @@ The `samples` are the only mandatory column. However, if spotfiles and images ar
 With the info table as input, we create the S4 object which contains all the samples as well as meta data. 
 
 ```{r, echo=FALSE}
-fix <-list.files(system.file("extdata/counts", package = "STutility"), full.names = T)
+fix <- list.files(system.file("extdata/counts", package = "STutility"), full.names = T)
 fixCounts <- fix[grep(fix, pattern = "[^_]MOB[1-9].tsv")]
 fixSpotfiles <- fix[grep(fix, pattern = "alignment")]
 fixImgs <- fix[grep(fix, pattern = ".jpg")]
@@ -78,10 +78,21 @@ cm <- prep.from.table(sampleTable=infoTable,
 
 ```
 
+```{r change genes ids}
+
+ensids <- read.table(file = list.files(system.file("extdata", package = "STutility"), full.names = T, pattern = "mouse_genes"), header = T, sep = "\t", stringsAsFactors = F)
+rownames(ensids) <- ensids$gene_id
+cm@assays$RNA@counts@Dimnames[[1]] <- ensids[cm@assays$RNA@counts@Dimnames[[1]], ]$gene_name
+cm@assays$RNA@data@Dimnames[[1]] <- ensids[cm@assays$RNA@data@Dimnames[[1]], ]$gene_name
+rownames(cm@assays$RNA@meta.features) <- ensids[rownames(cm@assays$RNA@meta.features), ]$gene_name
+#rownames(cm@assays$RNA@scale.data) <- ensids[rownames(cm@assays$RNA@scale.data), ]$gene_name
+```
+
 With the Seurat object created, we can proceed with the regular Seurat workflow to scale data, find variable features and conduct dimensionallity reductions:
 
 ```{r}
 
+cm <- NormalizeData(cm, normalization.method = "LogNormalize")
 cm <- ScaleData(cm, vars.to.regress = c("nFeature_RNA", "sample"), verbose = T)
 cm <- FindVariableFeatures(cm)
 cm <- RunPCA(cm, ndims.print = 1, nfeatures.print = 5)
@@ -100,17 +111,17 @@ DimPlot(object = cm, dims = 1:2)
 
 Or, we can use the prefix "ST", if instead we would like to visualize the output onto the spatial array:
 
-```{r, fig.width = 10, fig.height = 15}
+```{r, fig.width = 10, fig.height = 21}
 
 ST.DimPlot(object = cm, 
            reduction = "pca",
-           dims = 1:4, 
-           palette = "RdBu",
+           dims = 1:7, 
+           palette = "MaYl",
            group.by = "sample", 
            delim = "x|_", 
            rev.cols = F,
            pt.size = 1,
-           dark.theme = F, 
+           dark.theme = T, 
            ncol = 4, 
            grid.ncol = 1)
 
@@ -142,21 +153,22 @@ ST.DimPlot(object = cm,
 
 ```{r}
 
+#seh <- runSEH(cm, n.clust=10,
+#              n.start=10, 
+#              m.iter=10,
+#              log.freq = T)
+cm <- seh
 
-seh <- runSEH(cm, n.clust=10,
-              n.start=10, 
-              m.iter=10,
-              log.freq = T)
-
-
-ST.DimPlot(object = seh, 
+ST.DimPlot(object = cm, 
            reduction = "SEH",
            dims = 1:4, 
            group.by = "sample", 
            delim = "x|_", 
-           palette = "RdBu",
+           palette = "spectral",
            rev.cols = T,
            pt.size = 0.2,
-           dark.theme = T, ncol = 4, grid.ncol = 1)
+           dark.theme = T, 
+           ncol = 4, 
+           grid.ncol = 1)
 ```
 

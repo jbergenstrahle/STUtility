@@ -166,6 +166,8 @@ ST.DimPlot <- function(
 #' @param grid.ncol Number of columns for display when combining plots
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
+#' @importFrom cowplot plot_grid
+#'
 #' @return A ggplot object
 #' @export
 
@@ -279,7 +281,7 @@ ST.FeaturePlot <- function(
   if (return.plot.list) {
     return(plots)
   } else {
-    cowplot::plot_grid(plotlist = plots, ncol = grid.ncol)
+    plot_grid(plotlist = plots, ncol = grid.ncol)
   }
 }
 
@@ -296,6 +298,9 @@ ST.FeaturePlot <- function(
 #' @param palette color palette used for spatial heatmap
 #' @param rev.cols logical specifying whether colorscale should be reversed
 #' @param ... parameters passed to geom_point()
+#'
+#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn
+#'
 #' @export
 
 STPlot <- function(

@@ -23,9 +23,14 @@
 #' @param m.iter number of iterations kMeans
 #' @export
 
-runSEH <- function(se, n.clust=10,
-                   log.freq=TRUE, n.start=10, m.iter=10,
-                   ...) {
+runSEH <- function(
+  se,
+  n.clust = 10,
+  log.freq = TRUE,
+  n.start = 10,
+  m.iter = 10,
+  ...
+) {
 
   # --------------- OBS OBS ----- TAnk pa TOP genes EJ SORTED BY DEFAULT HAR
   # OBS only seurat work atm - add to include singlecellExp also
@@ -37,7 +42,7 @@ runSEH <- function(se, n.clust=10,
   if(log.freq==TRUE){
     print("Calculating relative frequences of log(1+counts)")
     rnaAssay<- prop.table(log(1 + rnaAssay, 2))
-  }else{
+  } else {
     print("Calculating lo(1+counts)")
     rnaAssay <- log(1 + rnaAssay)
   }
@@ -78,7 +83,7 @@ runSEH <- function(se, n.clust=10,
       #se[se@assays$cluster == cluster,
        #  se$sample == samp]@meta.data[[clusterName]] <- Matrix::colSums(z[["RNA"]]@counts) #values for plots
         # -------------
-        plotValues[which(rownames(plotValues)==samp)  , cluster] <- Matrix::colSums(z[["RNA"]]@counts)
+      plotValues[which(rownames(plotValues)==samp)  , cluster] <- Matrix::colSums(z[["RNA"]]@counts)
     }
   }
 
