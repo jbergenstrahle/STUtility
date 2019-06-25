@@ -91,7 +91,7 @@ ST.DimPlot <- function(
     data[,  group.by] <- object[[group.by, drop = TRUE]]
   } else if ("sample" %in% colnames(object[[]])) {
     if (length(unique(object[["sample"]]))) {
-      warning("column 'sample' found in meta data but not specified as the group.by variable, using column 'sample' as group.by variable ...")
+      warning("column 'sample' found in meta data but not specified as the group.by variable, using column 'sample' as group.by variable ...", call. = F)
       group.by <- "sample"
       data[, group.by] <- object[[group.by, drop = TRUE]]
     }
@@ -242,7 +242,7 @@ ST.FeaturePlot <- function(
     data[,  group.by] <- object[[group.by, drop = TRUE]]
   } else if ("sample" %in% colnames(object[[]])) {
     if (length(unique(object[["sample"]]))) {
-      warning("column 'sample' found in meta data but not specified as the group.by variable ...\n  setting 'sample' as group.by variable ...")
+      warning("column 'sample' found in meta data but not specified as the group.by variable, using column 'sample' as group.by variable ...", call. = F)
       group.by <- "sample"
       data[, group.by] <- object[[group.by, drop = TRUE]]
     }
@@ -349,7 +349,7 @@ ColorBlender <- function(
 #'
 #' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
 #' @param data.type type of data, e.g. numeric or integer
-#' @param group.by specifies column to facet the plots by, e.g. sampleID
+#' @param group.by specifies column to facet the plots by, e.g. sample
 #' @param shape.by specifies column to shape points by, e.g. morphological region
 #' @param variable name of continuous variable
 #' @param pt.size point size of each ST spot
