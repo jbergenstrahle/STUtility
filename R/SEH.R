@@ -56,7 +56,7 @@ palette.select <- function(palette) {
 
 ST.seh <- function(se, n.clust=10,
                    n.top = 0,
-                   log.freq=TRUE, n.start=10, n.iter=10, use.moduleScore=FALSE, use.scale=TRUE
+                   log.freq=TRUE, n.start=10, n.iter=10, use.moduleScore=FALSE, use.scale=TRUE,
                    ...) {
 
   # OBS only seurat work atm - add to include singlecellExp also
@@ -94,22 +94,10 @@ ST.seh <- function(se, n.clust=10,
   #Save this in s4 obj
   se@assays$cluster <- clusters
 
-  # =============================== Using clusters to sum relative counts ================================
-
- # for(cluster in unique(sort(clusters))){ #can this be removed?
-  #  name = paste("c_", cluster, sep="")
-  #  se@meta.data[[name]] <- 0
-  #}
-
- # se@assays$geneContribution <- rep(0, length(rownames(se[["RNA"]]))) #Storage for indivudal gene contribution to cluster
- #instead of subsettting - doing this now:
-
-
   plotValues <- matrix(0, ncol=length(unique(clusters)), nrow=dim(se)[[2]])
   colnames(plotValues) <- unique(sort(clusters))
   rownames(plotValues) <- sapply(strsplit(colnames(se), "_"), "[[", 2)
 
-<<<<<<< HEAD
   print("Obtaining SEH values...")
 
   if(use.moduleScore!=TRUE){
@@ -129,20 +117,6 @@ ST.seh <- function(se, n.clust=10,
         }
 
       }
-=======
-  for(samp in unique(sort(cm$sample))) { # Per sample
-    x <- se[, cm$sample==samp]
-    x[["RNA"]]@counts <- prop.table(Matrix::as.matrix(x[["RNA"]]@counts), 2)
-    for(cluster in unique(sort(x@assays$cluster))) { #Per gene cluster
-      clusterName = paste("c-", cluster, sep="")
-      z <- x[x@assays$cluster == cluster, ]
-     # se[se@assays$cluster == cluster,
-      #   se$sample == samp]@assays$geneContribution <- Matrix::rowSums(z[["RNA"]]@counts)
-      #se[se@assays$cluster == cluster,
-       #  se$sample == samp]@meta.data[[clusterName]] <- Matrix::colSums(z[["RNA"]]@counts) #values for plots
-        # -------------
-      plotValues[which(rownames(plotValues)==samp)  , cluster] <- Matrix::colSums(z[["RNA"]]@counts)
->>>>>>> origin/master
     }
   }else{ # ---------- Using Seurats AddModuleScore
     features <- split(names(clusters), clusters)
