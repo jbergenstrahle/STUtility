@@ -2,9 +2,10 @@ NAMESPACE
 inst/doc
 doc
 Meta
-man
+man/*
 .Rproj.user
 .gitignore
 .RData
 .Rhistory
 .DS_Store
+extdata/*
