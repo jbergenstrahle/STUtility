@@ -93,7 +93,7 @@ With the Seurat object created, we can proceed with the regular Seurat workflow 
 ```{r}
 library(Seurat)
 # store mitochondrial percentage in object meta data
-cm <- PercentageFeatureSet(cm, pattern = "^MT-", col.name = "percent.mt")
+cm <- PercentageFeatureSet(cm, pattern = "^mt-", col.name = "percent.mt")
 # run sctransform
 cm <- SCTransform(cm, vars.to.regress = "percent.mt", verbose = FALSE)
 # These are now standard steps in the Seurat workflow for visualization and clustering
@@ -138,7 +138,7 @@ ST.DimPlot(object = cm,
 
 ```{r, fig.width = 10, fig.height = 3}
 
-<<<<<<< HEAD
+
 ```
 
 ```{r}
@@ -147,7 +147,6 @@ Idents(se) <- "sample"
 avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
 pairs(avg.exp$SCT)
 
-=======
 ST.FeaturePlot(object = cm, 
                features = c("Nrgn", "Penk", "Cck"), 
                group.by = "sample", 
@@ -158,7 +157,7 @@ ST.FeaturePlot(object = cm,
                ncol = 4, 
                grid.ncol = 1, 
                blend = T)
->>>>>>> origin/master
+
 
 ```
 
