@@ -12,13 +12,14 @@
 #'
 #' @param object Seurat object
 #' @param dims Dimensions to plot, must numeric vectoir specifying number of dimensions to plot
+#' @param group.by Name of a metadata column to facet plot by (deault is "sample"). Note that if group.by is not specified,
+#' it will be assumed that only one ST array sample is present in the Seurat object.
 #' @param spots Vector of spots to plot (default is all spots)
-#' @param blend Scale and blend expression values to visualize coexpression of two features
+#' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param pt.size Adjust point size for plotting
 #' @param reduction Which dimensionality reduction to use. If not specified, first searches for umap, then tsne, then pca
-#' @param group.by Name of a metadata column to facet plot by (deault is sampleID)
 #' @param shape.by If NULL, all points are circles (default). You can specify any
 #' cell attribute (that can be pulled with FetchData) allowing for both
 #' different colors and different shapes on cells
@@ -41,13 +42,13 @@
 ST.DimPlot <- function(
   object,
   dims = c(1, 2),
+  group.by = NULL,
   spots = NULL,
   blend = FALSE,
   min.cutoff = NA,
   max.cutoff = NA,
   pt.size = 1,
   reduction = NULL,
-  group.by = NULL,
   shape.by = NULL,
   palette = "MaYl",
   rev.cols = F,
@@ -58,6 +59,7 @@ ST.DimPlot <- function(
   grid.ncol = NULL,
   center.zero = T,
   channels.use = NULL,
+  center.tissue = FALSE,
   ...
 ) {
   reduction <- reduction %||% {
@@ -66,41 +68,47 @@ ST.DimPlot <- function(
     reduc.use <- min(which(x = default.reductions %in% object.reductions))
     default.reductions[reduc.use]
   }
+
   spots <- spots %||% colnames(x = object)
   data <- Embeddings(object = object[[reduction]])[spots, dims, drop = FALSE]
   data <- as.data.frame(x = data)
   dims <- paste0(Key(object = object[[reduction]]), dims)
 
-  # Select colorscale
+  # Select colorscale if palette is NULL
   palette.info <- palette.select(info = T)
   palette <- palette %||% {
     palette <- subset(palette.info, category == "div")$palette[1]
   }
 
-  if (!blend && length(x = dims) %in% c(2, 3)) {
-    stop("Blending feature plots only works with two or three dimensions")
+  # Check that the number of dimensions are 2 or three if blending is active
+  if (blend && !length(x = dims) %in% c(2, 3)) {
+    stop(paste0("Blending feature plots only works with two or three dimensions. \n",
+                "Number of dimensions provided: ", length(x = dims)), call. = F)
   }
 
+  # Check that group.by variable is present in meta.data slot, otherwise select column named 'sample' if present
   if (!is.null(x = group.by)) {
     data[,  group.by] <- object[[group.by, drop = TRUE]]
   } else if ("sample" %in% colnames(object[[]])) {
     if (length(unique(object[["sample"]]))) {
-      warning("sample column found in meta data but not specified as the group.by variable ...\n  setting sample as group.by variable ...")
+      warning("column 'sample' found in meta data but not specified as the group.by variable, using column 'sample' as group.by variable ...")
       group.by <- "sample"
       data[, group.by] <- object[[group.by, drop = TRUE]]
     }
+  } else {
+    stop(paste0("Grouping variable (group.by) ", group.by, " not found in meta.data slot"), call. = F)
   }
 
   if (!is.null(x = shape.by)) {
+    if (!shape.by %in% colnames(object[[]])) {
+      stop(paste0("Shaping variable (shape.by) ", shape.by, " not found in meta.data slot"), call. = F)
+    }
     data[, shape.by] <- as.character(object[[shape.by, drop = TRUE]])
-    features <- colnames(x = data)[1:(ncol(x = data) - 4)]
-  } else {
-    features <- colnames(x = data)[1:(ncol(x = data) - 3)]
   }
 
   # Obtain array coordinates
-  if (all(c("adj_x", "adj_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("adj_x", "adj_y")]], nm = c("x", "y")))
+  if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
   } else {
     if(is.null(delim)) {
       stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
@@ -109,41 +117,26 @@ ST.DimPlot <- function(
     data <- cbind(data, coords[, c("x", "y")])
   }
 
-  data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
+  data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
 
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
-    spot.colors <- ColorBlender(data, channels.use)
+    spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- STPlot(data,
-                   data.type = "numeric",
-                   group.by,
-                   shape.by,
-                   d,
-                   pt.size,
-                   palette,
-                   rev.cols,
-                   ncol,
-                   spot.colors,
-                   center.zero,
+    plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d,
+                   pt.size, palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "))
+    if (dark.theme) {
+      plot <- plot + dark_theme()
+    }
     return(plot)
   } else {
     spot.colors <- NULL
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
-      plot <- STPlot(data,
-                     data.type,
-                     group.by,
-                     shape.by,
-                     d,
-                     pt.size,
-                     palette,
-                     rev.cols,
-                     ncol,
-                     spot.colors,
-                     center.zero)
+      plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
+                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -180,7 +173,7 @@ ST.DimPlot <- function(
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param slot Which slot to pull expression data from?
-#' @param blend Scale and blend expression values to visualize coexpression of two features
+#' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param pt.size Adjust point size for plotting
 #' @param group.by Name of a metadata column to facet plot by (deault is sampleID)
 #' @param shape.by If NULL, all points are circles (default). You can specify any
@@ -211,14 +204,15 @@ ST.FeaturePlot <- function(
   group.by = NULL,
   shape.by = NULL,
   palette = NULL,
-  rev.cols = F,
-  dark.theme = F,
+  rev.cols = FALSE,
+  dark.theme = FALSE,
   ncol = NULL,
   delim = NULL,
-  return.plot.list = F,
+  return.plot.list = FALSE,
   grid.ncol = NULL,
-  center.zero = F,
+  center.zero = FALSE,
   channels.use = NULL,
+  center.tissue = FALSE,
   ...
 ) {
   spots <- spots %||% colnames(x = object)
@@ -244,27 +238,32 @@ ST.FeaturePlot <- function(
     palette <- subset(palette.info, category == "seq")$palette[1]
   }
 
+  # Check that group.by variable is present in meta.data slot, otherwise select column named 'sample' if present
   if (!is.null(x = group.by)) {
     data[,  group.by] <- object[[group.by, drop = TRUE]]
   } else if ("sample" %in% colnames(object[[]])) {
     if (length(unique(object[["sample"]]))) {
-      warning("sample column found in meta data but not specified as the group.by variable ...\n  setting sample as group.by variable ...")
+      warning("column 'sample' found in meta data but not specified as the group.by variable ...\n  setting 'sample' as group.by variable ...")
       group.by <- "sample"
       data[, group.by] <- object[[group.by, drop = TRUE]]
     }
+  } else {
+    stop(paste0("Grouping variable (group.by) ", group.by, " not found in meta.data slot"), call. = F)
   }
 
   if (!is.null(x = shape.by)) {
-    stopifnot(shape.by %in% colnames(object[[]]))
-    data[, shape.by] <- object[[shape.by, drop = TRUE]]
+    if (!shape.by %in% colnames(object[[]])) {
+      stop(paste0("Shaping variable (shape.by) ", shape.by, " not found in meta.data slot"), call. = F)
+    }
+    data[, shape.by] <- as.character(object[[shape.by, drop = TRUE]])
   }
 
   # Obtain array coordinates
-  if (all(c("adj_x", "adj_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("adj_x", "adj_y")]], nm = c("x", "y")))
+  if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
   } else {
     if(is.null(delim)) {
-      stop("adjusted coordinates are not present in meta data and delimiter is missing ...", call. = FALSE)
+      stop("adjusted coordinates are not present in meta data and delimiter (delim) is missing ...", call. = FALSE)
     }
     coords <- GetCoords(colnames(object), delim)
     data <- cbind(data, coords[, c("x", "y")])
@@ -285,36 +284,21 @@ ST.FeaturePlot <- function(
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
-    spot.colors <- ColorBlender(data, channels.use)
+    spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- STPlot(data,
-                   data.type,
-                   group.by,
-                   shape.by,
-                   d,
-                   pt.size,
-                   palette,
-                   rev.cols,
-                   ncol,
-                   spot.colors,
-                   center.zero,
+    plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
+                   palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "))
+    if (dark.theme) {
+      plot <- plot + dark_theme()
+    }
     return(plot)
   } else {
     spot.colors <- NULL
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
-      plot <- STPlot(data,
-                     data.type,
-                     group.by,
-                     shape.by,
-                     d,
-                     pt.size,
-                     palette,
-                     rev.cols,
-                     ncol,
-                     spot.colors,
-                     center.zero)
+      plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
+                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -342,24 +326,23 @@ ColorBlender <- function(
   channels.use = NULL
 ) {
   rgb.order <- setNames(1:3, c("red", "green", "blue"))
-
-  if (!length(channels.use) == ncol(colored.data)) {
-    stop(paste0("channels.use must be same length as number of features"))
+  if (!length(channels.use) == ncol(data)) {
+    stop(paste0("channels.use must be same length as number of features or dimensions"))
   } else if (!all(channels.use %in% names(rgb.order))) {
-    stop("Invalid color names")
+    stop("Invalid color names in channels.use. Valid options are: 'red', 'green' and 'blue'")
   } else if (sum(duplicated(channels.use))){
-    stop("Duplicate color names not allowed")
+    stop("Duplicate color names are not allowed in channels.use")
   }
   col.order <- rgb.order[channels.use]
 
-  if (ncol(colored.data) == 2) {
-    colored.data <- cbind(colored.data, rep(0, nrow(colored.data)))
+  if (ncol(data) == 2) {
+    data <- cbind(data, rep(0, nrow(data)))
     col.order <- c(col.order, setdiff(1:3, col.order))
-    colored.data <- colored.data[, col.order]
-  } else if (ncol(colored.data) == 3) {
-    colored.data <- colored.data[, col.order]
+    data <- data[, col.order]
+  } else if (ncol(data) == 3) {
+    data <- data[, col.order]
   }
-  color.codes <- rgb(colored.data)
+  color.codes <- rgb(data)
 }
 
 
@@ -376,6 +359,8 @@ ColorBlender <- function(
 #' @param ncol number of columns in \code{facet_wrap}
 #' @param spot.colors character vector woth color names that overrides default coloring with ggplot2
 #' @param center.zero should the colorscale be centered around 0? Set to TRUE for scaled data
+#' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
+#' @param plot.title  Add title to plot
 #' @param ... parameters passed to geom_point()
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn
@@ -394,36 +379,64 @@ STPlot <- function(
   ncol = NULL,
   spot.colors = NULL,
   center.zero = T,
+  center.tissue = F,
   plot.title = NULL,
   ...
 ) {
+  # Center tissue along y-axis
+  if (center.tissue) {
+    if (!is.null(group.by)) {
+      data <- do.call(rbind, lapply(split(data, data[, group.by]), function(d) {
+        d[, "y"] <- d[, "y"] - median(d[, "y"]) + 32
+        return(d)
+      }))
+    } else {
+      data[, "y"] <- data[, "y"] - median(data[, "y"]) + 32
+    }
+  }
 
+  # Obtain colors from selected palette
   cols <- palette.select(palette)(3)
   if (rev.cols) {
     cols <- rev(cols)
   }
 
+  # Create new plot
   p <- ggplot()
   if (length(spot.colors) > 0) {
+
+    # Add shape aesthetic and blend colors if blend is active
     if (!is.null(shape.by)) {
       p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", shape = shape.by), color = spot.colors, size = pt.size)
     } else {
       p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y"), color = spot.colors, size = pt.size)
     }
+
   } else {
+
+    # Add shape aesthetic only
     if (!is.null(shape.by)) {
       p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable, shape = shape.by), size = pt.size)
     } else {
       p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable), size = pt.size)
     }
+
   }
 
+  # Add ST array dimensions
   p <- p +
       scale_x_continuous(limits = c(0, 67)) +
       scale_y_continuous(limits = c(0, 64)) +
       theme_void() +
-      facet_wrap(as.formula(paste("~", group.by)), ncol = ncol) +
       labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+
+  # Facet plots by group variable
+  if (!is.null(group.by)) {
+    p <- p +
+      facet_wrap(as.formula(paste("~", group.by)), ncol = ncol)
+  }
+
+  # Center colorscale at 0
   if (center.zero) {
     p <- p +
       scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
@@ -434,6 +447,7 @@ STPlot <- function(
     p <- p +
       scale_color_gradientn(colours = cols)
   }
+
   return(p)
 }
 
@@ -471,6 +485,7 @@ SetQuantile <- function(
   }
   return(as.numeric(x = cutoff))
 }
+
 
 #' Function used to scale numerical features
 #'
@@ -539,6 +554,7 @@ dark_theme <- function() {
         legend.text = element_text(colour = "white"))
 }
 
+
 #' QC histograms on the number of unqiue transcripts and genes per spot
 #'
 #' @param se S4 object
@@ -552,6 +568,7 @@ qc.hist <- function(se, metric="transcripts"){
   hist(cm$nFeature_RNA, main="Unique genes per spot", xlab="nr of genes", breaks="FD")
 
 }
+
 
 #' Correlation plots between all samples
 #'
