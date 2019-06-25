@@ -3,3 +3,7 @@ doc
 Meta
 man
 .Rproj.user
+.gitignore
+.RData
+.Rhistory
+.DS_Store
