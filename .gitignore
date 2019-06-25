@@ -1,6 +1,10 @@
 NAMESPACE
-.RData
-.Rhistory
-.Rproj.user
+inst/doc
 doc
 Meta
+man
+.Rproj.user
+.gitignore
+.RData
+.Rhistory
+.DS_Store
