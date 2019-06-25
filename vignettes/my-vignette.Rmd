@@ -121,11 +121,17 @@ ST.DimPlot(object = cm, dims = 1:4, dark.theme = T)
 
 ### 
 
-```{r, fig.width = 10, fig.height = 10}
+```{r, fig.width = 10, fig.height = 9}
 
 ST.FeaturePlot(object = cm, 
                features = c("Nrgn", "Penk", "Cck"),
-               dark.theme = T, ncol = 4, grid.ncol = 1, center.zero = T, palette = "RdBu", rev.cols = F, center.tissue = T)
+               dark.theme = T, 
+               ncol = 4, 
+               grid.ncol = 1, 
+               center.zero = F, 
+               palette = "the.cols", 
+               rev.cols = T, 
+               center.tissue = T)
 
 ```
 
