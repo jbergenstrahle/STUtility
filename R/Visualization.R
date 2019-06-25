@@ -193,7 +193,8 @@ ST.DimPlot <- function(
 #'
 #' @inheritParams STPlot
 #' @importFrom cowplot plot_grid
-#' @importFrom scales recale
+#' @importFrom scales rescale
+#' @importFrom ggplot2 ggplot theme
 #'
 #' @return A ggplot object
 #' @export
