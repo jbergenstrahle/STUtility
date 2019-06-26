@@ -1,18 +1,34 @@
 #' Function used to read HE images in jpeg format
 #'
 #' @param object Seurat object
+#' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
 #' @param labels Optional sample labels
+#' @param xdim Sets the pixel width for scaling, e.g. "400"
 #'
 #' @importFrom magick image_read
 #'
 #' @export
 
-ImageRead <- function(
+LoadImages <- function(
   object,
-  labels = NULL
+  image.paths = NULL,
+  labels = NULL,
+  xdim = "200"
 ) {
+
+  if (!is.null(image.paths)) {
+    if (!length(x = unique(object[["sample"]]) == length(x = image.paths))) {
+      stop(paste0("Number of images (",
+                  length(image.paths),
+                  ") does not match the number of samples (",
+                  length(x = unique(object[["sample"]]), ")")))
+    } else {
+      object@tools <- list(imgs = image.paths)
+    }
+  }
+
   if (!"imgs" %in% names(object@tools)) {
-    stop(paste0("images are not present in Seurat object"))
+    stop(paste0("Image paths are not present in Seurat object. Provide image.paths manually."))
   }
 
   imgs <- c()
@@ -24,43 +40,80 @@ ImageRead <- function(
     if (length(labels) != length(imgs)) {
       stop("Number of labels does not match the number of images")
     }
-    imgs <- setNames(imgs, nm = labels)
+    imgs <- setNames(lapply(seq_along(imgs), function(i) {
+      image_annotate(image_scale(imgs[[i]], xdim), text = labels[i], size = round(as.numeric(xdim)/20))
+    }), nm = labels)
+  } else {
+    imgs <- lapply(seq_along(imgs), function(i) {
+      image_scale(imgs[[i]], xdim)
+    })
   }
 
-  return(imgs)
+  object@tools$pointers <- imgs
+  object@tools$rasters <- lapply(imgs, as.raster)
+
+  return(object)
 }
 
-#' Function used to plot HE images obtained with \code{\link{ImageRead}}
+#' Function used to plot HE images obtained with \code{\link{LoadImages}}
 #'
-#' @param images list of images of class "magick-image
-#' @param xdim number of pixels of x axis in scled images
-#' @param label puts a label on each image
+#' @param object Seurat object
+#' @param index Image index
+#' @inheritParams LoadImages
 #'
 #' @importFrom magick image_append image_annotate image_scale
 #'
 #' @export
 
 ImagePlot <- function(
-  images,
-  xdim = "200",
-  label = T
+  object,
+  index = NULL
 ) {
-  if (label) {
-    labels <- ifelse(rep(!is.null(names(images)), length(images)), names(images), paste0(1:length(images)))
-    images <- lapply(seq_along(images), function(i) {
-      image_annotate(image_scale(images[[i]], xdim), text = labels[i], size = round(as.numeric(xdim)/20))
-    })
+
+  if (!"imgs" %in% names(object@tools)) {
+    stop(paste0("Image paths are not present in Seurat object. Run LoadImages before plotting."))
   }
 
-  ncols <- round(sqrt(length(x = images)))
-  nrows <- round(length(x = images)/ncols)
-  stack <- c()
-  for (i in 1:nrows) {
-    i <- i - 1
-    #frink, "The quick brown fox", font = 'Times', size = 30)
-    stack <- c(stack, image_append(Reduce(c, images[(i*ncols + 1):(i*ncols + ncols)])))
+  images <- object@tools$pointers
+  check_pointers <- any(sapply(lapply(images, function(images) {
+    try(image_info(images))
+  }), class) == "try-error")
+
+  if (check_pointers) {
+    warning(paste0("Image pointer is dead. You cannot save or cache image objects between R sessions. \n",
+                   "Rerun ImageRead if you want to set the image sizes manually. \n",
+                   "Setting image size to '200' pixels "), call. = F)
+    images <- c()
+    for (path in object@tools$imgs) {
+      images <- c(images, image_read(path))
+    }
+    if (!is.null(names(images))) {
+      images <- setNames(lapply(seq_along(images), function(i) {
+        image_annotate(image_scale(images[[i]], xdim), text = labels[i], size = round(as.numeric(xdim)/20))
+      }), nm = names(images))
+    } else {
+      images <- lapply(seq_along(imgs), function(i) {
+        image_scale(images[[i]], xdim)
+      })
+    }
+    object@tools$pointers <- images
   }
-  image_append(Reduce(c, stack), stack = T)
+
+  if (is.null(index)) {
+    ncols <- round(sqrt(length(x = images)))
+    nrows <- round(length(x = images)/ncols)
+    stack <- c()
+    for (i in 1:nrows) {
+      i <- i - 1
+      stack <- c(stack, image_append(Reduce(c, images[(i*ncols + 1):(i*ncols + ncols)])))
+    }
+    print(image_append(Reduce(c, stack), stack = T))
+  } else {
+    if (!index %in% 1:length(images)) stop("Image index out of bounds", call. = F)
+    print(images[[index]])
+  }
+
+  return(object)
 }
 
 
