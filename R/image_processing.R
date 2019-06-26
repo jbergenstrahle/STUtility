@@ -2,7 +2,7 @@
 #'
 #' @param object Seurat object
 #' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
-#' @param xdim Sets the pixel width for scaling, e.g. "400"
+#' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 1000 pixels)
 #'
 #' @importFrom magick image_read
 #'
@@ -12,8 +12,10 @@ LoadImages <- function(
   object,
   image.paths = NULL,
   group.var = "sample",
-  xdim = "200"
+  xdim = 200
 ) {
+
+  if (xdim > 1000) stop("xdim cannot be larger than 1000")
 
   if (!group.var %in% colnames(object[[]])) stop(paste0("group.var", group.var, " not found in meta.data slot"), call. = F)
 
@@ -47,7 +49,7 @@ LoadImages <- function(
   object@tools$dims <- setNames(lapply(imgs, image_info), nm = unique(object[[group.var, drop = T]]))
 
   imgs <- setNames(lapply(seq_along(imgs), function(i) {
-    image_annotate(image_scale(imgs[[i]], xdim), text = labels[i], size = round(as.numeric(xdim)/10))
+    image_annotate(image_scale(imgs[[i]], paste0(xdim)), text = unique(object[[group.var, drop = T]])[i], size = round(xdim/10))
   }), nm = unique(object[[group.var, drop = T]]))
 
   object@tools$pointers <- imgs
@@ -91,7 +93,7 @@ ImagePlot <- function(
       images <- c(images, image_read(path))
     }
     images <- setNames(lapply(seq_along(images), function(i) {
-      image_annotate(image_scale(images[[i]], xdim), text = labels[i], size = round(as.numeric(xdim)/10))
+      image_annotate(image_scale(images[[i]], paste0(xdim)), text = labels[i], size = round(xdim/10))
     }), nm = names(images))
     object@tools$pointers <- images
   }
