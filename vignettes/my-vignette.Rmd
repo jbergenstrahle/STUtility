@@ -1,11 +1,11 @@
----
+--
 title: "STUtility - A  Utility tool from the original Spatial Transcriptomics Research group"
 date: ""
 author: 
 - Joseph Bergenstråhle, Royal Institute of Technology (KTH)
 - Ludvig Larsson, Royal Institute of Technology (KTH)
 output: rmarkdown::html_vignette
-vignette: >
+	vignette: >
   %\VignetteIndexEntry{STUtility vignette}
   %\VignetteEngine{knitr::rmarkdown}
   \usepackage[utf8]{inputenc}
@@ -25,13 +25,11 @@ library(STutility)
 
 
 Introduction
-============
 
 STUtility is an Rpackage which includes various R-functions for interaction and analysis of Spatial Transcriptomics (ST) data. During the years of internal development of the ST method, the research group at SciLifeLab has used a vast array of R functions in their daily work. As the method is becoming widely adopted 
 
 
 Pre-process and read in data
-=============
 
 STUtility provides two approached for reading in data and creating the S4 object. 
 
@@ -91,12 +89,17 @@ rownames(cm@assays$RNA@meta.features) <- ensids[rownames(cm@assays$RNA@meta.feat
 With the Seurat object created, we can proceed with the regular Seurat workflow to scale data, find variable features and conduct dimensionallity reductions:
 
 ```{r}
+library(Seurat)
+# store mitochondrial percentage in object meta data
+cm <- PercentageFeatureSet(cm, pattern = "^mt-", col.name = "percent.mt")
+# run sctransform
+cm <- SCTransform(cm, vars.to.regress = "percent.mt", verbose = FALSE)
+# These are now standard steps in the Seurat workflow for visualization and clustering
+cm <- RunPCA(cm, verbose = FALSE)
+cm <- RunUMAP(cm, dims = 1:30, verbose = FALSE)
 
-cm <- NormalizeData(cm, normalization.method = "LogNormalize")
-cm <- ScaleData(cm, vars.to.regress = c("nFeature_RNA", "sample"), verbose = T)
-cm <- FindVariableFeatures(cm)
-cm <- RunPCA(cm, ndims.print = 3, nfeatures.print = 5)
-cm <- RunICA(cm, ndims.print = 3, nfeatures.print = 5)
+cm <- FindNeighbors(cm, dims = 1:30, verbose = FALSE)
+cm <- FindClusters(cm, verbose = FALSE)
 
 ```
 
@@ -122,6 +125,15 @@ ST.DimPlot(object = cm, dims = 1:4, dark.theme = T)
 ### 
 
 ```{r, fig.width = 10, fig.height = 9}
+
+
+```
+
+```{r}
+
+Idents(se) <- "sample"
+avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
+pairs(avg.exp$SCT)
 
 ST.FeaturePlot(object = cm, 
                features = c("Nrgn", "Penk", "Cck"),
@@ -158,6 +170,16 @@ ST.FeaturePlot(object = cm,
 #              log.freq = T)
 cm <- seh
 
+
+#Test to add correlation gene-matrix to guide user to choose k...
+# SAVE ALL THESE CHANGES TO A "SEH" BRANCH ! 
+
+
+```
+
+```{r}
+
+
 ST.DimPlot(object = cm, 
            reduction = "SEH",
            dims = 1:7, 
@@ -170,5 +192,54 @@ ST.DimPlot(object = cm,
            ncol = 4, 
            grid.ncol = 1, 
            center.zero = F)
+```
+
+
+
+
+```{r}
+
+
+bigcov <- function(x, nblocks = 10, verbose = TRUE, ...)
+{
+library(ff, quietly = TRUE)
+NCOL <- ncol(x)
+ 
+## test if ncol(x) %% nblocks gives remainder 0
+if (NCOL %% nblocks != 0) stop("Choose different 'nblocks' so that ncol(x) %% nblocks = 0!")
+ 
+## preallocate square matrix of dimension
+## ncol(x) in 'ff' single format
+corMAT <- ff(vmode = "single", dim = c(NCOL, NCOL))
+ 
+## split column numbers into 'nblocks' groups
+SPLIT <- split(1:NCOL, rep(1:nblocks, each = NCOL/nblocks))
+ 
+## create all unique combinations of blocks
+COMBS <- expand.grid(1:length(SPLIT), 1:length(SPLIT))
+COMBS <- t(apply(COMBS, 1, sort))
+COMBS <- unique(COMBS)
+ 
+## iterate through each block combination, calculate correlation matrix
+## between blocks and store them in the preallocated matrix on both
+## symmetric sides of the diagonal
+for (i in 1:nrow(COMBS)) {
+COMB <- COMBS[i, ]
+G1 <- SPLIT[[COMB[1]]]
+G2 <- SPLIT[[COMB[2]]]
+if (verbose) cat("Block", COMB[1], "with Block", COMB[2], "\n")
+flush.console()
+COV <- cov(x[, G1], x[, G2], ...)
+corMAT[G1, G2] <- COV
+corMAT[G2, G1] <- t(COV)
+COV <- NULL
+}
+ 
+gc()
+return(corMAT)
+}
+
+library(superheat)
+superheat(res)
 ```
 
