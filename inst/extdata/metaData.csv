@@ -1,5 +1,5 @@
 samples;type;z;individual;spotfiles;imgs
-inst/exdata/counts/MOB1.tsv;Mouse;100;1;alignment_table_MOB1;MOB1.jpg
-inst/exdata/counts/MOB2.tsv;Mouse;120;1;alignment_table_MOB2;MOB2.jpg
-inst/exdata/counts/MOB3.tsv;Mouse;130;2;alignment_table_MOB3;MOB3.jpg
-inst/exdata/counts/MOB4.tsv;Mouse;140;2;alignment_table_MOB4;MOB4.jpg
+/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB1.tsv;Mouse;100;1;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/alignment_table_MOB1.tsv;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB1.jpg
+/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB2.tsv;Mouse;120;1;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/alignment_table_MOB2.tsv;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB2.jpg
+/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB3.tsv;Mouse;130;2;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/alignment_table_MOB3.tsv;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB3.jpg
+/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB4.tsv;Mouse;140;2;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/alignment_table_MOB4.tsv;/Users/ludviglarsson/anaconda2/envs/R36/lib/R/library/STutility/extdata/counts/MOB4.jpg

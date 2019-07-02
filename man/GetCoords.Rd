@@ -12,7 +12,7 @@ GetCoords(spotnames, delim = "x")
 \item{delim}{delimiter}
 }
 \value{
-data.frame with x, y coordinates and optionally a sampleID column
+data.frame with x, y coordinates and optionally a sample column
 }
 \description{
 Extract table of x, y coordinates from ST count matrix headers
