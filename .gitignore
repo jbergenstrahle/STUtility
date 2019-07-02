@@ -10,3 +10,4 @@ man/*
 .DS_Store
 inst/.DS_Store
 inst/extdata/.DS_Store
+#inst/extdata/counts/*
