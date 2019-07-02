@@ -12,8 +12,6 @@
 #'
 #' @param object Seurat object
 #' @param dims Dimensions to plot, must numeric vectoir specifying number of dimensions to plot
-#' @param group.by Name of a metadata column to facet plot by (deault is "sample"). Note that if group.by is not specified,
-#' it will be assumed that only one ST array sample is present in the Seurat object.
 #' @param spots Vector of spots to plot (default is all spots)
 #' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
@@ -26,6 +24,7 @@
 #' @param delim delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data
 #' @param return.plot.list should the plots be returned as a list? By default, the plots are arranged into a grid
 #' @param grid.ncol Number of columns for display when combining plots
+#' @param verbose Print messages
 #'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
@@ -36,13 +35,13 @@
 #' @importFrom rlang !!
 #' @importFrom ggplot2 ggplot facet_wrap vars sym
 #' @importFrom viridis magma
+#' @importFrom Seurat FetchData Embeddings
 #'
 #' @export
 
 ST.DimPlot <- function(
   object,
   dims = c(1, 2),
-  group.by = NULL,
   spots = NULL,
   blend = FALSE,
   min.cutoff = NA,
@@ -60,6 +59,7 @@ ST.DimPlot <- function(
   center.zero = T,
   channels.use = NULL,
   center.tissue = FALSE,
+  verbose = FALSE,
   ...
 ) {
   reduction <- reduction %||% {
@@ -69,9 +69,12 @@ ST.DimPlot <- function(
     default.reductions[reduc.use]
   }
 
+  # prepare data
+  signs <- sign(dims); dims <- abs(dims)
   spots <- spots %||% colnames(x = object)
   data <- Embeddings(object = object[[reduction]])[spots, dims, drop = FALSE]
-  data <- as.data.frame(x = data)
+  if (verbose) cat(paste0("Selected ", length(spots), " spots"))
+  data <- as.data.frame(x = t(t(data)*signs))
   dims <- paste0(Key(object = object[[reduction]]), dims)
 
   # Select colorscale if palette is NULL
@@ -81,24 +84,20 @@ ST.DimPlot <- function(
   }
 
   # Check that the number of dimensions are 2 or three if blending is active
-  if (blend && !length(x = dims) %in% c(2, 3)) {
-    stop(paste0("Blending feature plots only works with two or three dimensions. \n",
+  if (blend & !length(x = dims) %in% c(2, 3)) {
+    stop(paste0("Blending dim plots only works with two or three dimensions. \n",
                 "Number of dimensions provided: ", length(x = dims)), call. = F)
   }
 
-  # Check that group.by variable is present in meta.data slot, otherwise select column named 'sample' if present
-  if (!is.null(x = group.by)) {
+  # Check that group.by variable is present in meta.data slot, otherwise assume that there's only one sample present in Seurat object
+  if ("sample" %in% colnames(object[[]])) {
+    group.by <- "sample"
     data[,  group.by] <- object[[group.by, drop = TRUE]]
-  } else if ("sample" %in% colnames(object[[]])) {
-    if (length(unique(object[["sample"]]))) {
-      warning("column 'sample' found in meta data but not specified as the group.by variable, using column 'sample' as group.by variable ...", call. = F)
-      group.by <- "sample"
-      data[, group.by] <- object[[group.by, drop = TRUE]]
-    }
   } else {
-    stop(paste0("Grouping variable (group.by) ", group.by, " not found in meta.data slot"), call. = F)
+    group.by <- NULL
   }
 
+  # Extract shape.by column from meta data if applicable
   if (!is.null(x = shape.by)) {
     if (!shape.by %in% colnames(object[[]])) {
       stop(paste0("Shaping variable (shape.by) ", shape.by, " not found in meta.data slot"), call. = F)
@@ -117,26 +116,35 @@ ST.DimPlot <- function(
     data <- cbind(data, coords[, c("x", "y")])
   }
 
+  # Scale data values
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
 
+  # blend colors or plot each dimension separately
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
+
+    if (verbose) cat(paste0("Blending colors for dimensions ",
+                            paste0(ifelse(length(dims) == 2, paste0(dims[1], " and ", dims[2]), paste0(dims[1], dims[2], " and ", dims[2]))),
+                            ": \n", paste(paste(dims, channels.use, sep = ":"), collapse = "\n")))
+
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d,
+    plot <- STPlot(data, data.type = "numeric", group.by, shape.by, NULL,
                    pt.size, palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
-                   plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "))
+                   plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
     return(plot)
   } else {
     spot.colors <- NULL
+    if (verbose) cat("Plotting dimensions:",
+                     ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
-                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue)
+                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, ...)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -175,13 +183,13 @@ ST.DimPlot <- function(
 #' @param slot Which slot to pull expression data from?
 #' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param pt.size Adjust point size for plotting
-#' @param group.by Name of a metadata column to facet plot by (deault is sampleID)
 #' @param shape.by If NULL, all points are circles (default). You can specify any
 #' cell attribute (that can be pulled with FetchData) allowing for both
 #' different colors and different shapes on cells
 #' @param delim delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data
 #' @param return.plot.list should the plots be returned as a list? By default, the plots are arranged into a grid
 #' @param grid.ncol Number of columns for display when combining plots
+#' @param verbose Print messages
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
 #' @inheritParams STPlot
@@ -198,10 +206,9 @@ ST.FeaturePlot <- function(
   spots = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
-  slot = "scale.data",
+  slot = "data",
   blend = FALSE,
   pt.size = 1,
-  group.by = NULL,
   shape.by = NULL,
   palette = NULL,
   rev.cols = FALSE,
@@ -213,6 +220,7 @@ ST.FeaturePlot <- function(
   center.zero = FALSE,
   channels.use = NULL,
   center.tissue = FALSE,
+  verbose = FALSE,
   ...
 ) {
   spots <- spots %||% colnames(x = object)
@@ -238,17 +246,12 @@ ST.FeaturePlot <- function(
     palette <- subset(palette.info, category == "seq")$palette[1]
   }
 
-  # Check that group.by variable is present in meta.data slot, otherwise select column named 'sample' if present
-  if (!is.null(x = group.by)) {
+  # Check that group.by variable is present in meta.data slot, otherwise assume that there's only one sample present in Seurat object
+  if ("sample" %in% colnames(object[[]])) {
+    group.by <- "sample"
     data[,  group.by] <- object[[group.by, drop = TRUE]]
-  } else if ("sample" %in% colnames(object[[]])) {
-    if (length(unique(object[["sample"]]))) {
-      warning("column 'sample' found in meta data but not specified as the group.by variable, using column 'sample' as group.by variable ...", call. = F)
-      group.by <- "sample"
-      data[, group.by] <- object[[group.by, drop = TRUE]]
-    }
   } else {
-    stop(paste0("Grouping variable (group.by) ", group.by, " not found in meta.data slot"), call. = F)
+    group.by <- NULL
   }
 
   if (!is.null(x = shape.by)) {
@@ -284,21 +287,28 @@ ST.FeaturePlot <- function(
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
+
+    if (verbose) cat(paste0("Blending colors for features ",
+                            paste0(ifelse(length(features) == 2, paste0(features[1], " and ", features[2]), paste0(features[1], features[2], " and ", features[2]))),
+                            ": \n", paste(paste(features, channels.use, sep = ":"), collapse = "\n")))
+
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
+    plot <- STPlot(data, data.type, group.by, shape.by, NULL, pt.size,
                    palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
-                   plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "))
+                   plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
     return(plot)
   } else {
     spot.colors <- NULL
+    if (verbose) cat("Plotting features:",
+                     ifelse(length(features) == 1, features,  paste0(paste(features[1:(length(features) - 1)], collapse = ", "), " and ", features[length(features)])))
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
       plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
-                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue)
+                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, ...)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -312,253 +322,6 @@ ST.FeaturePlot <- function(
       plot_grid(plotlist = plots, ncol = grid.ncol)
     }
   }
-}
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Feature plots on HE images
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-#'  Visualize 'features' on an ST array grid overlayed on top of HE image
-#'
-#' Colors spots on an an ST array grid according to a 'feature'
-#' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
-#'
-#' @param index Index specifying the sample that you want to use for plotting
-#' @param slot Which slot to pull expression data from?
-#' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
-#'
-#' @inheritParams ST.ImagePlot
-#' @inheritParams ST.FeaturePlot
-#' @importFrom cowplot plot_grid
-#' @importFrom scales rescale
-#'
-#' @return A ggplot object
-#' @export
-
-FeaturesOverlay <- function(
-  object,
-  features,
-  group.var = "sample",
-  group.index = 1,
-  min.cutoff = NA,
-  max.cutoff = NA,
-  slot = "scale.data",
-  blend = FALSE,
-  pt.size = 2,
-  shape.by = NULL,
-  palette = NULL,
-  rev.cols = FALSE,
-  dark.theme = FALSE,
-  ncol = NULL,
-  delim = NULL,
-  return.plot.list = FALSE,
-  grid.ncol = NULL,
-  center.zero = FALSE,
-  channels.use = NULL,
-  ...
-) {
-
-  group.index <- ifelse(class(group.index) == "numeric", unique(object[[group.var, drop = T]])[group.index], group.index)
-
-  # Check that image pointer is alive)
-  if (!group.index %in% names(object@tools$rasters)) {
-    stop(paste0("group.index ", group.index, " does not match any of the images present in the Seurat object"))
-  }
-  image <- object@tools$rasters[[group.index]]
-  imdims <- object@tools$dims[[group.index]]
-
-  # Select spots matching group.index
-  spots <- colnames(object)[object[[group.var, drop = T]] == group.index]
-
-  data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
-  data <- as.data.frame(lapply(data, function(x) {
-    new_x <- ifelse(test = sapply(x, function(n) {class(n) == "factor"}), yes = as.character(x), no = x)
-    return(new_x)
-  }))
-
-  data.type <- unique(sapply(data, class))
-
-  if (!blend && length(x = features) %in% c(2, 3) & !all(data.type %in% c("numeric", "integer"))) {
-    stop("Blending feature plots only works with two or three numeric features")
-  }
-
-  # Select colorscale
-  palette.info <- palette.select(info = T)
-  palette <- palette %||% {
-    palette <- subset(palette.info, category == "seq")$palette[1]
-  }
-
-  # Obtain array coordinates
-  if (all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]][spots, ], nm = c("x", "y")))
-  } else {
-    stop("pixel coordinates are not present in meta data.", call. = FALSE)
-  }
-
-  if (ncol(x = data) < 3) {
-    stop("None of the requested features were found: ",
-         paste(features, collapse = ", "),
-         " in slot ",
-         slot,
-         call. = FALSE)
-  }
-
-  if (class(unique(sapply(data, class))) == "numeric") {
-    data <- feature.scaler(data, min.cutoff, max.cutoff, spots)
-  }
-
-  if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 2)], 2, rescale)
-    channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
-    spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 1):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, palette,
-                         rev.cols, ncol, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "))
-    if (dark.theme) {
-      plot <- plot + dark_theme()
-    }
-    return(plot)
-  } else {
-    spot.colors <- NULL
-    # Create plots
-    plots <- lapply(X = features, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, palette,
-                           rev.cols, ncol, spot.colors, center.zero, ...)
-
-      if (dark.theme) {
-        plot <- plot + dark_theme()
-      }
-      return(plot)
-    })
-
-    if (return.plot.list) {
-      return(plots)
-    } else {
-      plot_grid(plotlist = plots, ncol = grid.ncol)
-    }
-  }
-}
-
-
-#' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
-#'
-#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn annotation_custom
-#' @importFrom magick image_info
-#' @importFrom grid rasterGrob
-#' @importFrom grDevices as.raster
-#'
-#' @param image image of class "raster" to use as background for plotting
-#' @param dims Dimensions of original image
-#'
-#' @inheritParams STPlot
-#'
-#' @export
-
-ST.ImagePlot <- function(
-  data,
-  data.type,
-  shape.by,
-  variable,
-  image,
-  dims,
-  pt.size = 2,
-  palette = "MaYl",
-  rev.cols = F,
-  ncol = NULL,
-  spot.colors = NULL,
-  center.zero = T,
-  plot.title = NULL,
-  ...
-) {
-  # Obtain colors from selected palette
-  cols <- palette.select(palette)(3)
-  if (rev.cols) {
-    cols <- rev(cols)
-  }
-
-  # Obtain image dimensions
-  x_dim <- as.numeric(dims[2])
-  y_dim <- as.numeric(dims[3])
-
-  # Draw image
-  g <- rasterGrob(image, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
-
-  # Create new plot
-  p <- ggplot() +
-    annotation_custom(g, -Inf, Inf, -Inf, Inf)
-
-  if (length(spot.colors) > 0) {
-
-    # Add shape aesthetic and blend colors if blend is active
-    if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size)
-    } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size)
-    }
-
-  } else {
-
-    # Add shape aesthetic only
-    if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = variable, shape = shape.by), size = pt.size)
-    } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = variable), size = pt.size)
-    }
-  }
-
-  # Add ST array dimensions
-  p <- p +
-    scale_x_continuous(limits = c(0, x_dim), expand = c(0, 0)) +
-    scale_y_continuous(limits = c(0, y_dim), expand = c(0, 0)) +
-    theme_void() +
-    labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
-
-  # Center colorscale at 0
-  if (center.zero) {
-    p <- p +
-      scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
-  } else if (data.type %in% c("character", "factor")) {
-    p <- p +
-      labs(color = variable)
-  } else {
-    p <- p +
-      scale_color_gradientn(colours = cols)
-  }
-  return(p)
-}
-
-
-
-#' Squeeze 2 or 3 column feature data into the unit cube and converts into RGB space
-#'
-#' @param data data.frame containing feature values and coordinates
-#' @param channels.use Select channels to use for blending. Default is red, green and blue but the order can be shuffled.
-#' For 2 features, the default is red and green. (options: "red", "green" and "blue")
-
-ColorBlender <- function(
-  data,
-  channels.use = NULL
-) {
-  rgb.order <- setNames(1:3, c("red", "green", "blue"))
-  if (!length(channels.use) == ncol(data)) {
-    stop(paste0("channels.use must be same length as number of features or dimensions"))
-  } else if (!all(channels.use %in% names(rgb.order))) {
-    stop("Invalid color names in channels.use. Valid options are: 'red', 'green' and 'blue'")
-  } else if (sum(duplicated(channels.use))){
-    stop("Duplicate color names are not allowed in channels.use")
-  }
-  col.order <- rgb.order[channels.use]
-
-  if (ncol(data) == 2) {
-    data <- cbind(data, rep(0, nrow(data)))
-    col.order <- c(col.order, setdiff(1:3, col.order))
-    data <- data[, col.order]
-  } else if (ncol(data) == 3) {
-    data <- data[, col.order]
-  }
-  color.codes <- rgb(data)
 }
 
 
@@ -623,28 +386,28 @@ STPlot <- function(
 
     # Add shape aesthetic and blend colors if blend is active
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", shape = shape.by), color = spot.colors, size = pt.size)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", shape = shape.by), color = spot.colors, size = pt.size, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y"), color = spot.colors, size = pt.size)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y"), color = spot.colors, size = pt.size, ...)
     }
 
   } else {
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable, shape = shape.by), size = pt.size)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable, shape = shape.by), size = pt.size, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable), size = pt.size)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable), size = pt.size, ...)
     }
 
   }
 
   # Add ST array dimensions
   p <- p +
-      scale_x_continuous(limits = c(0, 67)) +
-      scale_y_continuous(limits = c(0, 64)) +
-      theme_void() +
-      labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+    scale_x_continuous(limits = c(0, 67)) +
+    scale_y_continuous(limits = c(0, 64)) +
+    theme_void() +
+    labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
 
   # Facet plots by group variable
   if (!is.null(group.by)) {
@@ -665,6 +428,412 @@ STPlot <- function(
   }
 
   return(p)
+}
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Dimensional reduction plots on HE images
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#'  Visualize dimensionality reduction vectors on an ST array grid overlayed on top of HE image
+#'
+#' Colors spots on an an ST array grid according to a dimension
+#' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
+#'
+#' @param index Index specifying the sample that you want to use for plotting
+#' @param slot Which slot to pull expression data from?
+#' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
+#'
+#' @inheritParams ST.ImagePlot
+#' @inheritParams ST.DimPlot
+#' @importFrom cowplot plot_grid
+#' @importFrom scales rescale
+#'
+#' @return A ggplot object
+#' @export
+
+DimOverlay <- function(
+  object,
+  dims = c(1:2),
+  sample.index = 1,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  blend = FALSE,
+  pt.size = 1,
+  reduction = NULL,
+  shape.by = NULL,
+  palette = NULL,
+  rev.cols = FALSE,
+  dark.theme = FALSE,
+  delim = NULL,
+  return.plot.list = FALSE,
+  grid.ncol = NULL,
+  center.zero = FALSE,
+  channels.use = NULL,
+  verbose = FALSE,
+  ...
+) {
+  reduction <- reduction %||% {
+    default.reductions <- c('umap', 'tsne', 'pca')
+    object.reductions <- FilterObjects(object = object, classes.keep = 'DimReduc')
+    reduc.use <- min(which(x = default.reductions %in% object.reductions))
+    default.reductions[reduc.use]
+  }
+
+  # Check that LoadImages has been run
+  if (!all(c("imgs", "rasters", "pointers") %in% names(object@tools))) stop("You need to run LoadImages() before using FeatureOverlay()")
+
+  # Check that image pointer is alive)
+  if (!sample.index %in% names(object@tools$rasters)) {
+    stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
+  }
+  image <- object@tools$rasters[[sample.index]]
+  imdims <- object@tools$dims[[sample.index]]
+
+  group.var = "sample"
+  if (group.var %in% colnames(object[[]])) {
+    sample.index <- ifelse(class(sample.index) == "numeric", unique(object[[group.var, drop = T]])[sample.index], sample.index)
+    # Select spots matching sample.index
+    spots <- colnames(object)[object[[group.var, drop = T]] == sample.index]
+    if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
+  } else {
+    # Assuming that there's only one sample in the Seurat object
+    spots <- NULL
+    spots <- spots %||% colnames(x = object)
+    if (verbose) cat("Selecting all spots")
+  }
+
+  signs <- sign(dims); dims <- abs(dims)
+  data <- Embeddings(object = object[[reduction]])[spots, dims, drop = FALSE]
+  data <- as.data.frame(x = t(t(data)*signs))
+  dims <- paste0(Key(object = object[[reduction]]), dims)
+
+  # Select colorscale
+  palette.info <- palette.select(info = T)
+  palette <- palette %||% {
+    palette <- subset(palette.info, category == "seq")$palette[1]
+  }
+
+  # Check that the number of dimensions are 2 or three if blending is active
+  if (blend & !length(x = dims) %in% c(2, 3)) {
+    stop(paste0("Blending dim plots only works with two or three dimensions. \n",
+                "Number of dimensions provided: ", length(x = dims)), call. = F)
+  }
+
+  # Obtain array coordinates
+  if (all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]][spots, ], nm = c("x", "y")))
+  } else {
+    stop("pixel coordinates are not present in meta data.", call. = FALSE)
+  }
+
+  data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
+
+  if (blend) {
+    colored.data <- apply(data[, 1:(ncol(data) - 2)], 2, rescale)
+    channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
+
+    if (verbose) cat(paste0("Blending colors from features ", paste(paste(dims, channels.use, sep = ":"), collapse = ", ")))
+
+    spot.colors <- ColorBlender(colored.data, channels.use)
+    data <- data[, (ncol(data) - 1):ncol(data)]
+    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, palette,
+                         rev.cols, ncol = NULL, spot.colors, center.zero,
+                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), ...)
+    if (dark.theme) {
+      plot <- plot + dark_theme()
+    }
+    return(plot)
+  } else {
+    spot.colors <- NULL
+
+    if (verbose) cat("Plotting features:",
+                     ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
+
+    # Create plots
+    plots <- lapply(X = dims, FUN = function(d) {
+      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, palette,
+                           rev.cols, ncol = NULL, spot.colors, center.zero, ...)
+
+      if (dark.theme) {
+        plot <- plot + dark_theme()
+      }
+      return(plot)
+    })
+
+    if (return.plot.list) {
+      return(plots)
+    } else {
+      plot_grid(plotlist = plots, ncol = grid.ncol)
+    }
+  }
+}
+
+
+
+
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Feature plots on HE images
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#'  Visualize 'features' on an ST array grid overlayed on top of HE image
+#'
+#' Colors spots on an an ST array grid according to a 'feature'
+#' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
+#'
+#' @param index Index specifying the sample that you want to use for plotting
+#' @param slot Which slot to pull expression data from?
+#' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
+#'
+#' @inheritParams ST.ImagePlot
+#' @inheritParams ST.FeaturePlot
+#' @importFrom cowplot plot_grid
+#' @importFrom scales rescale
+#'
+#' @return A ggplot object
+#' @export
+
+FeatureOverlay <- function(
+  object,
+  features,
+  sample.index = 1,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  blend = FALSE,
+  pt.size = 2,
+  shape.by = NULL,
+  palette = NULL,
+  rev.cols = FALSE,
+  dark.theme = FALSE,
+  delim = NULL,
+  return.plot.list = FALSE,
+  grid.ncol = NULL,
+  center.zero = FALSE,
+  channels.use = NULL,
+  verbose = FALSE,
+  ...
+) {
+  # Check that LoadImages has been run
+  if (!all(c("imgs", "rasters", "pointers") %in% names(object@tools))) stop("You need to run LoadImages() before using FeatureOverlay()")
+
+  # Check that image pointer is alive)
+  if (!sample.index %in% names(object@tools$rasters)) {
+    stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
+  }
+  image <- object@tools$rasters[[sample.index]]
+  imdims <- object@tools$dims[[sample.index]]
+
+  group.var = "sample"
+  if (group.var %in% colnames(object[[]])) {
+    sample.index <- ifelse(class(sample.index) == "numeric", unique(object[[group.var, drop = T]])[sample.index], sample.index)
+    # Select spots matching sample.index
+    spots <- colnames(object)[object[[group.var, drop = T]] == sample.index]
+    if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
+  } else {
+    # Assuming that there's only one sample in the Seurat object
+    spots <- NULL
+    spots <- spots %||% colnames(x = object)
+    if (verbose) cat("Selecting all spots")
+  }
+
+  data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
+  data <- as.data.frame(lapply(data, function(x) {
+    new_x <- ifelse(test = sapply(x, function(n) {class(n) == "factor"}), yes = as.character(x), no = x)
+    return(new_x)
+  }))
+
+  data.type <- unique(sapply(data, class))
+
+  if ((blend & !length(x = features) %in% c(2, 3)) | !all(data.type %in% c("numeric", "integer"))) {
+    stop(paste0("Blending feature plots only works with two or three features of class numeric/integer. \n",
+                "Number of features provided: ", length(x = features), "\n",
+                "feature class: ", data.type), call. = F)
+  }
+
+  # Select colorscale
+  palette.info <- palette.select(info = T)
+  palette <- palette %||% {
+    palette <- subset(palette.info, category == "seq")$palette[1]
+  }
+
+  # Obtain array coordinates
+  if (all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]][spots, ], nm = c("x", "y")))
+  } else {
+    stop("pixel coordinates are not present in meta data.", call. = FALSE)
+  }
+
+  if (ncol(x = data) < 3) {
+    stop("None of the requested features were found: ",
+         paste(features, collapse = ", "),
+         " in slot ",
+         slot,
+         call. = FALSE)
+  }
+
+  if (class(unique(sapply(data, class))) == "numeric") {
+    data <- feature.scaler(data, min.cutoff, max.cutoff, spots)
+  }
+
+  if (blend) {
+    colored.data <- apply(data[, 1:(ncol(data) - 2)], 2, rescale)
+    channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
+
+    if (verbose) cat(paste0("Blending colors from features ", paste(paste(features, channels.use, sep = ":"), collapse = ", ")))
+
+    spot.colors <- ColorBlender(colored.data, channels.use)
+    data <- data[, (ncol(data) - 1):ncol(data)]
+    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, palette,
+                         rev.cols, ncol = NULL, spot.colors, center.zero,
+                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), ...)
+    if (dark.theme) {
+      plot <- plot + dark_theme()
+    }
+    return(plot)
+  } else {
+    spot.colors <- NULL
+
+    if (verbose) cat("Plotting features:",
+                     ifelse(length(features) == 1, features,  paste0(paste(features[1:(length(features) - 1)], collapse = ", "), " and ", features[length(features)])))
+
+    # Create plots
+    plots <- lapply(X = features, FUN = function(d) {
+      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, palette,
+                           rev.cols, ncol = NULL, spot.colors, center.zero, ...)
+
+      if (dark.theme) {
+        plot <- plot + dark_theme()
+      }
+      return(plot)
+    })
+
+    if (return.plot.list) {
+      return(plots)
+    } else {
+      plot_grid(plotlist = plots, ncol = grid.ncol)
+    }
+  }
+}
+
+
+#' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
+#'
+#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn annotation_custom
+#' @importFrom magick image_info
+#' @importFrom grid rasterGrob unit
+#' @importFrom grDevices as.raster
+#'
+#' @param image image of class "raster" to use as background for plotting
+#' @param dims Dimensions of original image
+#'
+#' @inheritParams STPlot
+#'
+#' @export
+
+ST.ImagePlot <- function(
+  data,
+  data.type,
+  shape.by,
+  variable,
+  image,
+  dims,
+  pt.size = 2,
+  palette = "MaYl",
+  rev.cols = F,
+  ncol = NULL,
+  spot.colors = NULL,
+  center.zero = T,
+  plot.title = NULL,
+  ...
+) {
+  # Obtain colors from selected palette
+  cols <- palette.select(palette)(3)
+  if (rev.cols) {
+    cols <- rev(cols)
+  }
+
+  # Obtain image dimensions
+  x_dim <- as.numeric(dims[2])
+  y_dim <- as.numeric(dims[3])
+
+  # Draw image
+  g <- rasterGrob(image, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
+
+  # Create new plot
+  p <- ggplot() +
+    annotation_custom(g, -Inf, Inf, -Inf, Inf)
+
+  if (length(spot.colors) > 0) {
+
+    # Add shape aesthetic and blend colors if blend is active
+    if (!is.null(shape.by)) {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
+    } else {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size, ...)
+    }
+
+  } else {
+
+    # Add shape aesthetic only
+    if (!is.null(shape.by)) {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = variable, shape = shape.by), size = pt.size, ...)
+    } else {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = variable), size = pt.size, ...)
+    }
+  }
+
+  # Add ST array dimensions
+  p <- p +
+    scale_x_continuous(limits = c(0, x_dim), expand = c(0, 0)) +
+    scale_y_continuous(limits = c(0, y_dim), expand = c(0, 0)) +
+    theme_void() +
+    labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+
+  # Center colorscale at 0
+  if (center.zero) {
+    p <- p +
+      scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
+  } else if (data.type %in% c("character", "factor")) {
+    p <- p +
+      labs(color = variable)
+  } else {
+    p <- p +
+      scale_color_gradientn(colours = cols)
+  }
+  return(p)
+}
+
+
+
+#' Squeeze 2 or 3 column feature data into the unit cube and converts into RGB space
+#'
+#' @param data data.frame containing feature values and coordinates
+#' @param channels.use Select channels to use for blending. Default is red, green and blue but the order can be shuffled.
+#' For 2 features, the default is red and green. (options: "red", "green" and "blue")
+
+ColorBlender <- function(
+  data,
+  channels.use = NULL
+) {
+  rgb.order <- setNames(1:3, c("red", "green", "blue"))
+  if (!length(channels.use) == ncol(data)) {
+    stop(paste0("channels.use must be same length as number of features or dimensions"))
+  } else if (!all(channels.use %in% names(rgb.order))) {
+    stop("Invalid color names in channels.use. Valid options are: 'red', 'green' and 'blue'")
+  } else if (sum(duplicated(channels.use))){
+    stop("Duplicate color names are not allowed in channels.use")
+  }
+  col.order <- rgb.order[channels.use]
+
+  if (ncol(data) == 2) {
+    data <- cbind(data, rep(0, nrow(data)))
+    col.order <- c(col.order, setdiff(1:3, col.order))
+    data <- data[, col.order]
+  } else if (ncol(data) == 3) {
+    data <- data[, col.order]
+  }
+  color.codes <- rgb(data)
 }
 
 
