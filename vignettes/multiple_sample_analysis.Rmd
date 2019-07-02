@@ -156,17 +156,62 @@ FeatureOverlay(object = se,
 
 ---
 
+Each spot in a Spatial Transcriptomics dataset typically contains RNA from a mixture of cells so why would we apply a workflow that was developed for single-cell RNAseq data? We can calculate some properties to visually inspect the data to see that ST data have similar properties to that of scRNAseq data.
 
+```{r, fig.width = 12, fig.height = 4}
+
+library(Matrix)
+library(magrittr)
+library(dplyr)
+
+# Get raw count data 
+umi_data <- GetAssayData(object = se, slot = "counts", assay = "RNA")
+dim(umi_data)
+
+# Calculate gene attributes
+gene_attr <- data.frame(mean = rowMeans(umi_data),
+                        detection_rate = rowMeans(umi_data > 0),
+                        var = apply(umi_data, 1, var), 
+                        row.names = rownames(umi_data)) %>%
+  mutate(log_mean = log10(mean), log_var = log10(var))
+
+# Obtain spot attributes from Seurat meta.data slot
+spot_attr <- se[[c("nFeature_RNA", "nCount_RNA")]]
+
+p1 <- ggplot(gene_attr, aes(log_mean, log_var)) + 
+  geom_point(alpha = 0.3, shape = 16) + 
+  geom_density_2d(size = 0.3) +
+  geom_abline(intercept = 0, slope = 1, color = 'red') +
+  ggtitle("Mean-variance relationship")
+
+# add the expected detection rate under Poisson model
+x = seq(from = -2, to = 2, length.out = 1000)
+poisson_model <- data.frame(log_mean = x, detection_rate = 1 - dpois(0, lambda = 10^x))
+p2 <- ggplot(gene_attr, aes(log_mean, detection_rate)) + 
+  geom_point(alpha=0.3, shape=16) + 
+  geom_line(data=poisson_model, color='red') +
+  ggtitle("Mean-detection-rate relationship")
+
+cowplot::plot_grid(p1, p2)
+
+```
+
+We can see from the mean-variance and Mean-detection-rate scatter plots that genes show overdispersion compared to what would be expected under a Poisson model. Because these properties are shared between ST and scRNAseq data we have reasoned that the workflow presented in the Seurat package should be applicable for ST data as well. It is important however to keep in mind that each spots contains a mixture of cell types and should be interpreted as a morphological unit in the context of a tissue section. 
+
+In order to normalize the data we recommend using [variance stabilized transformation](https://www.biorxiv.org/content/10.1101/576827v1) available in the SCTranfrom function in Seurat as of v3.0. 
 
 Following the rationale expressed above, we transform the data according to the Seurat workflow. 
 
 ```{r, eval=FALSE, warning=FALSE, message=FALSE} 
 # store mitochondrial percentage in object meta data
 se <- PercentageFeatureSet(se, pattern = "^mt-", col.name = "percent.mt")
+
 # run sctransform
 se <- SCTransform(se, vars.to.regress = c("sample", "nFeature_RNA"))
 
 ```
+
+Plotting dimesnionality reduction results
 
 ```{r, fig.width=16, fig.height=10}
 #se <- RunICA(se)
@@ -182,10 +227,14 @@ se <- FindNeighbors(object = se, dims = keep.dims, verbose = FALSE, reduction = 
 se <- FindClusters(object = se, verbose = FALSE)
 ```
 
+Plotting clusters in t-SNE
+
 
 ```{r, fig.width = 6, fig.height = 6}
 DimPlot(object = se, label = TRUE, reduction = "tsne") + NoLegend() + ggtitle('sctransform') 
 ```
+
+Plot features on top of HE
 
 
 ```{r, fig.width = 13, fig.height = 6}
@@ -200,6 +249,7 @@ FeatureOverlay(object = se,
 
 ```
 
+Plot features in t-SNE space or on ST array coordinates
 
 ```{r, fig.width = 12, fig.height = 4}
 fts <- c("Slc18a2", "Slc6a5")
