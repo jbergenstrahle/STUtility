@@ -143,7 +143,7 @@ ST.DimPlot <- function(
                      ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
-      plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
+      plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d, pt.size,
                      palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, ...)
 
       if (dark.theme) {
@@ -348,7 +348,7 @@ ST.FeaturePlot <- function(
 
 STPlot <- function(
   data,
-  data.type,
+  data.type = NULL,
   group.by,
   shape.by,
   variable,
@@ -357,7 +357,7 @@ STPlot <- function(
   rev.cols = F,
   ncol = NULL,
   spot.colors = NULL,
-  center.zero = T,
+  center.zero = TRUE,
   center.tissue = F,
   plot.title = NULL,
   ...
@@ -930,6 +930,7 @@ feature.scaler <- function(
 
 
 #' Generates a dark theme for STPlot
+#' @importFrom ggplot2 element_rect element_text theme
 
 dark_theme <- function() {
   theme(plot.background = element_rect(fill = "black"),

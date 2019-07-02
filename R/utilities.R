@@ -2,7 +2,7 @@
 #'
 #' @param spotnames x, y coordinates separated by delimiter (default "x")
 #' @param delim delimiter
-#' @return data.frame with x, y coordinates and optionally a sampleID column
+#' @return data.frame with x, y coordinates and optionally a sample column
 #' @export
 
 GetCoords <- function(
@@ -15,7 +15,7 @@ GetCoords <- function(
   }
   coords <- do.call(rbind, strsplit(spotnames, split = delim))
   if (ncol(coords) == 3) {
-    coords <- setNames(data.frame(coords, stringsAsFactors = F), nm = c("x", "y", "sampleID"))
+    coords <- setNames(data.frame(coords, stringsAsFactors = F), nm = c("x", "y", "sample"))
   } else if (ncol(coords) == 2) {
     coords <- setNames(data.frame(coords, stringsAsFactors = F), nm = c("x", "y"))
   } else {
@@ -94,6 +94,7 @@ FilterObjects <- function(object, classes.keep = c('Assay', 'DimReduc')) {
 
 palette.select <- function(palette, info = F) {
   palettes <- list(
+    LgBu = colorRampPalette(c("grey", "lightblue", "blue")),
     GrRd = colorRampPalette(c("lightgray", "mistyrose", "red")),
     magma = colorRampPalette(magma(9)),
     GnBu = colorRampPalette(rev(brewer.pal(9,"GnBu"))),
@@ -114,10 +115,35 @@ palette.select <- function(palette, info = F) {
     RdYlBu = colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))
   )
   if (info) {
-    return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div"), stringsAsFactors = F))
+    return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div"), stringsAsFactors = F))
   }
   if (!palette %in% names(palettes)) {
     stop("Invalid palette name: ", palette, call. = FALSE)
   }
   return(palettes[[palette]])
+}
+
+#' Convert gene names
+#'
+#' @param exprMat expression matrix
+#' @param annotation data.frame with one id.column containing the current gene ids and a matching replace
+#' column containing the new gene ids
+#' @param id.column character vector of unique gene ids of the same type as in the Seurat object
+#' @param replace.column character vector of unique gene ids to replace the old ids
+#'
+#' @return A Seurat object with covnerted gene ids
+#' @export
+ConvertGeneNames <- function(
+  exprMat,
+  annotation,
+  id.column,
+  replace.column
+) {
+
+  if (!id.column %in% colnames(annotation) | !replace.column %in% colnames(annotation)) stop(paste0(id.column, " and ", replace.column, " must be present in the annotation table"), call. = F)
+  if (sum(duplicated(annotation[, id.column])) > 0 | sum(duplicated(annotation[, id.column])) > 0) stop("Duplicated ids are not allowed", call. = F)
+
+  rownames(annotation) <- annotation[, id.column]
+  rownames(exprMat) <- annotation[rownames(exprMat), ]$gene_name
+  return(exprMat)
 }

@@ -6,9 +6,10 @@
 \usage{
 ST.DimPlot(object, dims = c(1, 2), spots = NULL, blend = FALSE,
   min.cutoff = NA, max.cutoff = NA, pt.size = 1, reduction = NULL,
-  group.by = NULL, shape.by = NULL, palette = "MaYl", rev.cols = F,
-  dark.theme = F, ncol = NULL, delim = NULL, return.plot.list = F,
-  grid.ncol = NULL, center.zero = T, channels.use = NULL, ...)
+  shape.by = NULL, palette = "MaYl", rev.cols = F, dark.theme = F,
+  ncol = NULL, delim = NULL, return.plot.list = F,
+  grid.ncol = NULL, center.zero = T, channels.use = NULL,
+  center.tissue = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -25,8 +26,6 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 \item{pt.size}{Adjust point size for plotting}
 
 \item{reduction}{Which dimensionality reduction to use. If not specified, first searches for umap, then tsne, then pca}
-
-\item{group.by}{Name of a metadata column to facet plot by (deault is sampleID)}
 
 \item{shape.by}{If NULL, all points are circles (default). You can specify any
 cell attribute (that can be pulled with FetchData) allowing for both
@@ -45,6 +44,10 @@ different colors and different shapes on cells}
 \item{grid.ncol}{Number of columns for display when combining plots}
 
 \item{center.zero}{should the colorscale be centered around 0? Set to TRUE for scaled data}
+
+\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
+
+\item{verbose}{Print messages}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }
