@@ -61,7 +61,7 @@ ST.seh <- function(se, n.clust=10,
 
   # OBS only seurat work atm - add to include singlecellExp also
 
-  # ================================= Clustering of relative counts =======================================
+  # %%%%%%%%%%%%% Clustering of relative counts  %%%%%%%%%%%%%
 
   rnaAssay <- se[["RNA"]]@counts
   rnaAssay <- rnaAssay[order(Matrix::rowSums(rnaAssay), decreasing = T), ]
@@ -118,7 +118,7 @@ ST.seh <- function(se, n.clust=10,
 
       }
     }
-  }else{ # ---------- Using Seurats AddModuleScore
+  }else{ # %%%%%%%%%%%%%  Using Seurats AddModuleScore
     features <- split(names(clusters), clusters)
     clusterScore <- AddModuleScore(se, features=features, assay="RNA", name="CovClusters")
 
