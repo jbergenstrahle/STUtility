@@ -1,0 +1,233 @@
+---
+title: "A comprehensive guide to Spatial Transcriptomics data analysis"
+author:
+- Joseph Bergenstråhle, Royal Institute of Technology (KTH)
+- Ludvig Larsson, Royal Institute of Technology (KTH)
+date: ''
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Using STUtility for multiple sample analysis
+
+As with all biological data, using multiple samples add power to the analysis and is a necessity to enable comprehensive insight which otherwise suffers from stochastic uncertainty. In this example tutorial, we display how you can input multiple samples, look for aggravating circumstances like batch effects and missing data, apply methods to correct such if present, get a holistic picture of your data as well as conduct more in depth analysis in various ways. 
+
+Along the different subsections, references to publications are given to display examples of how the different strategies have been applied previously on ST data.
+
+### Installation
+
+```{r}
+library(STutility)
+library(Seurat)
+library(ggplot2)
+```
+
+## Short background of the Spatial Transcriptomics method 
+
+---
+
+The tutorial aims to lay the foundation of best practice for ST data analysis. At such, the user is probably already familiar with the underlying method and a detailed description is therefore found elsewhere. Interested readers are pointed to the original publication from 2016 (https://science.sciencemag.org/content/353/6294/78). 
+
+[STmethod overview](F:\JoeDocs\PhD\STUtility\STutility\inst\extdata/st_method_1.png)
+
+In short, there are two main output components from an ST experiment; (i) the gene expression data and (ii) the image data. 
+All the steps explained in this guide could be performed with only the expression data. However, the image data, apart from being fundamental to the biological interpretation, is used to filter out capture-spots that lies directly under the tissue. This filtering removes the large amount of unwanted data points, lowering the memory burden of the data objects created as well as removing informational noise.    
+
+### Alignment
+
+Beskriv alignment
+
+### fddfdfdfdf
+
+1. Count files
+2. Spot detector output0
+3. H&E image
+
+
+## Input multiple samples
+
+---
+
+The different methods for data input are described in the [insert vignette link]. Here, we will go directly onto loading a data set via the sampletable method. To follow along this tutorial, download the test data set at [insert test data set link]. The downloadable content consists of count files, output from our spot detector tool and H&E stained images. 
+
+```{r, eval=FALSE}
+
+#Load data from sample table
+infoTable <- read.table(paste(new,"STutility/inst/extdata", "testmetaData.csv", sep="/"), sep=";", header=T)
+
+```
+
+We have extensively tried different methods and workflows for handling ST data. While all roads lead to Rome, as of the date of this writing, we find the Seurat approach [https://satijalab.org/seurat/] to be the most suited for the data that we produce. Seurat is an R package designed for single-cell RNAseq data. Obviously, this deviates from the data that the ST technology currently produce, as the resolution on the array implies that each capture-spot consists of transcripts originating from multiple cells. Nevertheless, the characteristics of the data has been found to in large resemble that of a typical single-cell RNAseq experiment (har skulle man vilja ha en jamforelse? som del i pek?).   
+
+
+```{r}
+#remove later
+load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/testDatatoLoad.RData")
+
+```
+
+(ska vi inkludera MT check? https://www.nature.com/articles/s12276-018-0071-8 "Clustering is another useful method to detect low-quality cells by specifically identifying clusters that are enriched in mitochondrial (mt) genes. This approach is based on a study suggesting that mtDNA genes are unregulated65 and cytoplasmic RNA is lost when the cell membrane is ruptured." )
+
+```{r, eval=FALSE}
+
+#Create Seurat
+se <- prep.from.table(sampleTable=infoTable,
+                      spot.file=FALSE,
+                      transpose=F,
+                      topN=0, th.gene=50, th.spot=50,
+                      type="Seurat")
+
+
+```
+
+
+### How to handel plotting and tissue image background
+
+---
+
+The core of an ST experiment is the interplay between quantative RNAseq data and qualative image data. Working in R, the handling of image information and plotting of multiple samples can get a bit cumbersome, especially if the images are of higher resolution. Typically, we rarely find much use of plotting multiple samples togheter with the tissue images within this framework. Instead, the general tip is to perform the various plots using only the expression data, and when finding an result of interest that warrants further analysis- take out that sample and plot it individually togheter with the stained tissue image. 
+
+
+
+## Seurat transformation
+
+---
+
+Following the rationale expressed above, we transform the data according to the Seurat workflow. 
+
+```{r, eval=FALSE}
+
+se <- SCTransform(se, verbose = FALSE)
+
+```
+
+
+## QC
+
+---
+
+We recommend to do create some general plots and statistical views of the data before diving further into analysis. This will act as a sanity check on the obtained data, and can immediately reveal eventual artifacts as batch effects or missing data.
+
+In general, most QC plots can be plotted with/without the spatial information added, i.e. the number of unique transcripts can be viewed as a histogram with capture-spot frequences or, the data points could be plotted as a heatmap with there spatial coordinates. In general, the extra layer of information subject to the spatial component can add valuable information (e.g. is the lower gene count a regional artifact?). As such, it's recommended to prefearbly use this as a basis for plotting - "it doesn't hurt".
+
+### Scatter plots
+
+For the sake of argument, lets start with a plot which is not suitable for adding the spatial component. An overall scatterplot can act as a simple measure of reproducibility between replicates. Here we display four replicates of consequative sections. 
+
+```{r}
+Idents(se) <- "sample" #For labels
+avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample", assay="SCT")
+
+pairs(log(avg.exp$SCT), 
+      panel=qc.scatter, lower.panel = NULL)
+
+```
+
+Sample 1,2 and 3,4 seems to resemble each other to a higher degree respectiviely. Wheater or not this is a technical artifact or a biological true difference is something one would look into. In this case, we are probably experiencing a batch effect between different sub-arrays.  
+
+### Checking known expression patterns 
+
+If the experiment at hand involves tissue sections with well-defined anatomical structure, one of the most obvious sanity checks is to simply plot the expression values of structural marker genes which should be differentially expressed between the anatomical structures. An example of this is shown below on a MOB sample. From empirical evidence we know _a priori_ that [insert gene names] are expressed [insert region]. By examining the expression patterns of these known genes, we can also assess if there is any evidence for horizontal diffusion or contamination which would indicate an experimental failure. 
+
+This check is of course only possible if the tissue section(s) has/have such defined structure. Nevertheless, one could with a bit of imagination often perform this kind of checks even for more homogenous samples, e.g. "I know that this genes should definietly be present/not present in my sample" etc. 
+
+
+```{r}
+
+genelist <- c("geneA", "geneB", "geneC", "geneD", "geneE", "geneR", "geneT", "gene")
+
+ST.FeaturePlot(object=se,
+               features="percent.mt",
+               delim = "x|_",
+               group.by = "sample",
+               pt.size = 2,
+               dark.theme = T)
+
+```
+
+### RGB color space plots ... 
+
+```{r, fig.width=12, fig.height=12}
+
+se <- RunPCA(se, verbose = FALSE)
+ST.DimPlot(object=se,
+               dims = 1:10,
+               delim = "x|_",
+               group.by = "sample",
+               pt.size = 1,
+               dark.theme = T)
+
+```
+
+### Nr unique genes/transcripts
+
+```{r}
+
+qcSamples(se)
+
+```
+
+namna att diverse violin etc finns via seurat
+
+## Holistic view via Spatial Expression Histology
+
+---
+
+```{r}
+
+#ta med spara gene cluster tabeller etc
+```
+
+
+## Batch effects and how to act
+
+---
+
+```{r}
+
+#LL
+
+```
+
+## Clustering of regions - an overivew
+
+---
+
+```{r}
+
+#LL
+
+```
+
+## DEA analysis - How to find spatial relevant patterns
+
+---
+
+```{r}
+
+#TBC...
+
+```
+
+## Regional analysis - Supervised DEA
+
+---
+
+```{r}
+
+#Eventuellt interaktiv Rplot
+
+```
+
+## General  
+
+### Plotting and saving of images 
+
+### Writing tables of data
+
+

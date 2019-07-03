@@ -16,6 +16,9 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, blend = FALSE,
 
 \item{dims}{Dimensions to plot, must numeric vectoir specifying number of dimensions to plot}
 
+\item{group.by}{Name of a metadata column to facet plot by (deault is "sample"). Note that if group.by is not specified,
+it will be assumed that only one ST array sample is present in the Seurat object.}
+
 \item{spots}{Vector of spots to plot (default is all spots)}
 
 \item{blend}{Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)}
