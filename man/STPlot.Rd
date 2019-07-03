@@ -6,7 +6,7 @@
 \usage{
 STPlot(data, data.type, group.by, shape.by, variable, pt.size = 1,
   palette = "MaYl", rev.cols = F, ncol = NULL, spot.colors = NULL,
-  center.zero = T, plot.title = NULL, ...)
+  center.zero = T, center.tissue = F, plot.title = NULL, ...)
 }
 \arguments{
 \item{data}{data.frame containing (x, y) coordinates, a group vector and a continuous variable vector}
@@ -30,6 +30,10 @@ STPlot(data, data.type, group.by, shape.by, variable, pt.size = 1,
 \item{spot.colors}{character vector woth color names that overrides default coloring with ggplot2}
 
 \item{center.zero}{should the colorscale be centered around 0? Set to TRUE for scaled data}
+
+\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
+
+\item{plot.title}{Add title to plot}
 
 \item{...}{parameters passed to geom_point()}
 }
