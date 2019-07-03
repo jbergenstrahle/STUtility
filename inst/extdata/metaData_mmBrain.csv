@@ -1,0 +1,9 @@
+samples;type;spotfiles;imgs
+~/STUtility/inst/extdata/counts/Hippo1.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo1.tsv.gz;~/STUtility/inst/extdata/counts/Hippo1.jpg
+~/STUtility/inst/extdata/counts/Hippo2.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo2.tsv.gz;~/STUtility/inst/extdata/counts/Hippo2.jpg
+~/STUtility/inst/extdata/counts/Hippo3.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo3.tsv.gz;~/STUtility/inst/extdata/counts/Hippo3.jpg
+~/STUtility/inst/extdata/counts/Hippo4.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo4.tsv.gz;~/STUtility/inst/extdata/counts/Hippo4.jpg
+~/STUtility/inst/extdata/counts/Hippo5.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo5.tsv.gz;~/STUtility/inst/extdata/counts/Hippo5.jpg
+~/STUtility/inst/extdata/counts/Hippo6.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo6.tsv.gz;~/STUtility/inst/extdata/counts/Hippo6.jpg
+~/STUtility/inst/extdata/counts/Hippo7.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo7.tsv.gz;~/STUtility/inst/extdata/counts/Hippo7.jpg
+~/STUtility/inst/extdata/counts/Hippo8.tsv.gz;Mouse;~/STUtility/inst/extdata/counts/alignment_table_Hippo8.tsv.gz;~/STUtility/inst/extdata/counts/Hippo8.jpg

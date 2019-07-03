@@ -124,7 +124,7 @@ ST.DimPlot(object = cm, dims = 1:4, dark.theme = T)
 
 ### 
 
-```{r, fig.width = 10, fig.height = 10}
+```{r, fig.width = 10, fig.height = 9}
 
 
 ```
@@ -136,21 +136,14 @@ avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "samp
 pairs(avg.exp$SCT)
 
 ST.FeaturePlot(object = cm, 
-               features = c("Nrgn", "Penk", "Cck"), 
-               group.by = "sample", 
-               delim = "x|_", 
-               center.zero = F, 
-               rev.cols = T, 
-               dark.theme = T,
+               features = c("Nrgn", "Penk", "Cck"),
+               dark.theme = T, 
                ncol = 4, 
                grid.ncol = 1, 
-               blend = T)
-
-```
-
-```{r}
-ST.FeaturePlot(object = cm, features = c("Nrgn", "Penk", "Cck"), 
-               dark.theme = T, ncol = 4, grid.ncol = 1, center.zero = T, palette = "RdBu", rev.cols = F, center.tissue = T)
+               center.zero = F, 
+               palette = "the.cols", 
+               rev.cols = T, 
+               center.tissue = T)
 
 ```
 

@@ -36,12 +36,25 @@ parse.spot.file = function(path, delim="\t", ...) {
 #' @param topN OPTIONAL: Filter out the top most expressed genes
 #' @param th.gene OPTIONAL: Filter genes with total counts across all samples below threshold
 #' @param th.spot OPTIONAL: Filter `"capture-spots"` with total count values below threshold
+#' @param ... parameters passed to \code{\link{CreateSeuratObejct}}
+#'
+#' @inheritParams ConvertGeneNames
+#'
 #' @export
 
-prep.from.table <- function(sampleTable, transpose=TRUE,
-                           topN=0, th.gene=0, th.spot=0,
-                           object.type = "Seurat",
-                           spot.file = TRUE,  ...){
+prep.from.table <- function(
+  sampleTable,
+  transpose=TRUE,
+  topN=0,
+  th.gene=0,
+  th.spot=0,
+  object.type = "Seurat",
+  spot.file = TRUE,
+  annotation = NULL,
+  id.column = NULL,
+  replace.column = NULL,
+  ...
+){
   outObj = NULL
   counts <- list()
   spotFileData <- list()
@@ -56,13 +69,17 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
     cat(paste0("Loading ", path, "\n"))
     if(transpose==FALSE){
       counts[[path]] <- st.load.matrix(path)
-    }else{counts[[path]] <- t(st.load.matrix(path))}
+    } else{counts[[path]] <- t(st.load.matrix(path))}
 
     if(spot.file != FALSE){ #Remove spots outside of tissue
       spotsData <- as.data.frame(parse.spot.file(sampleTable[which(sampleTable$samples==path), "spotfiles"]))
-      spotsDataKeep <- paste(spotsData[which(spotsData$selected==1),]$x, spotsData[which(spotsData$selected==1),]$y, sep="x")
-      counts[[path]] <- counts[[path]][, c(spotsDataKeep)]
-      spotFileData[[i]] <- spotsData[which(spotsData$selected==1), ] #Save pixel coords etc
+      if ("selected" %in% colnames(spotsData)) {
+        spotsData <- subset(spotsData, selected == 1)
+      }
+      rownames(spotsData) <- paste(spotsData$x, spotsData$y, sep="x")
+      spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
+      counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+      spotFileData[[i]] <- spotsData #Save pixel coords etc
     }
 
     #pre-filter
@@ -103,19 +120,30 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
     idx <- idx + 1
   }
 
-  if(object.type=="Seurat"){
-    m <- CreateSeuratObject(counts = cnt)
-  }else{
-    m <- SingleCellExperiment(assays=list(counts=cnt))
+  if (spot.file) {
+    meta_data <- data.frame(sample = samples, ads_x = adj_x, ads_y = adj_y, pixel_x = pixelx, pixel_y = pixely, row.names = colnames(cnt), stringsAsFactors = F)
+  } else {
+    meta_data <- data.frame(sample = samples, row.names = colnames(cnt), stringsAsFactors = F)
   }
 
-  #add meta
-  m$sample <- samples
-  if(spot.file != FALSE){
-    m$pixel_x <- pixelx
-    m$pixel_y <- pixely
-    m$ads_x <- adj_x
-    m$ads_y <- adj_y
+  #----- Add metadata
+  metaData <- sampleTable[, -which(colnames(sampleTable) %in% c("samples", "spotfiles", "imgs")), drop = F]
+  if(!is.null(ncol(metaData)) & ncol(metaData) > 1){
+    for(column in colnames(metaData)){
+      meta_data[, column] <- metaData[samples, column]
+    }
+  }
+
+  if (!is.null(annotation)) {
+    id.column <- id.column %||% "gene_id"
+    replace.column <- id.column %||% "gene_name"
+    cnt <- ConvertGeneNames(cnt, annotation, id.column, replace.column)
+  }
+
+  if(object.type=="Seurat"){
+    m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
+  }else{
+    m <- SingleCellExperiment(assays=list(counts=cnt))
   }
 
   #Filter top genes
@@ -124,14 +152,7 @@ prep.from.table <- function(sampleTable, transpose=TRUE,
     m <- m[1:topN, ]
   }
 
-  #----- Add metadata
-  metaData <- sampleTable[, -which(colnames(sampleTable) %in% c("samples", "spotfiles", "imgs"))]
-  if(!is.null(ncol(metaData)) & ncol(metaData)>1){
-    for(column in colnames(metaData)){
-      #print(column)
-      m[[column]] <- metaData[samples, column]
-    }
-  }
+
   # ---- Add image paths
   m@tools <- list(imgs = sampleTable$imgs)
 
