@@ -7,6 +7,9 @@
 #' @param path Path to count files
 #' @param delim delimiter
 #' @param row.names set column as row.names
+#'
+#' @importFrom data.table fread
+#'
 #' @keywords internal
 
 st.load.matrix = function(path, delim="\t", row.names=1, ...) {
@@ -35,6 +38,7 @@ st.load.matrix = function(path, delim="\t", row.names=1, ...) {
 #' @param delim delimiter used to separate coordinates in expression matrix headers
 #' @param labels labels to use as suffix for the headers of each expression matrix
 #' @param sparse.matrix.fmt return mergedexpression matrix in dgCMatrix format to save memory
+#'
 #' @return merged expression matrix
 
 Merger <- function(
