@@ -127,6 +127,31 @@ se <- LoadImages(object = se)
 
 ```
 
+
+```{r}
+# TODO: Take care of warnings 
+
+se <- MaskImages(object = se, verbose = T)
+
+```
+
+```{r, fig.width=12, fig.height = 12}
+
+par(mar = c(0,0,0,0), mfrow = c(3, 3))
+
+for (rst in se@tools$rasters) {
+  plot(rst)
+}
+
+```
+
+```{r, fig.height = 6, fig.width = 12}
+
+FeatureOverlay(object = se, features = c("Nrgn", "Cck"), palette = "GrRd")
+
+```
+
+
 You can then look at the HE images for each sample using the ImagePlot() function. The raw images are not loaded but instead we store pointers to the image files to save memory. This allows us to change the size of the working images whenever we want to, but it is important to know that the pointers will die between R sessions. The ImagePlot will therefore return a Seurat object with updated pointers to make sure that the pointers are kept alive if you start a new session.
 
 
