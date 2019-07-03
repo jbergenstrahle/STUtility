@@ -8,4 +8,6 @@ man/*
 .RData
 .Rhistory
 .DS_Store
-extdata/*
+inst/.DS_Store
+inst/extdata/.DS_Store
+#inst/extdata/counts/*
