@@ -6,7 +6,8 @@
 This function is a wrapper to create a complete S4 object with all the samples and metadata}
 \usage{
 prep.from.table(sampleTable, transpose = TRUE, topN = 0, th.gene = 0,
-  th.spot = 0, object.type = "Seurat", spot.file = TRUE, ...)
+  th.spot = 0, object.type = "Seurat", spot.file = TRUE,
+  annotation = NULL, id.column = NULL, replace.column = NULL, ...)
 }
 \arguments{
 \item{sampleTable}{table with paths to count files and metadata}
@@ -19,6 +20,15 @@ coordiantes as rows.}
 \item{th.gene}{OPTIONAL: Filter genes with total counts across all samples below threshold}
 
 \item{th.spot}{OPTIONAL: Filter `"capture-spots"` with total count values below threshold}
+
+\item{annotation}{data.frame with one id.column containing the current gene ids and a matching replace
+column containing the new gene ids}
+
+\item{id.column}{character vector of unique gene ids of the same type as in the Seurat object}
+
+\item{replace.column}{character vector of unique gene ids to replace the old ids}
+
+\item{...}{parameters passed to \code{\link{CreateSeuratObejct}}}
 }
 \description{
 Create S4 object from info table.

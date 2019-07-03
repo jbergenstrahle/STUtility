@@ -5,11 +5,11 @@
 \title{Visualize 'features' on an ST array grid}
 \usage{
 ST.FeaturePlot(object, features, spots = NULL, min.cutoff = NA,
-  max.cutoff = NA, slot = "scale.data", blend = FALSE, pt.size = 1,
-  group.by = NULL, shape.by = NULL, palette = NULL,
-  rev.cols = FALSE, dark.theme = FALSE, ncol = NULL, delim = NULL,
+  max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
+  shape.by = NULL, palette = NULL, rev.cols = FALSE,
+  dark.theme = FALSE, ncol = NULL, delim = NULL,
   return.plot.list = FALSE, grid.ncol = NULL, center.zero = FALSE,
-  channels.use = NULL, center.tissue = FALSE, ...)
+  channels.use = NULL, center.tissue = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -30,8 +30,6 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 
 \item{pt.size}{Adjust point size for plotting}
 
-\item{group.by}{Name of a metadata column to facet plot by (deault is sampleID)}
-
 \item{shape.by}{If NULL, all points are circles (default). You can specify any
 cell attribute (that can be pulled with FetchData) allowing for both
 different colors and different shapes on cells}
@@ -51,6 +49,8 @@ different colors and different shapes on cells}
 \item{center.zero}{should the colorscale be centered around 0? Set to TRUE for scaled data}
 
 \item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
+
+\item{verbose}{Print messages}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }
