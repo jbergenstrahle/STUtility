@@ -5,7 +5,7 @@
 \title{==============  Spatial Expression Histology ====================================}
 \usage{
 ST.seh(se, n.clust = 10, n.top = 0, log.freq = TRUE, n.start = 10,
-  n.iter = 10, use.moduleScore = FALSE, use.scale = TRUE)
+  n.iter = 10, use.moduleScore = FALSE, use.scale = TRUE, ...)
 }
 \arguments{
 \item{se}{s4 object}
