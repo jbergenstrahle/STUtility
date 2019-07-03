@@ -6,9 +6,10 @@
 \usage{
 ST.FeaturePlot(object, features, spots = NULL, min.cutoff = NA,
   max.cutoff = NA, slot = "scale.data", blend = FALSE, pt.size = 1,
-  group.by = NULL, shape.by = NULL, palette = NULL, rev.cols = F,
-  dark.theme = F, ncol = NULL, delim = NULL, return.plot.list = F,
-  grid.ncol = NULL, center.zero = F, channels.use = NULL, ...)
+  group.by = NULL, shape.by = NULL, palette = NULL,
+  rev.cols = FALSE, dark.theme = FALSE, ncol = NULL, delim = NULL,
+  return.plot.list = FALSE, grid.ncol = NULL, center.zero = FALSE,
+  channels.use = NULL, center.tissue = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -48,6 +49,8 @@ different colors and different shapes on cells}
 \item{grid.ncol}{Number of columns for display when combining plots}
 
 \item{center.zero}{should the colorscale be centered around 0? Set to TRUE for scaled data}
+
+\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }

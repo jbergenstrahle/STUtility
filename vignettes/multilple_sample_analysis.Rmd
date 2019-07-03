@@ -23,7 +23,8 @@ Along the different subsections, references to publications are given to display
 
 ```{r}
 library(STutility)
-
+library(Seurat)
+library(ggplot2)
 ```
 
 ## Short background of the Spatial Transcriptomics method 
@@ -100,10 +101,8 @@ The core of an ST experiment is the interplay between quantative RNAseq data and
 Following the rationale expressed above, we transform the data according to the Seurat workflow. 
 
 ```{r, eval=FALSE}
-# store mitochondrial percentage in object meta data
-se <- PercentageFeatureSet(se, pattern = "^MT-", col.name = "percent.mt")
-# run sctransform
-se <- SCTransform(se, vars.to.regress = "percent.mt", verbose = FALSE)
+
+se <- SCTransform(se, verbose = FALSE)
 
 ```
 
@@ -114,18 +113,22 @@ se <- SCTransform(se, vars.to.regress = "percent.mt", verbose = FALSE)
 
 We recommend to do create some general plots and statistical views of the data before diving further into analysis. This will act as a sanity check on the obtained data, and can immediately reveal eventual artifacts as batch effects or missing data.
 
+In general, most QC plots can be plotted with/without the spatial information added, i.e. the number of unique transcripts can be viewed as a histogram with capture-spot frequences or, the data points could be plotted as a heatmap with there spatial coordinates. In general, the extra layer of information subject to the spatial component can add valuable information (e.g. is the lower gene count a regional artifact?). As such, it's recommended to prefearbly use this as a basis for plotting - "it doesn't hurt".
+
 ### Scatter plots
 
-By looking at ...
-
+For the sake of argument, lets start with a plot which is not suitable for adding the spatial component. An overall scatterplot can act as a simple measure of reproducibility between replicates. Here we display four replicates of consequative sections. 
 
 ```{r}
-library(Seurat)
-Idents(se) <- "sample"
-avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
-pairs(log(avg.exp$SCT))
+Idents(se) <- "sample" #For labels
+avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample", assay="SCT")
+
+pairs(log(avg.exp$SCT), 
+      panel=qc.scatter, lower.panel = NULL)
 
 ```
+
+Sample 1,2 and 3,4 seems to resemble each other to a higher degree respectiviely. Wheater or not this is a technical artifact or a biological true difference is something one would look into. In this case, we are probably experiencing a batch effect between different sub-arrays.  
 
 ### Checking known expression patterns 
 
@@ -133,8 +136,10 @@ If the experiment at hand involves tissue sections with well-defined anatomical 
 
 This check is of course only possible if the tissue section(s) has/have such defined structure. Nevertheless, one could with a bit of imagination often perform this kind of checks even for more homogenous samples, e.g. "I know that this genes should definietly be present/not present in my sample" etc. 
 
+
 ```{r}
-library(ggplot2)
+
+genelist <- c("geneA", "geneB", "geneC", "geneD", "geneE", "geneR", "geneT", "gene")
 
 ST.FeaturePlot(object=se,
                features="percent.mt",
@@ -145,16 +150,16 @@ ST.FeaturePlot(object=se,
 
 ```
 
-### RGB color space plots .... 
+### RGB color space plots ... 
 
-```{r}
+```{r, fig.width=12, fig.height=12}
 
 se <- RunPCA(se, verbose = FALSE)
 ST.DimPlot(object=se,
                dims = 1:10,
                delim = "x|_",
                group.by = "sample",
-               pt.size = 2,
+               pt.size = 1,
                dark.theme = T)
 
 ```
@@ -163,6 +168,7 @@ ST.DimPlot(object=se,
 
 ```{r}
 
+qcSamples(se)
 
 ```
 
