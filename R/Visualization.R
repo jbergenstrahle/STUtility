@@ -440,7 +440,8 @@ STPlot <- function(
 #' Colors spots on an an ST array grid according to a dimension
 #' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
 #'
-#' @param index Index specifying the sample that you want to use for plotting
+#' @param sample.index Index specifying the sample that you want to use for plotting
+#' @param type Image type to plot on
 #' @param slot Which slot to pull expression data from?
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
@@ -456,6 +457,7 @@ DimOverlay <- function(
   object,
   dims = c(1:2),
   sample.index = 1,
+  type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
   blend = FALSE,
@@ -480,14 +482,20 @@ DimOverlay <- function(
     default.reductions[reduc.use]
   }
 
-  # Check that LoadImages has been run
-  if (!all(c("imgs", "rasters", "pointers") %in% names(object@tools))) stop("You need to run LoadImages() before using FeatureOverlay()")
+  type <- type %||% {
+    choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
+    choices[min(as.integer(na.omit(match(names(object@tools), choices))))]
+  }
+
+  # Check that selected image type is present in Seurat object
+  msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
+  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"))
 
   # Check that image pointer is alive)
-  if (!sample.index %in% names(object@tools$rasters)) {
+  if (!sample.index %in% names(object@tools[[type]])) {
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
-  image <- object@tools$rasters[[sample.index]]
+  image <- object@tools[[type]][[sample.index]]
   imdims <- object@tools$dims[[sample.index]]
 
   group.var = "sample"
@@ -521,10 +529,12 @@ DimOverlay <- function(
   }
 
   # Obtain array coordinates
-  if (all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]][spots, ], nm = c("x", "y")))
+  px.ids <- ifelse(rep(type %in% c("raw", "masked", "masked.masks"), 2), c("pixel_x", "pixel_y"), c("warped_x", "warped_y"))
+
+  if (all(px.ids %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[px.ids]][spots, ], nm = c("x", "y")))
   } else {
-    stop("pixel coordinates are not present in meta data.", call. = FALSE)
+    stop(paste0(paste(px.ids, collapse = " and "), " coordinates are not present in meta data."), call. = FALSE)
   }
 
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
@@ -537,7 +547,7 @@ DimOverlay <- function(
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 1):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, palette,
+    plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, palette,
                          rev.cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), ...)
     if (dark.theme) {
@@ -552,7 +562,7 @@ DimOverlay <- function(
 
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, palette,
+      plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, palette,
                            rev.cols, ncol = NULL, spot.colors, center.zero, ...)
 
       if (dark.theme) {
@@ -581,7 +591,8 @@ DimOverlay <- function(
 #' Colors spots on an an ST array grid according to a 'feature'
 #' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
 #'
-#' @param index Index specifying the sample that you want to use for plotting
+#' @param sample.index Index specifying the sample that you want to use for plotting
+#' @param type Image type to plot on
 #' @param slot Which slot to pull expression data from?
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
@@ -597,6 +608,7 @@ FeatureOverlay <- function(
   object,
   features,
   sample.index = 1,
+  type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
   slot = "data",
@@ -614,14 +626,21 @@ FeatureOverlay <- function(
   verbose = FALSE,
   ...
 ) {
-  # Check that LoadImages has been run
-  if (!all(c("imgs", "rasters", "pointers") %in% names(object@tools))) stop("You need to run LoadImages() before using FeatureOverlay()")
+
+  type <- type %||% {
+    choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
+    choices[min(as.integer(na.omit(match(names(object@tools), choices))))]
+  }
+
+  # Check that selected image type is present in Seurat object
+  msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
+  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"))
 
   # Check that image pointer is alive)
-  if (!sample.index %in% names(object@tools$rasters)) {
+  if (!sample.index %in% names(object@tools[[type]])) {
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
-  image <- object@tools$rasters[[sample.index]]
+  image <- object@tools[[type]][[sample.index]]
   imdims <- object@tools$dims[[sample.index]]
 
   group.var = "sample"
@@ -658,10 +677,12 @@ FeatureOverlay <- function(
   }
 
   # Obtain array coordinates
-  if (all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]][spots, ], nm = c("x", "y")))
+  px.ids <- ifelse(rep(type %in% c("raw", "masked", "masked.masks"), 2), c("pixel_x", "pixel_y"), c("warped_x", "warped_y"))
+
+  if (all(px.ids %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[px.ids]][spots, ], nm = c("x", "y")))
   } else {
-    stop("pixel coordinates are not present in meta data.", call. = FALSE)
+    stop(paste0(paste(px.ids, collapse = " and "), " coordinates are not present in meta data."), call. = FALSE)
   }
 
   if (ncol(x = data) < 3) {
@@ -802,6 +823,137 @@ ST.ImagePlot <- function(
       scale_color_gradientn(colours = cols)
   }
   return(p)
+}
+
+#' Apply DimOverlay to multiple samples
+#'
+#' @param object Seurat object
+#' @param sampleids Names of samples to plot
+#' @param method Display method
+#' @param ncols Number of columns in output image
+#' @param ... Parameters passed to DimOverlay
+#' @inheritParams DimOverlay
+#'
+#' @export
+#'
+
+MultiDimOverlay <- function(
+  object,
+  sampleids,
+  method = "viewer",
+  ncols = NULL,
+  dims = c(1:2),
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  blend = FALSE,
+  pt.size = 1,
+  reduction = NULL,
+  shape.by = NULL,
+  palette = NULL,
+  rev.cols = FALSE,
+  dark.theme = FALSE,
+  center.zero = FALSE,
+  channels.use = NULL,
+  verbose = FALSE,
+  ...
+) {
+
+  ncols <- ncols %||% round(sqrt(length(x = sampleids)))
+  nrows <- round(length(x = sampleids)/ncols)
+
+  p.list <- lapply(sampleids, function(i) {
+    DimOverlay(object, dims = dims, sample.index = i, type = type, min.cutoff = min.cutoff, max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, reduction = reduction, shape.by = shape.by, palette = palette, rev.cols = rev.cols, dark.theme = dark.theme, delim = NULL, return.plot.list = FALSE, grid.ncol = NULL, center.zero = center.zero, channels.use = channels.use, verbose = verbose, ... = ...)
+  })
+
+  tmp.file <- tempfile(pattern = "", fileext = ".png")
+
+  colf <- round(sqrt(length(x = dims)))
+  colr <- round(length(x = dims)/ncols)
+
+  png(width = object@tools$xdim*ncols*colf, height = object@tools$xdim*nrows*colr, file = tmp.file)
+  par(mar = c(0, 0, 0, 0))
+  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
+  dev.off()
+
+  p <- image_read(tmp.file)
+
+  if (method == "viewer") {
+    print(p)
+    unlink(tmp.file)
+  } else if (method == "raster") {
+    par(mar = c(0, 0, 0, 0))
+    plot(as.raster(p))
+    unlink(tmp.file)
+  } else {
+    stop(paste0("Invalid method ", method), call. = FALSE)
+  }
+}
+
+
+#' Apply FeatureOverlay to multiple samples
+#'
+#' @param object Seurat object
+#' @param sampleids Names of samples to plot
+#' @param method Display method
+#' @param ncols Number of columns in output image
+#' @param ... Parameters passed to DimOverlay
+#' @inheritParams FeatureOverlay
+#'
+#' @export
+#'
+
+MultiFeatureOverlay <- function(
+  object,
+  sampleids,
+  method = "viewer",
+  ncols = NULL,
+  features,
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  blend = FALSE,
+  pt.size = 2,
+  shape.by = NULL,
+  palette = NULL,
+  rev.cols = FALSE,
+  dark.theme = FALSE,
+  center.zero = FALSE,
+  channels.use = NULL,
+  verbose = FALSE,
+  ...
+) {
+
+  ncols <- ncols %||% round(sqrt(length(x = sampleids)))
+  nrows <- round(length(x = sampleids)/ncols)
+
+  p.list <- lapply(sampleids, function(s) {
+    FeatureOverlay(object, features = features, sample.index = s, type = type, min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot, blend = blend, pt.size = pt.size, shape.by = shape.by, palette = palette, rev.cols = rev.cols, dark.theme = dark.theme, delim = NULL, return.plot.list = FALSE, grid.ncol = NULL, center.zero = center.zero, channels.use = channels.use, verbose = verbose, ... = ...)
+  })
+
+  tmp.file <- tempfile(pattern = "", fileext = ".png")
+
+  colf <- round(sqrt(length(x = dims)))
+  colr <- round(length(x = dims)/ncols)
+
+  png(width = object@tools$xdim*ncols*colf, height = object@tools$xdim*nrows*colr, file = tmp.file)
+  par(mar = c(0, 0, 0, 0))
+  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
+  dev.off()
+
+  p <- image_read(tmp.file)
+
+  if (method == "viewer") {
+    print(p)
+    unlink(tmp.file)
+  } else if (method == "raster") {
+    par(mar = c(0, 0, 0, 0))
+    plot(as.raster(p))
+    unlink(tmp.file)
+  } else {
+    stop(paste0("Invalid method ", method), call. = FALSE)
+  }
 }
 
 

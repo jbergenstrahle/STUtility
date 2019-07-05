@@ -1,4 +1,3 @@
-#' @import dplyr magrittr
 #' @import Matrix
 "_PACKAGE"
 
@@ -61,6 +60,10 @@ qcGenes <- function(
 #' @param object expression matrix with spots in columns and genes in rows or Seurat object
 #' @param delim delimiter
 #' @param labels character vector with labels corresponding to dataset IDs in merged expression matrix [optional]
+#'
+#' @importFrom magrittr %>%
+#' @importFrom dplyr summarize group_by
+#'
 #' @return data.frame with quality metrics per sample
 
 qcSamples <- function(
