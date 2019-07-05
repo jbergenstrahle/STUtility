@@ -1,4 +1,3 @@
-#' @importFrom data.table fread
 #' @import Matrix
 "_PACKAGE"
 

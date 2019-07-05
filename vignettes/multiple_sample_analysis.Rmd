@@ -109,6 +109,8 @@ The core of an ST experiment is the interplay between quantative RNAseq data and
 For example, we can visualize the number of RNA features and RNA counts on the ST array coordinates and quickly verify where we capture more material from the tissue.
 
 ```{r, fig.height=4, fig.width=12}
+# TODO: check warning message
+
 ST.FeaturePlot(object = se, 
                features = c("nFeature_RNA", "nCount_RNA"), 
                palette = "GrRd",
@@ -128,12 +130,38 @@ se <- LoadImages(object = se)
 ```
 
 
+
 ```{r}
 # TODO: Take care of warnings 
 
 se <- MaskImages(object = se, verbose = T)
 
 ```
+
+Example of how you can apply individual transformations to images
+
+
+```{r, fig.width=12, fig.height=12}
+# TODO: Take care of warnings 
+ImagePlot(se, method = "raster", type = "masked")
+
+# Mirror image number 5 along y axis
+transforms <- list("5" = list("mirror.y" = TRUE))
+
+se <- WarpImages(object = se, transforms)
+
+ImagePlot(se, method = "raster")
+
+```
+
+```{r}
+
+FeatureOverlay(se, features = "Nrgn")
+
+```
+
+
+
 
 ```{r, fig.width=12, fig.height = 12}
 
