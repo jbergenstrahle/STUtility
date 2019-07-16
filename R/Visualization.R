@@ -489,13 +489,13 @@ DimOverlay <- function(
 
   # Check that selected image type is present in Seurat object
   msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
-  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"))
+  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"), call. = FALSE)
 
   # Check that image pointer is alive)
   if (!sample.index %in% names(object@tools[[type]])) {
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
-  image <- object@tools[[type]][[sample.index]]
+  image <- as.raster(image_annotate(image_read(object@tools[[type]][[sample.index]]), text = paste(sample.index), size = round(object@tools$xdim/10)))
   imdims <- object@tools$dims[[sample.index]]
 
   group.var = "sample"
@@ -634,13 +634,13 @@ FeatureOverlay <- function(
 
   # Check that selected image type is present in Seurat object
   msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
-  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"))
+  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"), call. = FALSE)
 
   # Check that image pointer is alive)
   if (!sample.index %in% names(object@tools[[type]])) {
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
-  image <- object@tools[[type]][[sample.index]]
+  image <- as.raster(image_annotate(image_read(object@tools[[type]][[sample.index]]), text = paste(sample.index), size = round(object@tools$xdim/10)))
   imdims <- object@tools$dims[[sample.index]]
 
   group.var = "sample"
@@ -868,8 +868,8 @@ MultiDimOverlay <- function(
 
   tmp.file <- tempfile(pattern = "", fileext = ".png")
 
-  colf <- round(sqrt(length(x = dims)))
-  colr <- round(length(x = dims)/ncols)
+  colf <- ceiling(sqrt(length(x = dims)))
+  colr <- round(length(x = dims)/colf)
 
   png(width = object@tools$xdim*ncols*colf, height = object@tools$xdim*nrows*colr, file = tmp.file)
   par(mar = c(0, 0, 0, 0))
@@ -929,13 +929,19 @@ MultiFeatureOverlay <- function(
   nrows <- round(length(x = sampleids)/ncols)
 
   p.list <- lapply(sampleids, function(s) {
-    FeatureOverlay(object, features = features, sample.index = s, type = type, min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot, blend = blend, pt.size = pt.size, shape.by = shape.by, palette = palette, rev.cols = rev.cols, dark.theme = dark.theme, delim = NULL, return.plot.list = FALSE, grid.ncol = NULL, center.zero = center.zero, channels.use = channels.use, verbose = verbose, ... = ...)
+    FeatureOverlay(object, features = features, sample.index = s, type = type,
+                   min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
+                   blend = blend, pt.size = pt.size, shape.by = shape.by,
+                   palette = palette, rev.cols = rev.cols, dark.theme = dark.theme,
+                   delim = NULL, return.plot.list = FALSE, grid.ncol = NULL,
+                   center.zero = center.zero, channels.use = channels.use,
+                   verbose = verbose, ... = ...)
   })
 
   tmp.file <- tempfile(pattern = "", fileext = ".png")
 
-  colf <- round(sqrt(length(x = dims)))
-  colr <- round(length(x = dims)/ncols)
+  colf <- ceiling(sqrt(length(x = features)))
+  colr <- round(length(x = features)/colf)
 
   png(width = object@tools$xdim*ncols*colf, height = object@tools$xdim*nrows*colr, file = tmp.file)
   par(mar = c(0, 0, 0, 0))
