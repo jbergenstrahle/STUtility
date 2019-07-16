@@ -88,8 +88,6 @@ LoadImages <- function(
 }
 
 
-# TODO: label raster images, why are images black when put into viewer? Compare with warpimages return ...
-
 #' Function used to plot HE images obtained with \code{\link{LoadImages}}
 #'
 #' @param object Seurat object
