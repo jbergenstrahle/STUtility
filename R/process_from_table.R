@@ -34,8 +34,6 @@ parse.spot.file = function(path, delim="\t", ...) {
 #' @param transpose set TRUE if count files are in the form of genes as columns and spatial
 #' coordiantes as rows.
 #' @param topN OPTIONAL: Filter out the top most expressed genes
-#' @param th.gene OPTIONAL: Filter genes with total counts across all samples below threshold
-#' @param th.spot OPTIONAL: Filter `"capture-spots"` with total count values below threshold
 #' @param ... parameters passed to \code{\link{CreateSeuratObejct}}
 #'
 #' @inheritParams ConvertGeneNames
@@ -46,9 +44,6 @@ prep.from.table <- function(
   sampleTable,
   transpose=TRUE,
   topN=0,
-  th.gene=0,
-  th.spot=0,
-  object.type = "Seurat",
   spot.file = TRUE,
   annotation = NULL,
   id.column = NULL,
@@ -82,8 +77,6 @@ prep.from.table <- function(
       spotFileData[[i]] <- spotsData #Save pixel coords etc
     }
 
-    #pre-filter
-    counts[[path]] <- counts[[path]][rowSums(counts[[path]])>th.gene, colSums(counts[[path]])>th.spot]
     i=i+1
   }
 
@@ -140,11 +133,8 @@ prep.from.table <- function(
     cnt <- ConvertGeneNames(cnt, annotation, id.column, replace.column)
   }
 
-  if(object.type=="Seurat"){
-    m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
-  }else{
-    m <- SingleCellExperiment(assays=list(counts=cnt))
-  }
+
+  m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
 
   #Filter top genes
   if (topN > 0){
