@@ -30,9 +30,12 @@ parse.spot.file = function(path, delim="\t", ...) {
 #' Create S4 object from info table.
 #' This function is a wrapper to create a complete S4 object with all the samples and metadata
 #'
-#' @param sampleTable table with paths to count files and metadata
+#' @param infotable table with paths to count files and metadata
 #' @param transpose set TRUE if count files are in the form of genes as columns and spatial
 #' coordiantes as rows.
+#' @param min.gene.count filter away genes that has a total read count below this threshold
+#' @param min.gene.spots filter away genes that is not expressed below this number of capture spots
+#' @param min.spot.count filter away capture spots that contains a total read count below this threshold
 #' @param topN OPTIONAL: Filter out the top most expressed genes
 #' @param ... parameters passed to \code{\link{CreateSeuratObejct}}
 #'
@@ -41,9 +44,12 @@ parse.spot.file = function(path, delim="\t", ...) {
 #' @export
 
 prep.from.table <- function(
-  sampleTable,
+  infotable,
   transpose=TRUE,
   topN=0,
+  min.gene.count = 0,
+  min.gene.spots = 0,
+  min.spot.count = 0,
   spot.file = TRUE,
   annotation = NULL,
   id.column = NULL,
@@ -53,7 +59,7 @@ prep.from.table <- function(
   outObj = NULL
   counts <- list()
   spotFileData <- list()
-  countPaths <- sampleTable[,"samples"]
+  countPaths <- infotable[,"samples"]
   i=1
 
   if(spot.file != FALSE){
@@ -67,7 +73,7 @@ prep.from.table <- function(
     } else{counts[[path]] <- t(st.load.matrix(path))}
 
     if(spot.file != FALSE){ #Remove spots outside of tissue
-      spotsData <- as.data.frame(parse.spot.file(sampleTable[which(sampleTable$samples==path), "spotfiles"]))
+      spotsData <- as.data.frame(parse.spot.file(infotable[which(infotable$samples==path), "spotfiles"]))
       if ("selected" %in% colnames(spotsData)) {
         spotsData <- subset(spotsData, selected == 1)
       }
@@ -120,7 +126,7 @@ prep.from.table <- function(
   }
 
   #----- Add metadata
-  metaData <- sampleTable[, -which(colnames(sampleTable) %in% c("samples", "spotfiles", "imgs")), drop = F]
+  metaData <- infotable[, -which(colnames(infotable) %in% c("samples", "spotfiles", "imgs")), drop = F]
   if(!is.null(ncol(metaData)) & ncol(metaData) > 1){
     for(column in colnames(metaData)){
       meta_data[, column] <- metaData[samples, column]
@@ -133,6 +139,11 @@ prep.from.table <- function(
     cnt <- ConvertGeneNames(cnt, annotation, id.column, replace.column)
   }
 
+  # ---- pre filtering
+
+  keep.genes <- rowSums(cnt)>=min.gene.count &
+    apply(cnt, 1, function(i) sum(i > 0)) > min.gene.spots
+  keep.spots <- colSums(cnt)>=min.spot.count
 
   m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
 
@@ -144,7 +155,7 @@ prep.from.table <- function(
 
 
   # ---- Add image paths
-  m@tools <- list(imgs = sampleTable$imgs)
+  m@tools <- list(imgs = infotable$imgs)
 
   cat(paste("After filtering the dimensions of the experiment is: "))
   print(dim(m))
