@@ -82,6 +82,7 @@ ST.DimPlot <- function(
   palette <- palette %||% {
     palette <- subset(palette.info, category == "div")$palette[1]
   }
+  print(palette)
 
   # Check that the number of dimensions are 2 or three if blending is active
   if (blend & !length(x = dims) %in% c(2, 3)) {
@@ -106,14 +107,19 @@ ST.DimPlot <- function(
   }
 
   # Obtain array coordinates
-  if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
+  if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
+    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
+  } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
     data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
+    xlim <- ylim <- NULL
   } else {
     if(is.null(delim)) {
       stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
     }
     coords <- GetCoords(colnames(object), delim)
     data <- cbind(data, coords[, c("x", "y")])
+    xlim <- ylim <- NULL
   }
 
   # Scale data values
@@ -131,7 +137,7 @@ ST.DimPlot <- function(
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- STPlot(data, data.type = "numeric", group.by, shape.by, NULL,
-                   pt.size, palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
+                   pt.size, palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, xlim, ylim,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
@@ -144,7 +150,7 @@ ST.DimPlot <- function(
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d, pt.size,
-                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, ...)
+                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -262,14 +268,19 @@ ST.FeaturePlot <- function(
   }
 
   # Obtain array coordinates
-  if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
+  if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
+    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
+  } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
     data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
+    xlim <- ylim <- NULL
   } else {
     if(is.null(delim)) {
-      stop("adjusted coordinates are not present in meta data and delimiter (delim) is missing ...", call. = FALSE)
+      stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
     }
     coords <- GetCoords(colnames(object), delim)
     data <- cbind(data, coords[, c("x", "y")])
+    xlim <- ylim <- NULL
   }
 
   if (ncol(x = data) < 3) {
@@ -296,7 +307,7 @@ ST.FeaturePlot <- function(
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- STPlot(data, data.type, group.by, shape.by, NULL, pt.size,
                    palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
-                   plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), ...)
+                   plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), xlim, ylim, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -308,7 +319,7 @@ ST.FeaturePlot <- function(
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
       plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
-                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, ...)
+                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -339,7 +350,8 @@ ST.FeaturePlot <- function(
 #' @param spot.colors character vector woth color names that overrides default coloring with ggplot2
 #' @param center.zero should the colorscale be centered around 0? Set to TRUE for scaled data
 #' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
-#' @param plot.title  Add title to plot
+#' @param plot.title Add title to plot
+#' @param xlim,ylim Set x/y-axis limits
 #' @param ... parameters passed to geom_point()
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn
@@ -360,17 +372,22 @@ STPlot <- function(
   center.zero = TRUE,
   center.tissue = F,
   plot.title = NULL,
+  xlim = NULL,
+  ylim = NULL,
   ...
 ) {
+
+  xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
+
   # Center tissue along y-axis
   if (center.tissue) {
     if (!is.null(group.by)) {
       data <- do.call(rbind, lapply(split(data, data[, group.by]), function(d) {
-        d[, "y"] <- d[, "y"] - median(d[, "y"]) + 32
+        d[, "y"] <- d[, "y"] - median(d[, "y"]) + ylim[2]/2
         return(d)
       }))
     } else {
-      data[, "y"] <- data[, "y"] - median(data[, "y"]) + 32
+      data[, "y"] <- data[, "y"] - median(data[, "y"]) + ylim[2]/2
     }
   }
 
@@ -386,26 +403,26 @@ STPlot <- function(
 
     # Add shape aesthetic and blend colors if blend is active
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", shape = shape.by), color = spot.colors, size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y"), color = spot.colors, size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y")), color = spot.colors, size = pt.size, ...)
     }
 
   } else {
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable, shape = shape.by), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = variable, shape = shape.by), size = pt.size, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "64 - y", color = variable), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = variable), size = pt.size, ...)
     }
 
   }
 
   # Add ST array dimensions
   p <- p +
-    scale_x_continuous(limits = c(0, 67)) +
-    scale_y_continuous(limits = c(0, 64)) +
+    scale_x_continuous(limits = xlim) +
+    scale_y_continuous(limits = ylim) +
     theme_void() +
     labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
 
@@ -419,7 +436,7 @@ STPlot <- function(
   if (center.zero) {
     p <- p +
       scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
-  } else if (data.type %in% c("character", "factor")) {
+  } else if (any(data.type %in% c("character", "factor"))) {
     p <- p +
       labs(color = variable)
   } else {
