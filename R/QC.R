@@ -102,10 +102,10 @@ qcSamples <- function(
 
 #' function(x, y, ...) used to plot the contents of each panel of the display in pairs function
 #'
-#' @param x
-#' @param y
+#' @param x x coordinate
+#' @param y y coordinate
 #' @return panel for pairs function
-#' @export internal
+#' @keywords internal
 
 qc.scatter <- function(x,y){
     dns <- densCols(x,y);
