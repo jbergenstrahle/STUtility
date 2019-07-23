@@ -142,13 +142,13 @@ Example of how you can apply individual transformations to images
 
 
 ```{r, fig.width=12, fig.height=12}
-# TODO: Take care of warnings 
-ImagePlot(se, method = "raster", type = "processed.masks")
+ImagePlot(se, method = "raster")
 
-# Mirror image number 5 along y axis
-transforms <- list("5" = list("mirror.y" = FALSE))
+se <- AlignImages(se, verbose = T)
+## Mirror image number 5 along y axis
+#transforms <- list("5" = list("mirror.y" = T, "mirror.x" = T))
 
-se <- WarpImages(object = se, transforms)
+#se <- WarpImages(object = se, transforms)
 
 ImagePlot(se, method = "raster")
 
@@ -164,22 +164,9 @@ MultiFeatureOverlay(se, features = "Nrgn", sampleids = paste0(1:8))
 
 
 
-
-```{r, fig.width=12, fig.height = 12}
-
-par(mar = c(0,0,0,0), mfrow = c(3, 3))
-
-for (rst in se@tools$raw) {
-  plot(rst)
-}
-
-```
-
-
-
 ```{r, fig.height = 6, fig.width = 12}
 
-FeatureOverlay(object = se, features = c("Nrgn", "Cck"), palette = "GrRd", sample.index = 5, type = "processed.masks")
+FeatureOverlay(object = se, features = c("Nrgn", "Cck"), palette = "GrRd", sample.index = 5)
 
 ```
 
@@ -190,8 +177,7 @@ You can then look at the HE images for each sample using the ImagePlot() functio
 ```{r, fig.height=6, fig.width=12}
 
 # Plot HE images
-par(mar = c(0, 0, 0, 0))
-ImagePlot(se, ncols = 4)
+ImagePlot(se, ncols = 3)
 
 ```
 
@@ -344,6 +330,7 @@ ST.DimPlot(object = se, dims = c(-3, -17, 28), blend = T, reduction = "ica", dar
 
 
 
+
 ## QC
 
 ---
@@ -369,11 +356,12 @@ If the experiment at hand involves tissue sections with well-defined anatomical 
 
 This check is of course only possible if the tissue section(s) has/have such defined structure. Nevertheless, one could with a bit of imagination often perform this kind of checks even for more homogenous samples, e.g. "I know that this genes should definietly be present/not present in my sample" etc. 
 
-```{r, fig.height=6, fig.width=6}
+```{r, fig.height=12, fig.width=12}
 library(ggplot2)
 
 ST.FeaturePlot(object=se,
-               features="Penk",
+               features="Nrgn",
+               palette = "GrRd",
                delim = "x|_",
                pt.size = 1,
                dark.theme = T)
@@ -382,15 +370,16 @@ ST.FeaturePlot(object=se,
 
 ### RGB color space plots .... 
 
-```{r, fig.height=6, fig.width=8}
+```{r, fig.height=6, fig.width=16}
 
-se <- RunPCA(se, verbose = FALSE)
-ST.DimPlot(object=se,
-               dims = 1:4,
-               group.by = "sample",
-               pt.size = 1,
-               dark.theme = T,
-               ncol = 1, grid.ncol = 4)
+#se <- RunPCA(se, verbose = FALSE)
+ST.DimPlot(object = se,
+           dims = 1:4,
+           reduction = "pca",
+           pt.size = 1,
+           dark.theme = T,
+           ncol = 2, 
+           grid.ncol = 4)
 
 ```
 
