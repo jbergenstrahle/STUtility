@@ -3,13 +3,13 @@
 #' @param object Seurat object
 #' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
 #' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 1000 pixels)
-#' @param verbose Print progress messages
+#' @param verbose Print messages
 #'
 #' @importFrom magick image_read
 #'
 #' @export
 
-LoadImages <- function(
+LoadImages <- function (
   object,
   image.paths = NULL,
   xdim = 400,
@@ -25,13 +25,11 @@ LoadImages <- function(
 
   # Check that a sample column exists in meta data
   if (!"sample" %in% colnames(object[[]])) {
-    if (verbose) cat(paste("No 'sample' column found in meta.data slot, assuming that only 1 sample is available. \n"))
     if (length(object@tools$imgs) > 1 & is.null(image.paths)) {
       stop(paste0("Column 'sample' is missing from meta.data and is required when more than one image path (#", length(object@tools$imgs), ") has been provided."), call. = F)
     } else {
       if (!is.null(image.paths)) {
         if (length(image.paths) == 1) {
-          if (verbose) cat(paste("Loading provided images: \n", paste(image.paths, collapse = "\n")))
           object@tools <- list(imgs = image.paths)
         } else {
           stop("Provided image.paths but there are more images than the number of samples (1). \nIf you have more than 1 sample, make sure to provide a 'sample' column in the meta.data slot.")
@@ -40,7 +38,6 @@ LoadImages <- function(
     }
     samplenames <- "1"
   } else {
-    if (verbose) cat(paste("'sample' column found in meta.data slot. Sample ids present in meta.data: \n", paste(unique(object[["sample", drop = T]]), collapse = ", "), "\n\n"))
     if (!is.null(image.paths)) {
       if (!length(x = unique(object[["sample"]]) == length(x = image.paths))) {
         stop(paste0("Number of images (",
@@ -48,7 +45,6 @@ LoadImages <- function(
                     ") does not match the number of samples (",
                     length(x = unique(object[["sample"]]), ")")), call. = F)
       } else {
-        if (verbose) cat(paste("Loading provided images: ", paste(image.paths, collapse = "\n")))
         object@tools <- list(imgs = image.paths)
       }
     }
@@ -62,39 +58,43 @@ LoadImages <- function(
   }
 
   imgs <- c()
+  dims <- list()
   for (i in seq_along(object@tools$imgs)) {
     path <- object@tools$imgs[i]
-    if (verbose) cat("Reading ", path , " for sample ", unique(object[["sample", drop = T]])[i], "\n", sep = "")
-    imgs <- c(imgs, image_read(path))
-  }
-
-  object@tools$dims <- setNames(lapply(imgs, image_info), nm = samplenames)
-
-  if (verbose) cat("\n")
-  imgs <- setNames(lapply(seq_along(imgs), function(i) {
+    if (verbose) cat("Reading ", path , " for sample ", unique(object[["sample", drop = T]])[i], " ... \n", sep = "")
+    im <- image_read(path)
+    dims <- c(dims, list(image_info(im)))
     if (verbose) {
-      info <- image_info(imgs[[i]])
+      info <- dims[[i]]
       width <- as.numeric(info[2]); height <- as.numeric(info[3])
       ydim <- round(height/(width/xdim))
       cat("Scaling down sample ", unique(object[["sample", drop = T]])[i], " image from ", paste(width, height, sep = "x"), " pixels to ", paste(xdim, ydim, sep = "x"), " pixels \n", sep = "")
     }
-    image_scale(imgs[[i]], paste0(xdim))
-  }), nm = samplenames)
+    im <- image_scale(im, paste0(xdim))
+    #tmpf <- tempfile()
+    #image_write(im, path = tmpf)
+    #im <- image_read(tmpf)
+    imgs <- c(imgs, list(as.raster(im)))
+  }
 
-  object@tools$raw <- lapply(imgs, as.raster)
+  object@tools$dims <- setNames(dims, nm = samplenames)
+  object@tools$raw <- setNames(imgs, nm = samplenames)
   object@tools$xdim <- xdim
 
   return(object)
 }
 
 
+# TODO: label raster images, why are images black when put into viewer? Compare with warpimages return ...
+
 #' Function used to plot HE images obtained with \code{\link{LoadImages}}
 #'
 #' @param object Seurat object
-#' @param index Image index
+#' @param indices Image indices to select
 #' @param type Specify which image to display [options: "raw", "masked" or "processed"]
 #' @param method Specify display method (raster or viewer).
 #' @param ncols Number of columns in output grid of images
+#' @param annotate Will put a unique id in the top left corner
 #' @inheritParams LoadImages
 #'
 #' @importFrom magick image_append image_annotate image_scale
@@ -103,61 +103,53 @@ LoadImages <- function(
 
 ImagePlot <- function(
   object,
-  index = NULL,
+  indices = NULL,
   type = NULL,
   method = "viewer",
-  ncols = NULL
+  ncols = NULL,
+  annotate = TRUE
 ) {
+
+  if (!is.null(type)) {
+    if (!type %in% names(object@tools)) stop(paste0("Invalid type ", type), call. = FALSE)
+  }
 
   type <- type %||% {
     choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
     choices[min(as.integer(na.omit(match(names(object@tools), choices))))]
   }
 
-  # Check that selected image type is present in Seurat object
-  msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
-  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using ImagePlot() on '", type, "' images"), call. = FALSE)
-
   images <- object@tools[[type]]
+  indices <- indices %||% {
+    seq_along(images)
+  }
 
-  # If no index is given, plot all images
-  if (is.null(index)) {
-    ncols <- ncols %||% round(sqrt(length(x = images)))
-    nrows <- round(length(x = images)/ncols)
-    images <- lapply(images, image_read)
+  if (any(!indices %in% 1:length(images))) stop("Image indices out of bounds: ", paste(setdiff(indices, 1:length(images)), collapse = ", "), call. = F)
+  images <- images[indices]
+
+  images <- lapply(images, image_read)
+  if (annotate) {
     images <- setNames(lapply(seq_along(images ), function(i) {image_annotate(images[[i]], text = names(images)[i], size = round(object@tools$xdim/10))}), nm = names(images))
+  }
+  ncols <- ncols %||% round(sqrt(length(x = images)))
+  nrows <- ceiling(length(x = images)/ncols)
 
-    if (method == "viewer") {
-      stack <- c()
-      for (i in 1:nrows) {
-        i <- i - 1
-        stack <- c(stack, image_append(Reduce(c, images[(i*ncols + 1):(i*ncols + ncols)])))
-      }
+  if (method == "viewer") {
+    stack <- c()
+    for (i in 1:nrows) {
+      i <- i - 1
+      stack <- c(stack, image_append(Reduce(c, images[(i*ncols + 1):(i*ncols + ncols)])))
+    }
 
-      final_img <- image_append(Reduce(c, stack), stack = T)
-      print(final_img)
-    } else if (method == "raster"){
-      graphics.off()
-      par(mar = c(0, 0, 0, 0), mfrow = c(nrows, ncols))
-      for (i in seq_along(images)) {
-        rst <- as.raster(images[[i]])
-        plot(rst)
-      }
-    } else {
-      stop(paste0("Invalid display method: ", method), call. = F)
+    final_img <- image_append(Reduce(c, stack), stack = T)
+    print(final_img)
+  } else if (method == "raster"){
+    par(mar = c(0, 0, 0, 0), mfrow = c(nrows, ncols))
+    for (rst in lapply(images, as.raster)) {
+      plot(rst)
     }
   } else {
-    if (!index %in% 1:length(images)) stop("Image index out of bounds", call. = F)
-    final_img <- images[[index]]
-    if (method == "viewer") {
-      final_img <- image_annotate(image_read(final_img), text = names(images)[index], size = round(object@tools$xdim/10))
-      print(final_img)
-    } else if (method == "raster"){
-      final_img <- as.raster(image_annotate(image_read(final_img), text = names(images)[index], size = round(object@tools$xdim/10)))
-      plot(final_img)
-    } else {
-      stop(paste0("Invalid display method: ", method), call. = F)
-    }
+    stop(paste0("Invalid display method: ", method), call. = F)
   }
 }
 
@@ -261,23 +253,7 @@ MaskImages <- function(
       }
     }
 
-    masks[[i]] <- as.raster(add(keep.sp))
-    #inds_inside_tissue <- do.call(rbind, lapply(sp, function(px) {
-    #  m <- px[, ]; colnames(m) <- 1:ncol(m); rownames(m) <- 1:nrow(m)
-#
-    #  inds <- data.frame(label = as.numeric(m),
-    #                     y.id = rep(1:nrow(m), ncol(m)),
-    #                     x.id = rep(1:ncol(m), each = nrow(m)))
-    #  inds$idx <- 1:nrow(inds)
-    #  inds.under.tissue <- subset(inds, label == 1)
-#
-    #  inds_coords <- paste(inds.under.tissue[, "x.id"], inds.under.tissue[, "y.id"], sep = "x")
-    #  if (length(intersect(pixel_coords, inds_coords)) > 0) {
-    #    return(subset(inds, label == 0))
-    #  } else {
-    #    return(NULL)
-    #  }
-    #}))
+    masks[[i]] <- as.raster(imager::add(keep.sp))
 
     if (verbose) {
       cat(paste0("Masking background in image ", i , "\n"))
@@ -289,7 +265,7 @@ MaskImages <- function(
     rasters[[i]] <- rst
 
     # Find tissue center
-    center <- which(t(as.matrix(seg[, ])) > 0, arr.ind = T) %>% as.data.frame() %>% summarize(center.x = median(col), center.y = median(row))
+    center <- which(seg[, , 1, 1] > 0, arr.ind = T) %>% as.data.frame() %>% summarize(center.x = median(col), center.y = median(row))
     centers[[i]] <- center
   }
 
@@ -374,10 +350,11 @@ generate.map.rot <- function (
   dims = NULL,
   centers = NULL
 ) {
-  theta <- pi*(angle/360)*2
-  cx <- centers$center.x; cy <- centers$center.y
+  theta <- pi*(angle/360)
+  cx <- ifelse(center.x, as.numeric(centers[1]), dims[1]/2)
+  cy <- ifelse(center.y, as.numeric(centers[2]), dims[2]/2)
 
-  map.rot <- function (
+  map.rot <- function(
     x,
     y
   ) {
@@ -388,14 +365,12 @@ generate.map.rot <- function (
     if(!is.null(dims) & mirror.y) {
       y <- dims[2] - y; cy <- dims[2] - cy
     }
-    x <- x - cx; y <- y - cy
-    xnew = cos(theta)*(x) - sin(theta)*(y) + cx
-    ynew = sin(theta)*(x) + cos(theta)*(y) + cy
 
-    xnew <- ifelse(rep(center.x, length(xnew)), xnew + cx - dims[1]/2, xnew)
-    ynew <- ifelse(rep(center.y, length(ynew)), ynew + cy - dims[2]/2, ynew)
-
-    list(x = xnew, y = ynew)
+    x <- x - cx + dims[1]/2; cx <- dims[1]/2
+    x <- x - cy + dims[2]/2; cy <- dims[2]/2
+    xnew = cos(theta)*(x - cx) - sin(theta)*(y - cy)
+    ynew = sin(theta)*(x - cx) + cos(theta)*(y - cy)
+    list(x = cx + xnew, y = cy + ynew)
   }
 
   return(map.rot)
@@ -423,18 +398,18 @@ add.margins <- function(
 #' Apply warping of x, y coordinates using a affine transformation function
 #'
 #' @param im Raster image
-#' @param map.rot Affine transformation function, see \link{\code{generate.map.rot}}
-#' @param interpolation Set interpolation method for backward transformation [default: "cubic"]
+#' @param map.rot Affine transformation function, see \code{\link{generate.map.rot}}
+#'
+#' @importFrom imager as.cimg imwarp
+#' @importFrom grDevices as.raster
 
 Warp <- function(
   im,
-  map.rot,
-  interpolation
+  map.rot
 ) {
   copy.im <- as.raster(matrix(data = "#FFFFFF", nrow = nrow(im), ncol = ncol(im)))
-  copy.im <- imwarp(as.cimg(copy.im), map = map.rot, direction = "backward", interpolation = interpolation)
-  inds <- which(copy.im != 255)
-  im <- imwarp(as.cimg(im), map = map.rot, direction = "backward", interpolation = interpolation)
+  copy.im <- imwarp(as.cimg(copy.im), map = map.rot, direction = "backward", interpolation = "cubic")
+  im <- imwarp(as.cimg(im), map = map.rot, direction = "backward", interpolation = "cubic")
   #im[inds] <- 255
   imrst <- as.raster(im)
   tab.im <- table(imrst)
@@ -452,10 +427,6 @@ Warp <- function(
 #'
 #' @param object Seurat object
 #' @param transforms List of arguments passed to warp function
-#' @param center.all Centers all images based on centroid of binary mask
-#' @param verbose Print progress messages
-#'
-#' @inheritParams Warp
 #'
 #' @return Seurat object with processed imaged
 #'
@@ -463,14 +434,12 @@ Warp <- function(
 
 WarpImages <- function (
   object,
-  transforms,
-  center.all = FALSE,
-  interpolation = "cubic",
-  verbose = FALSE
+  transforms
 ) {
   if (!"masked" %in% names(object@tools)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
+  if (!any(c("pixel_x", "pixel_y") %in% names(object@tools))) stop(paste0("Pixel coordinates are missing in Seurat object"), call. = FALSE)
 
-  if (!all(names(transforms) %in% names(object@tools$masked))) stop(paste0("Elements of transformation list does not match the image labels"))
+  if (!all(names(transforms) %in% names(object@tools$masked))) stop(paste0("transforms does not match the image labels"))
 
   warp.functions <- lapply(1:length(object@tools$masked), function(i) NULL)
   processed.images <- object@tools$masked
@@ -478,64 +447,34 @@ WarpImages <- function (
   processed.masks <- object@tools$masked.masks
   warped_coords <- object[[c("pixel_x", "pixel_y")]]
 
-  if (center.all) {
-    iternames <- names(object@tools$masked)
-  } else {
-    iternames <- names(transforms)
-  }
-
-  for (i in iternames) {
+  for (i in names(transforms)) {
     m <- object@tools$masked[[i]]
     #m <- add.margins(rst)
 
     args <- transforms[[i]]
-    center.x <- args[["center.x"]] %||% TRUE
-    center.y <- args[["center.y"]] %||% TRUE
+    center.x <- args[["center.x"]] %||% FALSE
+    center.y <- args[["center.y"]] %||% FALSE
     angle <- args[["angle"]] %||% 0
     mirror.x <- args[["mirror.x"]] %||% FALSE
     mirror.y <- args[["mirror.y"]] %||% FALSE
 
-    if (verbose) {
-      cat("Transforming image ", i, " with the following settings: \n",
-          paste0("\tcenter.x = ", center.x, "\n"),
-          paste0("\tcenter.y = ", center.y, "\n"),
-          paste0("\tangle = ", angle, "\n"),
-          paste0("\tmirror.x = ", mirror.x, "\n"),
-          paste0("\tmirror.y = ", mirror.y, "\n"),
-          sep = "")
-    }
-
     #map.rot <- generate.map.rot(center.x, center.y, angle, mirror.x, mirror.y, dims = dim(m), centers = object@tools$centers[[i]] + (dim(m) - dim(rst))/2)
-    centers = object@tools$centers[[i]]
-    map.rot <- generate.map.rot(center.x, center.y, angle, mirror.x, mirror.y, dims = dim(m), centers = centers)
+    map.rot <- generate.map.rot(center.x, center.y, angle, mirror.x, mirror.y, dims = dim(m), centers = object@tools$centers[[i]])
 
     # Obtain scale factors
-    if (verbose) {
-      cat("Scaling pixel coordinates to lower resolution (1/", round(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim), ") ...\n", sep = "")
-    }
     dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
     dims.scaled <- dim(object@tools$raw[[i]])
     sf.xy <- dims.raw/dims.scaled
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
-    ydim <- as.numeric(object@tools$dims[[i]][3])/(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim)
 
     # Warp pixels
-    if (verbose) cat("Warping pixel coordinates ... \n")
-    warped_xy <- setNames(as.data.frame(do.call(cbind, map.rot(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))
-
-    # We use the same function "map.rot" to warp pixel coordinates, however we need to add an offset in case we
-    # want to center the images
-    add_x <- ifelse(mirror.x, 0, 2*(object@tools$xdim/2 - centers$center.x))
-    add_y <- ifelse(mirror.y, 0, 2*(ydim/2 - centers$center.y))
-    warped_xy[, "warped_x"] <- warped_xy[, "warped_x"] + add_x
-    warped_xy[, "warped_y"] <- warped_xy[, "warped_y"] + add_y
-    warped_coords[rownames(pixel_xy), ] <- sapply(warped_xy*sf.xy, round, digits = 1)
+    warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.rot(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
+    warped_coords[rownames(pixel_xy), ] <- warped_xy
 
     warp.functions[[i]] <- map.rot
-    if (verbose) cat("Warping image ... \n\n")
-    processed.images[[i]] <- Warp(m, map.rot, interpolation)
+    processed.images[[i]] <- Warp(m, map.rot)
     msk <- masks[[i]]
-    processed.masks[[i]] <- Warp(msk, map.rot, interpolation)
+    processed.masks[[i]] <- Warp(msk, map.rot)
   }
 
   object@tools$processed <- processed.images
