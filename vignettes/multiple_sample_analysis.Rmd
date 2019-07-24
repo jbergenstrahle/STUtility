@@ -164,7 +164,7 @@ If we want to overlay these spatial heatmaps on the HE image it is much easier t
 
 ```{r}
 
-se <- LoadImages(object = se, verbose = T)
+se <- LoadImages(object = se, verbose = T, time.resolve = T)
 
 ```
 
