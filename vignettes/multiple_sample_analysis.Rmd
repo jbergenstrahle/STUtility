@@ -122,17 +122,18 @@ ensids <- read.table(file = list.files(system.file("extdata", package = "STutili
 
 We are now ready to load our samples and create a "seurat" object. 
 
-Here, we demonstrate the creation of the seurat object, while also including some filtering by only keeping the genes that are found in at least 5 capture spots and a total count value >= 20. We also only keep the spots that contains >= 200 total transcrips. (Note: by default `prep.from.table()` will remove spots that are located outside of the tissue according to the infoTable. If your infoTable do not include paths to spotfiles, or, if you want to simply omit this step: set `spot.file=FALSE`). 
+Here, we demonstrate the creation of the seurat object, while also including some filtering by only keeping the genes that are found in at least 5 capture spots and a total count value >= 100. We also only keep the spots that contains >= 500 total transcrips. (Note: by default `prep.from.table()` will remove spots that are located outside of the tissue according to the infoTable. If your infoTable do not include paths to spotfiles, or, if you want to simply omit this step: set `spot.file=FALSE`). 
 
 ```{r}
 #DOUBLE CHECK SO THAT THIS IS CORRECT NOW
 
 se <- prep.from.table(infotable = infoTable, 
                       transpose = T, 
-                      min.gene.count = 20, 
+                      min.gene.count = 100, 
                       min.gene.spots = 5,
-                      min.spot.count = 200, 
+                      min.spot.count = 500, 
                       annotation = ensids)
+
 
 
 ```
