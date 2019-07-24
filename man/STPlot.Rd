@@ -7,7 +7,7 @@
 STPlot(data, data.type = NULL, group.by, shape.by, variable,
   pt.size = 1, palette = "MaYl", rev.cols = F, ncol = NULL,
   spot.colors = NULL, center.zero = TRUE, center.tissue = F,
-  plot.title = NULL, ...)
+  plot.title = NULL, xlim = NULL, ylim = NULL, ...)
 }
 \arguments{
 \item{data}{data.frame containing (x, y) coordinates, a group vector and a continuous variable vector}
@@ -35,6 +35,8 @@ STPlot(data, data.type = NULL, group.by, shape.by, variable,
 \item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
 
 \item{plot.title}{Add title to plot}
+
+\item{xlim, ylim}{Set x/y-axis limits}
 
 \item{...}{parameters passed to geom_point()}
 }
