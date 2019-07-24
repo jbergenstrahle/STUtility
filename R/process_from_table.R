@@ -145,6 +145,14 @@ prep.from.table <- function(
     apply(cnt, 1, function(i) sum(i > 0)) > min.gene.spots
   keep.spots <- colSums(cnt)>=min.spot.count
 
+  before <- dim(cnt)
+  cnt <- cnt[keep.genes, keep.spots]
+  after <- dim(cnt)
+
+  print("------------- Filtering (not including images based filtering) --------------")
+  print(paste("Spots removed: ", before[2] - after[2] ))
+  print(paste("Genes removed: ", before[1] - after[1]))
+
   m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
 
   #Filter top genes
