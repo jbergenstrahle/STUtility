@@ -13,7 +13,8 @@ LoadImages <- function (
   object,
   image.paths = NULL,
   xdim = 400,
-  verbose = FALSE
+  verbose = FALSE,
+  time.resolve = FALSE
 ) {
   # Check that image paths are present
   if (!"imgs" %in% names(object@tools)) {
@@ -75,6 +76,10 @@ LoadImages <- function (
     #image_write(im, path = tmpf)
     #im <- image_read(tmpf)
     imgs <- c(imgs, list(as.raster(im)))
+    if(time.resolve == TRUE){
+      gc()
+      sleepy(5)
+    }
   }
 
   object@tools$dims <- setNames(dims, nm = samplenames)
@@ -484,5 +489,17 @@ WarpImages <- function (
   return(object)
 }
 
+#' Function to perform system sleep if user having memory issues during image loading
+#'
+#' @param x time to sleep
+#' @keywords internal
+
+
+sleepy <- function(x)
+{
+  p1 <- proc.time()
+  Sys.sleep(x)
+  proc.time() - p1 # The cpu usage should be negligible
+}
 
 
