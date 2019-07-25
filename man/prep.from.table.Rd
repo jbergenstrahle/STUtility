@@ -5,21 +5,24 @@
 \title{Create S4 object from info table.
 This function is a wrapper to create a complete S4 object with all the samples and metadata}
 \usage{
-prep.from.table(sampleTable, transpose = TRUE, topN = 0, th.gene = 0,
-  th.spot = 0, object.type = "Seurat", spot.file = TRUE,
-  annotation = NULL, id.column = NULL, replace.column = NULL, ...)
+prep.from.table(infotable, transpose = TRUE, topN = 0,
+  min.gene.count = 0, min.gene.spots = 0, min.spot.count = 0,
+  spot.file = TRUE, annotation = NULL, id.column = NULL,
+  replace.column = NULL, ...)
 }
 \arguments{
-\item{sampleTable}{table with paths to count files and metadata}
+\item{infotable}{table with paths to count files and metadata}
 
 \item{transpose}{set TRUE if count files are in the form of genes as columns and spatial
 coordiantes as rows.}
 
 \item{topN}{OPTIONAL: Filter out the top most expressed genes}
 
-\item{th.gene}{OPTIONAL: Filter genes with total counts across all samples below threshold}
+\item{min.gene.count}{filter away genes that has a total read count below this threshold}
 
-\item{th.spot}{OPTIONAL: Filter `"capture-spots"` with total count values below threshold}
+\item{min.gene.spots}{filter away genes that is not expressed below this number of capture spots}
+
+\item{min.spot.count}{filter away capture spots that contains a total read count below this threshold}
 
 \item{annotation}{data.frame with one id.column containing the current gene ids and a matching replace
 column containing the new gene ids}
