@@ -101,7 +101,7 @@ LoadImages <- function (
 #'
 #' @export
 
-ImagePlot <- function(
+ImagePlot <- function (
   object,
   indices = NULL,
   type = NULL,
@@ -181,7 +181,7 @@ ImagePlot <- function(
 #'
 #' @export
 
-MaskImages <- function(
+MaskImages <- function (
   object,
   compactness = 1,
   median.blur = 10,
@@ -196,8 +196,8 @@ MaskImages <- function(
   for (i in seq_along(object@tools$raw)) {
     im <- image_read(object@tools$raw[[i]])
     im <- magick2cimg(im) %>% medianblur(median.blur)
-    f <- ecdf(im)
-    im <- f(im) %>% as.cimg(dim = dim(im))
+    #f <- ecdf(im)
+    #im <- f(im) %>% as.cimg(dim = dim(im))
     if (verbose) {
       cat(paste0("Loaded image ", i, "\n"))
       cat(paste0("Running SLIC algorithm \n"))
@@ -226,7 +226,7 @@ MaskImages <- function(
     # Colect pixel coordinates for spots in meta.data slot
     dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
     dims.scaled <- dim(object@tools$raw[[i]])
-    sf.xy <- dims.raw/dims.scaled
+    sf.xy <- dims.raw/rev(dims.scaled)
     pixel_xy <- sapply(subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy, round)
     pixel_coords <- paste(pixel_xy[, 1], pixel_xy[, 2], sep = "x")
 
@@ -236,17 +236,21 @@ MaskImages <- function(
 
     for (j in seq_along(sp)) {
       px <- sp[[j]]
-      m <- px[, ]; colnames(m) <- 1:ncol(m); rownames(m) <- 1:nrow(m)
+      m <- t(px[, ]); colnames(m) <- 1:ncol(m); rownames(m) <- 1:nrow(m)
 
       inds <- data.frame(label = as.numeric(m),
                          y.id = rep(1:nrow(m), ncol(m)),
                          x.id = rep(1:ncol(m), each = nrow(m)))
       inds$idx <- 1:nrow(inds)
+
+      #plot(inds.under.tissue[, 2:3], xlim = c(0, 400), ylim = c(0, 400))
+      #points(pixel_xy, col = "red")
+
       inds.under.tissue <- subset(inds, label == 1)
 
       inds_coords <- paste(inds.under.tissue[, "x.id"], inds.under.tissue[, "y.id"], sep = "x")
       if (length(intersect(pixel_coords, inds_coords)) > 0) {
-        inds_inside_tissue <- rbind(inds_inside_tissue, subset(inds, label == 0))
+        inds_inside_tissue <- rbind(inds_inside_tissue, subset(inds, label == 1))
         keep.sp <- c(keep.sp, list(px))
       } else {
         next
@@ -259,13 +263,13 @@ MaskImages <- function(
       cat(paste0("Masking background in image ", i , "\n"))
     }
 
-    rst <- t(object@tools$raw[[i]])
-    rst[inds_inside_tissue$idx] <- "#FFFFFF"
-    rst <- t(rst)
+    rst <- object@tools$raw[[i]]
+    rst[(1:length(rst))[-inds_inside_tissue$idx]] <- "#FFFFFF"
+    #rst <- t(rst)
     rasters[[i]] <- rst
 
     # Find tissue center
-    center <- which(seg[, , 1, 1] > 0, arr.ind = T) %>% as.data.frame() %>% summarize(center.x = median(col), center.y = median(row))
+    center <- which(seg[, , 1, 1] > 0, arr.ind = T) %>% as.data.frame() %>% summarize(center.x = mean(row), center.y = mean(col))
     centers[[i]] <- center
   }
 
@@ -286,10 +290,10 @@ MaskImages <- function(
 #' @param compactness Controls scaling ratio for pixel values
 #' @param ... Parameters passed to kmeans
 #'
-#' @importFrom purrr map_dbl
+#' @importFrom purrr map_dbl map
 #' @importFrom imager imsplit LabtosRGB
 
-slic <- function(
+slic <- function (
   im,
   nS,
   compactness = 1,
@@ -330,47 +334,41 @@ slic <- function(
 
 
 
-#' Create affine transformation function
+
+
+#' Create transformation function
 #'
 #' Creates a function that takes x,y values as input and applies a transformation
 #'
-#' @param center.x,center.y Center tissue along x/y axis
-#' @param angle Angle for clock wise rotation given in degrees
-#' @param mirror.x,mirror.y Logical specifying if image should be mirrored along x/y axis
-#' @param dims Raw image dimensions
-#' @param centers Centroid coordinates for tissue
+#' @param tr Forward transformation matrix
+#' @param forward Logical: sets algorithm to 'forwar', otherwise 'backward'
 #'
 
 generate.map.rot <- function (
-  center.x = FALSE,
-  center.y = FALSE,
-  angle = 0,
-  mirror.x = FALSE,
-  mirror.y = FALSE,
-  dims = NULL,
-  centers = NULL
+  tr,
+  forward = FALSE
 ) {
-  theta <- pi*(angle/360)
-  cx <- ifelse(center.x, as.numeric(centers[1]), dims[1]/2)
-  cy <- ifelse(center.y, as.numeric(centers[2]), dims[2]/2)
 
-  map.rot <- function(
-    x,
-    y
-  ) {
-
-    if(!is.null(dims) & mirror.x) {
-      x <- dims[1] - x; cx <- dims[1] - cx
+  if (forward) {
+    map.rot <- function (
+      x,
+      y
+    ) {
+      xy <- t(cbind(x, y, 1))
+      #tr <- combine.tr(center.cur, center.new, alpha = angle, mirror.x, mirror.y)
+      xytr <- t(tr%*%xy)
+      list(x = xytr[, 1], y = xytr[, 2])
     }
-    if(!is.null(dims) & mirror.y) {
-      y <- dims[2] - y; cy <- dims[2] - cy
+  } else {
+    map.rot <- function (
+      x,
+      y
+    ) {
+      xy <- t(cbind(x, y, 1))
+      #tr <- combine.tr(center.cur, center.new, alpha = angle, mirror.x, mirror.y)
+      xytr <- t(solve(tr)%*%xy)
+      list(x = xytr[, 1], y = xytr[, 2])
     }
-
-    x <- x - cx + dims[1]/2; cx <- dims[1]/2
-    x <- x - cy + dims[2]/2; cy <- dims[2]/2
-    xnew = cos(theta)*(x - cx) - sin(theta)*(y - cy)
-    ynew = sin(theta)*(x - cx) + cos(theta)*(y - cy)
-    list(x = cx + xnew, y = cy + ynew)
   }
 
   return(map.rot)
@@ -403,20 +401,24 @@ add.margins <- function(
 #' @importFrom imager as.cimg imwarp
 #' @importFrom grDevices as.raster
 
-Warp <- function(
+Warp <- function (
   im,
-  map.rot
+  map.rot,
+  mask = FALSE
 ) {
-  copy.im <- as.raster(matrix(data = "#FFFFFF", nrow = nrow(im), ncol = ncol(im)))
-  copy.im <- imwarp(as.cimg(copy.im), map = map.rot, direction = "backward", interpolation = "cubic")
   im <- imwarp(as.cimg(im), map = map.rot, direction = "backward", interpolation = "cubic")
-  #im[inds] <- 255
-  imrst <- as.raster(im)
-  tab.im <- table(imrst)
-  if (length(tab.im) > 2) {
+  if (!mask) {
+    copy.im <- as.raster(matrix(data = "#FFFFFF", nrow = ncol(im), ncol = nrow(im)))
+    copy.im <- imwarp(as.cimg(copy.im), map = map.rot, direction = "backward", interpolation = "cubic")
+    inds <- which(copy.im != 255)
     im[inds] <- 255
     imrst <- as.raster(im)
-    imrst[imrst == names(which.max(tab.im))] <- "#FFFFFF"
+    tab.im <- table(imrst)
+    if (length(tab.im) > 2) {
+      imrst[imrst == names(tab.im)[which.max(tab.im)]] <- "#FFFFFF"
+    }
+  } else {
+    imrst <- as.raster(t(ifelse(im[, , 1, 1] > 100, 1, 0)))
   }
   return(imrst)
 }
@@ -427,6 +429,7 @@ Warp <- function(
 #'
 #' @param object Seurat object
 #' @param transforms List of arguments passed to warp function
+#' @param verbose Print messages
 #'
 #' @return Seurat object with processed imaged
 #'
@@ -434,22 +437,32 @@ Warp <- function(
 
 WarpImages <- function (
   object,
-  transforms
+  transforms,
+  verbose
 ) {
   if (!"masked" %in% names(object@tools)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-  if (!any(c("pixel_x", "pixel_y") %in% names(object@tools))) stop(paste0("Pixel coordinates are missing in Seurat object"), call. = FALSE)
+  if (!any(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) stop(paste0("Pixel coordinates are missing in Seurat object"), call. = FALSE)
 
   if (!all(names(transforms) %in% names(object@tools$masked))) stop(paste0("transforms does not match the image labels"))
 
-  warp.functions <- lapply(1:length(object@tools$masked), function(i) NULL)
-  processed.images <- object@tools$masked
+  processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
   masks <- object@tools$masked.masks
   processed.masks <- object@tools$masked.masks
-  warped_coords <- object[[c("pixel_x", "pixel_y")]]
+  if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
+    warped_coords <- object[[c("warped_x", "warped_y", "sample")]]
+    spots <- rownames(subset(warped_coords, sample %in% names(transforms)))
+    pxset <- object[[c("pixel_x", "pixel_y")]]
+    warped_coords[spots, 1:2] <- pxset[spots, ]
+    warped_coords <- warped_coords[, 1:2]
+  } else {
+    warped_coords <- object[[c("pixel_x", "pixel_y")]]
+  }
+
 
   for (i in names(transforms)) {
+
+    if (verbose) cat(paste0("Loading masked image for sample ", i, " ... \n"))
     m <- object@tools$masked[[i]]
-    #m <- add.margins(rst)
 
     args <- transforms[[i]]
     center.x <- args[["center.x"]] %||% FALSE
@@ -458,27 +471,31 @@ WarpImages <- function (
     mirror.x <- args[["mirror.x"]] %||% FALSE
     mirror.y <- args[["mirror.y"]] %||% FALSE
 
-    #map.rot <- generate.map.rot(center.x, center.y, angle, mirror.x, mirror.y, dims = dim(m), centers = object@tools$centers[[i]] + (dim(m) - dim(rst))/2)
-    map.rot <- generate.map.rot(center.x, center.y, angle, mirror.x, mirror.y, dims = dim(m), centers = object@tools$centers[[i]])
+    tr <- combine.tr(as.numeric(object@tools$centers[[i]]), rev(dim(m)/2), alpha = angle, mirror.x = mirror.x, mirror.y = mirror.y)
+
+    map.rot.backward <- generate.map.rot(tr)
+    map.rot.forward <- generate.map.rot(tr, forward = TRUE)
 
     # Obtain scale factors
     dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
     dims.scaled <- dim(object@tools$raw[[i]])
-    sf.xy <- dims.raw/dims.scaled
+    sf.xy <- dims.raw/rev(dims.scaled)
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp pixels
-    warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.rot(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
-    warped_coords[rownames(pixel_xy), ] <- warped_xy
+    if (verbose) cat(paste0("Warping pixel coordinates for ", i, " ... \n"))
+    warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.rot.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
+    warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
 
-    warp.functions[[i]] <- map.rot
-    processed.images[[i]] <- Warp(m, map.rot)
+    if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
+    processed.images[[i]] <- Warp(m, map.rot.backward)
     msk <- masks[[i]]
-    processed.masks[[i]] <- Warp(msk, map.rot)
+    if (verbose) cat(paste0("Warping image mask for ", i, " ... \n"))
+    processed.masks[[i]] <- Warp(msk, map.rot.backward, mask = T)
+    if (verbose) cat(paste0("Finished alignment for sample", i, " \n\n"))
   }
 
   object@tools$processed <- processed.images
-  object@tools$warp.functions <- warp.functions
   object@tools$processed.masks <- processed.masks
   object[[c("warped_x", "warped_y")]] <- warped_coords
   return(object)
