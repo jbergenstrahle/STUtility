@@ -99,3 +99,18 @@ qcSamples <- function(
   }
   return(qc.table)
 }
+
+#' function(x, y, ...) used to plot the contents of each panel of the display in pairs function
+#'
+#' @param x x coordinate
+#' @param y y coordinate
+#' @return panel for pairs function
+#' @keywords internal
+
+qc.scatter <- function(x,y){
+    dns <- densCols(x,y);
+    points(x,y, col=dns, pch=".", panel.first=grid());
+    abline(a=0, b=1, col="brown")
+}
+
+
