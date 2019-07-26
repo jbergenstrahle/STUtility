@@ -174,15 +174,17 @@ ImagePlot <- function (
 #' @param object.size.th Threshold used to filter out objects in the background which are not part of the
 #' tissue, e.g. bubbles or other debris
 #' @param verbose Print messages
-#' @param blurred.mask Runs an alternative masking procedure
+#' @param enhanced.masking Runs an additional anisotropic blurring step which can improve the accuracy of masking for
+#' more complicated tissue types but runs significantly slower.
 #'
 #' @inheritParams slic
 #'
-#' @importFrom imager magick2cimg medianblur sRGBtoLab as.cimg split_connected add
+#' @importFrom imager magick2cimg medianblur sRGBtoLab as.cimg split_connected add imsplit imappend RGBtoHSV blur_anisotropic HSVtoRGB add
 #' @importFrom magick image_read
-#' @importFrom dplyr select
+#' @importFrom dplyr select summarize
 #' @importFrom magrittr %>%
 #' @importFrom stats kmeans
+#' @importFrom purrr modify_at
 #'
 #' @return A Seurat object with masked HE images
 #'
@@ -194,7 +196,7 @@ MaskImages <- function (
   median.blur = 10,
   object.size.th = 0.01,
   verbose = FALSE,
-  blurred.mask = FALSE
+  enhanced.masking = FALSE
 ) {
 
   rasters <- list()
@@ -203,21 +205,23 @@ MaskImages <- function (
 
   for (i in seq_along(object@tools$raw)) {
     im <- image_read(object@tools$raw[[i]])
-    #im <- magick2cimg(im) %>% RGBtoHSV() %>% imsplit("c") %>%
-    #       modify_at(2,~ . * 2) %>% imappend("c") %>%
-    #       HSVtoRGB %>% blur_anisotropic(amplitude=1e4,sharpness=0.6, anisotropy = 0.7)
-    im <- magick2cimg(im) %>% medianblur(median.blur)
+
+    if (enhanced.masking) {
+      im <- magick2cimg(im) %>% RGBtoHSV() %>% imsplit("c") %>%
+        modify_at(2, ~ . * 4) %>% imappend("c") %>%
+        HSVtoRGB() %>% blur_anisotropic(amplitude = 1e4, sharpness = 0.6, anisotropy = 0.7)
+    } else {
+      im <- magick2cimg(im) %>% medianblur(median.blur)
+    }
+
     #f <- ecdf(im)
     #im <- f(im) %>% as.cimg(dim = dim(im)) %>% plot
-
 
     if (verbose) {
       cat(paste0("Loaded image ", i, "\n"))
       cat(paste0("Running SLIC algorithm \n"))
     }
-    out <- slic(im, nS = object@tools$xdim*1.5, compactness) %>% plot
-    #f <- ecdf(im)
-    #im <- f(im) %>% as.cimg(dim = dim(im))
+    out <- slic(im, nS = object@tools$xdim*1.5, compactness)
 
     d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
       select(-x,-y)
@@ -227,13 +231,6 @@ MaskImages <- function (
 
     # Extract pixel sets
     px <- seg > 0.5
-
-    #if (blurred.mask) {
-    #  centroid <- apply(which(px == 1, arr.ind = T), 2, mean)
-    #  out <- out %>% medianblur(30)
-    #  seg <- px.flood(out, centroid[1], centroid[2], sigma = .35) %>% as.cimg %>% grayscale()
-    #  px <- seg > 0.5
-    #}
 
     sp <- split_connected(px)
 
@@ -280,7 +277,7 @@ MaskImages <- function (
       }
     }
 
-    masks[[i]] <- as.raster(imager::add(keep.sp))
+    masks[[i]] <- as.raster(add(keep.sp))
 
     if (verbose) {
       cat(paste0("Masking background in image ", i , "\n"))
@@ -314,7 +311,8 @@ MaskImages <- function (
 #' @param ... Parameters passed to kmeans
 #'
 #' @importFrom purrr map_dbl map
-#' @importFrom imager imsplit LabtosRGB
+#' @importFrom imager imsplit LabtosRGB sRGBtoLab spectrum nPix as.cimg
+#' @importFrom stats kmeans
 
 slic <- function (
   im,
