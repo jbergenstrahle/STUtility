@@ -174,10 +174,12 @@ ImagePlot <- function (
 #' @param object.size.th Threshold used to filter out objects in the background which are not part of the
 #' tissue, e.g. bubbles or other debris
 #' @param verbose Print messages
+#' @param blurred.mask Runs an alternative masking procedure
 #'
 #' @inheritParams slic
 #'
 #' @importFrom imager magick2cimg medianblur sRGBtoLab as.cimg split_connected add
+#' @importFrom magick image_read
 #' @importFrom dplyr select
 #' @importFrom magrittr %>%
 #' @importFrom stats kmeans
@@ -191,7 +193,8 @@ MaskImages <- function (
   compactness = 1,
   median.blur = 10,
   object.size.th = 0.01,
-  verbose = FALSE
+  verbose = FALSE,
+  blurred.mask = FALSE
 ) {
 
   rasters <- list()
@@ -200,23 +203,38 @@ MaskImages <- function (
 
   for (i in seq_along(object@tools$raw)) {
     im <- image_read(object@tools$raw[[i]])
+    #im <- magick2cimg(im) %>% RGBtoHSV() %>% imsplit("c") %>%
+    #       modify_at(2,~ . * 2) %>% imappend("c") %>%
+    #       HSVtoRGB %>% blur_anisotropic(amplitude=1e4,sharpness=0.6, anisotropy = 0.7)
     im <- magick2cimg(im) %>% medianblur(median.blur)
     #f <- ecdf(im)
-    #im <- f(im) %>% as.cimg(dim = dim(im))
+    #im <- f(im) %>% as.cimg(dim = dim(im)) %>% plot
+
+
     if (verbose) {
       cat(paste0("Loaded image ", i, "\n"))
       cat(paste0("Running SLIC algorithm \n"))
     }
-    out <- slic(im, nS = object@tools$xdim*1.5, compactness)
+    out <- slic(im, nS = object@tools$xdim*1.5, compactness) %>% plot
+    #f <- ecdf(im)
+    #im <- f(im) %>% as.cimg(dim = dim(im))
 
     d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
       select(-x,-y)
 
     km <- kmeans(d, 2)
-    seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(median.blur)
+    seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(20)
 
     # Extract pixel sets
     px <- seg > 0.5
+
+    #if (blurred.mask) {
+    #  centroid <- apply(which(px == 1, arr.ind = T), 2, mean)
+    #  out <- out %>% medianblur(30)
+    #  seg <- px.flood(out, centroid[1], centroid[2], sigma = .35) %>% as.cimg %>% grayscale()
+    #  px <- seg > 0.5
+    #}
+
     sp <- split_connected(px)
 
     # Check object sizes
