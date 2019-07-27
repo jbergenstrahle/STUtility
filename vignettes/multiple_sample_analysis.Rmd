@@ -139,11 +139,11 @@ se <- prep.from.table(infotable = infoTable,
 ```
 
 
-### How to handle plotting and tissue image background
+## How to handle plotting and tissue image background
 
 ---
 
-The core of an ST experiment is the interplay between quantative RNAseq data and qualative image data. Working in R, the handling of image information and plotting of multiple samples can get a bit cumbersome, especially if the images are of higher resolution. Typically, we rarely find much use of plotting multiple samples togheter with the tissue images within this framework. Instead, the general tip is to perform the various plots using only the expression data, and when finding an result of interest that warrants further analysis- take out that sample and plot it individually togheter with the stained tissue image. 
+The core of an ST experiment is the interplay between quantative RNAseq data and qualative image data. Working in R, the handling of image information and plotting of multiple samples can get a bit cumbersome, especially if the images are of higher resolution. Typically, we rarely find much use of plotting multiple samples togheter with the tissue images within this framework. Instead, the general tip is to perform the various plots using only the expression data, and after finding anything of interest that warrants further analysis - take out that sample and plot it individually togheter with the stained tissue image. 
 
 For example, we can visualize the number of RNA features and RNA counts on the ST array coordinates and quickly verify where we capture more material from the tissue.
 
@@ -167,6 +167,7 @@ OBS: We have noted that some systems experience memory problems due to large siz
 ```{r}
 
 se <- LoadImages(object = se, verbose = T, time.resolve = T)
+#undrar om man inte ska ha den som default egentligen?
 
 ```
 
@@ -179,7 +180,7 @@ se <- MaskImages(object = se, verbose = T)
 
 ```
 
-You can then look at the HE images for each sample using the ImagePlot() function. The raw images are not loaded but instead we store pointers to the image files to save memory. This allows us to change the size of the working images whenever we want to, but it is important to know that the pointers will die between R sessions. The ImagePlot will therefore return a Seurat object with updated pointers to make sure that the pointers are kept alive if you start a new session.
+You can then look at the HE images using the ImagePlot() function. The raw images are not loaded but instead we store pointers to the image files to save memory. This allows us to change the size of the working images whenever we want to, but it is important to know that the pointers will die between R sessions. The ImagePlot will therefore return a Seurat object with updated pointers to make sure that the pointers are kept alive if you start a new session.
 
 
 ```{r, fig.height=6, fig.width=12}
@@ -202,34 +203,64 @@ FeatureOverlay(object = se,
 
 ```
 
-#### Individual transformations to images
+### Individual transformations to images
+
+If you follow along the test set in this vignette, you will notice that the samples are not quite aligned with respect to each other on the array. We have implemented a process to align the images.
+
+To demonstrate the effect:
 
 ```{r, fig.width=12, fig.height=12}
 ImagePlot(se, method = "raster")
+```
 
+Call the automatic alignment:
+
+```{r, fig.width=12, fig.height=12}
 se <- AlignImages(se, verbose = T)
+
+#OBS: vcgCreateKDtree not loaded by deafult (Rvcg package)
+#computeTransform not loaded bby deafult (Morpho package)
+#fixed by keywords internal ?
+#Morpho måste läggas till som dependency, eller kanske suggested
+
+
 ## Mirror image number 5 along y axis
 #transforms <- list("5" = list("mirror.y" = T, "mirror.x" = T))
 
 #se <- WarpImages(object = se, transforms)
+```
+
+And the result:
+
+```{r, fig.width=12, fig.height=12}
 
 ImagePlot(se, method = "raster")
 
 ```
 
-
+The new alignments are stored in the Seurat object, and subsequent plotting functions will use this alignment as default. 
 
 ```{r, fig.width=6, fig.height = 6}
 
-MultiFeatureOverlay(se, features = "Nrgn", sampleids = paste0(1:8))
+MultiFeatureOverlay(se, features = "Nrgn", 
+                    sampleids = paste0(1:8),
+                    palette = "GrRd")
+
+#TODO:  "masked", "raw" eller "processed" add to documentation. 
 
 ```
 
-
+The `type` parameter can be set to "masked", "raw" or "processed", to override the deafult use of processed masked images. 
 
 ```{r, fig.height = 6, fig.width = 12}
 
-FeatureOverlay(object = se, features = c("Nrgn", "Cck"), palette = "GrRd", sample.index = 5)
+FeatureOverlay(object = se, features = c("Nrgn", "Cck"), 
+               palette = "GrRd", sample.index = 5,
+               type="raw")
+
+FeatureOverlay(object = se, features = c("Nrgn", "Cck"), 
+               palette = "GrRd", sample.index = 5,
+               type="processed")
 
 ```
 
@@ -280,55 +311,84 @@ cowplot::plot_grid(p1, p2)
 
 We can see from the mean-variance and Mean-detection-rate scatter plots that genes show overdispersion compared to what would be expected under a Poisson model. Because these properties are shared between ST and scRNAseq data we have reasoned that the workflow presented in the Seurat package should be applicable for ST data as well. It is important however to keep in mind that each spots contains a mixture of cell types and should be interpreted as a morphological unit in the context of a tissue section. 
 
-In order to normalize the data we recommend using [variance stabilized transformation](https://www.biorxiv.org/content/10.1101/576827v1) available in the SCTranfrom function in Seurat as of v3.0. 
+In order to normalize the data we recommend using [variance stabilized transformation](https://www.biorxiv.org/content/10.1101/576827v1) available in the SCTransform function in Seurat as of v3.0. 
 
-Following the rationale expressed above, we transform the data according to the Seurat workflow. 
+Following the rationale expressed above, we transform the data according to the Seurat workflow. Note: for comprehensive tutorials in the different options and workflow possitibilites avaiable within Seurat, we recommend looking at their website https://satijalab.org/seurat/  
 
 ```{r, eval=FALSE, warning=FALSE, message=FALSE} 
-# store mitochondrial percentage in object meta data
-se <- PercentageFeatureSet(se, pattern = "^mt-", col.name = "percent.mt")
 
-# run sctransform
 se <- SCTransform(se, vars.to.regress = c("sample", "nFeature_RNA"))
 
 ```
 
-Plotting dimesnionality reduction results
+## Finding spatial expression pattens and areas of interest
+
+The strength of untargeted whole transcriptome capture is the ability to perform unsupervised analysis and the ability to find spatial gene expression patterns. We've found good use of the dimensionally reduction method "ICA" (Independent Component Analysis) to find spatial expression pattens. An example is demonstrated below:
 
 ```{r, fig.width=16, fig.height=10}
-#se <- RunICA(se)
-ST.DimPlot(se, dims = 1:5, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = T, pt.size = 0.3, center.zero = T)
 
+se <- RunICA(se)
+
+```
+
+Different dimensionality reductions methods are suported via Seurat (`RunPCA()`, `RunTSNE`, `RunICA()` ) and the output are stored in the Seurat object. 
+
+We can then plot a variable number of dimensions across the samples.
+
+```{r, fig.width=16, fig.height=10}
+ST.DimPlot(se, dims = 1:5, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = T, pt.size = 0.3, center.zero = T)
+```
+
+[INSERT WAY TO FIND GENES A LA LUDLAR]
+
+## Clustering
+
+Clustering is a standard procedure in genomic analysis, and the methods for doing so are numerous. Here we demonstrate an example where we use the result of ICA to perform clustering. In the priveous section, we demonstrated how to plot a subset of dimensions from the ICA output. Going through this list, we can notice the dimensions that are "spatially active", i.e. that seems to confer a spatial pattern along their axis. We can extract these dimensions:
+
+```{r, fig.width=16, fig.height=10}
 keep.dims <- c(1:12, 16:18, 21:28, 30:34, 40:41, 47, 49:50)
 ```
 
+And then use them to construct a Shared Nearset Neighbor (SSN) Graph. 
 
 ```{r}
-se <- RunTSNE(object = se, dims = keep.dims, reduction = "ica", verbose = FALSE)
 se <- FindNeighbors(object = se, dims = keep.dims, verbose = FALSE, reduction = "ica")
+```
+
+And the clustering using a modularity optimizer
+
+```{r}
 se <- FindClusters(object = se, verbose = FALSE)
 ```
 
-Plotting clusters in t-SNE
-
+We can then plot the clusters in two dimensions (e.g. via tSNE) spatially
 
 ```{r, fig.width = 6, fig.height = 6}
-DimPlot(object = se, label = TRUE, reduction = "tsne") + NoLegend() + ggtitle('sctransform') 
+ST.DimPlot(object = se,
+           reduction = "tsne")
 ```
 
-Plot features on top of HE
+```{r, fig.width = 6, fig.height = 6}
+ST.DimPlot(object = se, label = TRUE, reduction = "tsne") + NoLegend() + ggtitle('sctransform') 
+```
+
+We can take a look at the top variable features and plot those on top of the tissues.
+
+[OBS lagga in sa man forstar att se@assays$SCT@var.features alltid far senaste dim redcution?]
 
 
 ```{r, fig.width = 13, fig.height = 6}
 
 head(se@assays$SCT@var.features, 20)
-FeatureOverlay(object = se, 
-                features = c("Slc18a2", "Slc6a5"), 
-                palette = "GrRd",
-                sample.index = 1, 
-                alpha = 1,
-                blend = F)
+top <- se@assays$SCT@var.features
 
+MultiFeatureOverlay(se, features = top[1], 
+                    sampleids = paste0(1:8),
+                    palette = "GrRd")
+
+MultiFeatureOverlay(se, features = "Hbb-bs", 
+                    sampleids = paste0(1:8),
+                    palette = "GrRd")
 ```
 
 Plot features in t-SNE space or on ST array coordinates
