@@ -11,7 +11,7 @@
 #' Function built upon the DimPlot() function from Seurat (https://github.com/satijalab/seurat/blob/master/R/utilities.R)
 #'
 #' @param object Seurat object
-#' @param dims Dimensions to plot, must numeric vectoir specifying number of dimensions to plot
+#' @param dims Dimensions to plot, a numeric vector specifying number of dimensions to plot
 #' @param spots Vector of spots to plot (default is all spots)
 #' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
@@ -82,7 +82,6 @@ ST.DimPlot <- function(
   palette <- palette %||% {
     palette <- subset(palette.info, category == "div")$palette[1]
   }
-  print(palette)
 
   # Check that the number of dimensions are 2 or three if blending is active
   if (blend & !length(x = dims) %in% c(2, 3)) {
