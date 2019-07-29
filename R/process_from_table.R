@@ -56,7 +56,6 @@ prep.from.table <- function(
   replace.column = NULL,
   ...
 ){
-  outObj = NULL
   counts <- list()
   spotFileData <- list()
   countPaths <- infotable[,"samples"]
@@ -164,6 +163,10 @@ prep.from.table <- function(
 
   # ---- Add image paths
   m@tools <- list(imgs = infotable$imgs)
+
+  if(spot.file == FALSE){
+    m@misc$spotfile = FALSE
+  }else{m@misc$spotfile = TRUE}
 
   cat(paste("After filtering the dimensions of the experiment is: "))
   print(dim(m))
