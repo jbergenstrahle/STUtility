@@ -15,7 +15,7 @@ knitr::opts_chunk$set(echo = TRUE)
 
 ## Using STUtility for multiple sample analysis
 
-As with all biological data, using multiple samples add power to the analysis and is a necessity to enable comprehensive insight which otherwise suffers from stochastic uncertainty. In this example tutorial, we display how you can input multiple samples, look for aggravating circumstances like batch effects and missing data, apply methods to correct such if present, get a holistic picture of your data as well as conduct more in depth analysis in various ways. 
+As with all biological data, using multiple samples add power to the analysis and is a necessity to enable comprehensive insight which otherwise suffers from stochastic uncertainty. In this example tutorial, we display how you can input multiple samples, look for aggravating circumstances like batch effects and missing data, apply methods to correct such if present, get a holistic picture of your data as well as conduct more in depth analysis in various ways (more on this later). 
 
 Along the different subsections, references to publications are given to display examples of how the different strategies have been applied previously on ST data.
 
@@ -38,7 +38,11 @@ devtools::install_github(
 library(STutility)
 library(Seurat)
 
-load("F:\JoeDocs\PhD\STUtility\testDatatoLoad.RData")
+#load("F:\JoeDocs\PhD\STUtility\testDatatoLoad.RData")
+
+
+
+load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/testDatatoLoad.RData")
 
 ```
 
@@ -60,7 +64,7 @@ An introductory animation is avaiable on our website: http://www.spatialtranscri
 
 The gene expression data consists of a count matrix with genes in rows and capture "spots" in columns. Each spot represents a small area on an ST array from which the captured transcripts have been barcoded with a unique sequence. The Cy3 image gives an idea of how this grid system of spots is arranged in an ST array.
 
-Bild på Cy3
+Bild på Cy3 - vi lar val ha nagon som bara har en snygg workflow bild att langa fram har?
 
 The unique barcode makes it possible to map the transcripts onto a spatial position on the tissue section and would be equivalent to a cell specific barcode in scRNA-seq data but can tag a mixture of transcripts from multiple cells. The spatial position of a spot is an (x, y) coordinate that defines the centroid of the spot area. These spatial coordinates are stored in the spot ids (column names) and allows us to visualize gene expression (and other spot features) in the array grid system. However, if you want to overlay a visualization on top the HE image you want to make sure that the spot coordinates are exact in relation to morphological features of the image. When the spots are printed onto the ST array surface, they will sometimes deviate from the (x, y) coordinates given by the spot ids and should therefore be adjusted. In addition to the spot adjustment, you will also need to label the spots that are located directly under the tissue. Spot adjustment and selection can be done autamatically using our [ST spot detector](https://github.com/SpatialTranscriptomicsResearch/st_spot_detector) web tool which outputs a table of adjusted coordinates and labels for the spots under tissue.
 
@@ -78,7 +82,7 @@ To use the full range of functions within STutility, all three files are needed 
 
 ---
 
-To follow along this tutorial, download the test data set at [insert test data set link]. The downloadable content consists of count files, output from our spot detector tool, H&E stained images as well as an "infoTable" to read in the files into R.
+To follow along this tutorial, download the test data set at TODO:[insert test data set link]. The downloadable content consists of count files, output from our spot detector tool, H&E stained images as well as an "infoTable" to read in the files into R.
 
 ### The infoTable 
 
@@ -100,12 +104,11 @@ Lets load the provided infoTable
 
 ```{r, eval=FALSE}
 
-#Load data from sample table
 infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)
 ```
 
 
-```{r, eval=TRUE}
+```{r, eval=TRUE, echo=FALSE}
 infoTable
 ```
 
@@ -114,9 +117,7 @@ infoTable
 infoTable <- read.table("metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)
 ```
 
-We have extensively tried different methods and workflows for handling ST data. While all roads lead to Rome, as of the date of this writing we find the Seurat approach [https://satijalab.org/seurat/] to be the most suited for this type of data. Seurat is an R package designed for single-cell RNAseq data. Obviously, this deviates from the data that the ST technology currently produce, as the resolution on the array implies that each capture-spot consists of transcripts originating from multiple cells. Nevertheless, the characteristic 
-
-[har skulle man vilja ha en jamforelse? som del i pek?] 
+We have extensively tried different methods and workflows for handling ST data. While all roads lead to Rome, as of the date of this writing we find the Seurat approach [https://satijalab.org/seurat/] to be the most suited for this type of data. Seurat is an R package designed for single-cell RNAseq data. Obviously, this deviates from the data that the ST technology currently produce, as the resolution on the array implies that each capture-spot consists of transcripts originating from multiple cells. Nevertheless, the characteristics of the ST data resembles that of scRNAseq to a large extent. 
 
 The provided count matrix consists of EnsambleIDs as gene names. Gene symbols are often a preference for easier reading, and we provide a transformation table accordingly. 
 
@@ -153,7 +154,7 @@ The core of an ST experiment is the interplay between quantative RNAseq data and
 
 For example, we can visualize the number of RNA features and RNA counts on the ST array coordinates and quickly verify where we capture more material from the tissue.
 
-NOTE: see section [What if I don't have spot file coordinates?] at the end of the vignette if you are missing spot files. 
+NOTE: see the end of the vignette how to handle plotting if you are missing image/spot-files. 
 
 ```{r, fig.height=4, fig.width=12}
 # TODO: check warning message
@@ -170,7 +171,9 @@ ST.FeaturePlot(object = se,
 
 If we want to overlay these spatial heatmaps on the HE image it is much easier to focus on one sample at the time. Handling large images gets clumsy so we recommend to work with downscaled versions of the images that takes up less memory. First, we have to load the images into the Seurat object. The LoadImages() function allow you to load the images into the Seurat object and will automatically save a scaled down version of each image that you can use for plotting.
 
-OBS: We have noted that some systems experience memory problems due to large size image information not being cleared when removing old obejcts. If this is the case, the user can set `time.resolve=TRUE`, which will add a small garbage collection step to avoid this issue. 
+OBS: We have noted that some systems experience memory problems due to large size image information not being cleared when removing old obejcts. If this is the case, the user can set `time.resolve=TRUE`, which will add a small garbage collection step to avoid this issue.
+
+NOTE: time.resolve is set to TRUE as deafult in the current version. This will imply that the process takes approx. 5sec longer per sample. Turn this off if annoyed. 
 
 ```{r, eval=FALSE}
 
@@ -445,9 +448,9 @@ Lets use the Allen brain atlas to see how well our data match. Lets take the gen
 
 https://mouse.brain-map.org/gene/show/12209
 
-Expression: 
+Expression: [Expression data - Allen brain atlas](Allen_expression_data.PNG)
 
-ISH:
+ISH: [ISH data - Allen brain atlas](Allen_ISH_data.PNG)
 
 ## QC
 
@@ -463,6 +466,13 @@ We start off by doing a simple scatter correlation plot of the average expressio
 Idents(se) <- "sample"
 avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
 pairs(log(avg.exp$SCT))
+
+```
+
+### Nr unique genes/transcripts
+
+```{r}
+
 
 ```
 
@@ -486,14 +496,52 @@ ST.FeaturePlot(object=se,
 
 ### Checking for batch effects
 
-see section - rgb dim.red space etc. 
-
-
-### Nr unique genes/transcripts
+The dimensionallity reduction (e.g. via UMAP) projection onto RGB space works excellent as a batch effect check. Here we show four samples of mouse hippocampus that clearly display a batch effect subject to samples prepared on different arrays:
 
 ```{r}
 
+#Load hippo samples
 
+infoTabel2 <- read.table("~/STUtility/inst/extdata/metaData_hippo_batch_check.csv", sep=";", header=T, stringsAsFactors = F)
+se.batch.effect <- prep.from.table(infotable = infoTabel2, 
+                      transpose = F, 
+                      min.gene.count = 100, 
+                      min.gene.spots = 5,
+                      min.spot.count = 500, 
+                      spot.file = FALSE)
+
+#Perform Seurat transform
+se.batch.effect <- SCTransform(se.batch.effect, 
+                               vars.to.regress = c("sample", "nFeature_RNA"),
+                               verbose = F)
+
+
+se.batch.effect <- RunICA(se.batch.effect, verbose = FALSE)
+se.batch.effect <- RunUMAP(object = se.batch.effect, dims = 1:50, verbose = FALSE, n.components = 3, reduction = "ica", reduction.name = "umap.3d")
+
+gg <- ST.DimPlot(object = se.batch.effect, dims = 1:3, 
+           reduction = "umap.3d", blend = T, 
+           dark.theme = T,
+           delim="x|_")
+# ----------------------- Denna del kan kanske laggas in i ST.Dimplot eller STplot?
+# lagga in en flagga -> plotly = T/F
+test <- ggplot_build(gg) #test$data[[1]]$colour
+rgbTransform <- as.data.frame(t(col2rgb(test$data[[1]]$colour)))
+gg$layers[[1]]$mapping$rgbs <- paste("R:", round(rgbTransform$red/2.55), 
+                                          "% G:", round(rgbTransform$green/2.55), 
+                                          "% B:", round(rgbTransform$blue/2.55), "%",
+                                          sep="")
+
+dark_theme <- function() {
+  theme(plot.background = element_rect(fill = "black"),
+        plot.title = element_text(colour = "white"),
+        strip.text = element_text(colour = 'white'),
+        legend.title = element_text(colour = "white"),
+        legend.text = element_text(colour = "white"))
+}
+ggP <- ggplotly(gg + dark_theme() , tooltip="rgbs")
+
+# ---------------------------------------------------------------------------------
 ```
 
 
@@ -512,11 +560,98 @@ see section - rgb dim.red space etc.
 
 ---
 
+Once again, we make use of the Seurat 
+
+https://satijalab.org/seurat/v3.0/de_vignette.html
+
+Lets use the RGB UMAP strategy to select a region of interest. 
+
 ```{r}
 
 #Eventuellt interaktiv Rplot
+gg <- ST.DimPlot(object = se, dims = 1:3, 
+           reduction = "umap.3d", blend = T, 
+           dark.theme = T,
+           delim="x|_")
+
+test <- ggplot_build(gg) 
+rgbTransform <- as.data.frame(t(col2rgb(test$data[[1]]$colour)))
+gg$layers[[1]]$mapping$rgbs <- paste("R:", round(rgbTransform$red/2.55), 
+                                          "% G:", round(rgbTransform$green/2.55), 
+                                          "% B:", round(rgbTransform$blue/2.55), "%",
+                                          sep="")
+
+se$rgb.red <- round(rgbTransform$red/2.55)
+se$rgb.green <- round(rgbTransform$green/2.55)
+se$rgb.blue <- round(rgbTransform$blue/2.55)
+
+ggP <- ggplotly(gg , tooltip="rgbs")
 
 ```
+
+Example: look at the inner section of (the hundora). Our hypothesis is that there is a difference between the uppern and lower part, displed by the dark orange and the more yellow part. It might even be so that across time, one expression program would turn to the next (obs, we dont have a time serier here). Lets conduct a differential expression between these two regions, or rather "colors". We can define a color interval to perform our selection, guided by the hover information we obtain from the picture. Lets define the orange cells as:  
+
+Red: >85%, Green: 30-40%, Blue: 10-20%.
+
+And the yellow cells as:
+
+Red: >85%, Green: 65-75%, Blue: 20-30%. 
+
+```{r}
+
+#Put func call inside e.g. STDimplot
+
+rgb.label <- function(object, 
+                       label1 = "label1",
+                       label2 = NULL,
+                       red1=c(0,255), 
+                       green1=c(0,255), 
+                       blue1=c(0,255),
+                       red2=c(0,255), 
+                       green2=c(0,255), 
+                       blue2=c(0,255)){
+  object$rgbInfo <- 0
+  object$rgbInfo[which(se$rgb.red > red1[1] & se$rgb.red < red1[2]
+& se$rgb.green > green1[1] & se$rgb.green < green1[2]
+& se$rgb.blue > blue1[1] & se$rgb.blue < blue1[2])] <- label1
+    
+ if(!is.null(label2)){
+    object$rgbInfo[which(se$rgb.red > red2[1] & se$rgb.red < red2[2]
+  & se$rgb.green > green2[1] & se$rgb.green < green2[2]
+  & se$rgb.blue > blue2[1] & se$rgb.blue < blue2[2])] <- label2
+ }
+  
+  object$rgbInfo  <- as.factor(object$rgbInfo)
+  
+  #seuratobject <- AddMetaData(object, metadata=object$rgbInfo)
+  Idents(object = object) <- object$rgbInfo #skriver over?
+  
+  return(object)
+}
+
+se <- rgb.label(object = se, label1="orange", red1=c(85,255), green1=c(30,40), blue1=c(10,20),
+                label2 = "yellow", red2=c(85,255), green2=c(67,75), blue2=c(20,30))
+
+```
+
+
+
+```{r}
+de.markers <- FindMarkers(se, ident.1 = "orange", ident.2 = "yellow")
+
+head(de.markers)
+```
+
+`pct.1` and `pct.2` is the percentage of capture-spots where the gene is detected in the first and second group. 
+You can exlude `ident.2` to instead perform differential expression between one group vs all other capture-spots.
+
+```{r}
+de.markers <- FindMarkers(se, ident.1 = "orange")
+head(de.markers)
+#OK DETTA E INTE SA JAKLA SNYGGT IOF ATT MAN ENDAST KAN GE 2 ST AT GANGNE, ERE OK ELLER INTE?
+```
+
+See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test. 
 
 ## Other 
 
@@ -526,9 +661,21 @@ The core of STUtility is the Seurat object, where all information from the diffe
 
 ### What if I don't have spot file coordinates?
 
-No problem. However, the count matrix needs to have some sort of coordinate info in order to actually plot the data spatially. Normally this information is kept in the colnames of the count matrix, e.g. "XxY" with X=xcoordiante and Y=ycoordinate. Creating the Seurat object with the `prep.from.table` function will result in the addition of "_z" to the columnames of the input matrix, where "z" is the sample number. When calling the spatial plots (i.e. ST.xxxPlot), use the parameter `delim` to specifiy the type of colnames you have in the Seurat object. If the names are according to the outline above, this would imply `delim = x|_”`.  
+No problem. However, the count matrix needs to have some sort of coordinate info in order to actually plot the data spatially. Normally this information is kept in the colnames of the count matrix, e.g. "XxY" with X=xcoordiante and Y=ycoordinate. Creating the Seurat object with the `prep.from.table` function will result in the addition of "_z" to the columnames of the input matrix, where "z" is the sample number. When calling the spatial plots (i.e. ST.xxxPlot), use the parameter `delim` to specifiy the type of colnames you have in the Seurat object. If the names are according to the outline above, this would imply `delim = "x|_"`.  
 
 ### Saving of images 
+
+For saving images, we usally use the built in function `pdf()` within R. All ploting functions in STutility returns a ggplot object. Accordingly just, initiate the pdf function, make the plot and then turn off the graphic device:
+
+```{r, eval=FALSE}
+
+pdf("nameOfyourImage.pdf", width = 12, height = 12)
+
+ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T)
+
+dev.off()
+
+```
 
 ## Acknowledgement
 

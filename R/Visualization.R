@@ -165,6 +165,8 @@ ST.DimPlot <- function(
   }
 }
 
+
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Feature plots
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -895,7 +897,6 @@ MultiDimOverlay <- function(
   p <- image_read(tmp.file)
 
   if (method == "viewer") {
-    print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
     par(mar = c(0, 0, 0, 0))
@@ -967,7 +968,6 @@ MultiFeatureOverlay <- function(
   p <- image_read(tmp.file)
 
   if (method == "viewer") {
-    print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
     par(mar = c(0, 0, 0, 0))

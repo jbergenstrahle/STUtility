@@ -37,6 +37,7 @@ parse.spot.file = function(path, delim="\t", ...) {
 #' @param min.gene.spots filter away genes that is not expressed below this number of capture spots
 #' @param min.spot.count filter away capture spots that contains a total read count below this threshold
 #' @param topN OPTIONAL: Filter out the top most expressed genes
+#' @param spot.file OPTIONAL: Turn this off (FALSE) if images or/and spotfiles are not used as input
 #' @param ... parameters passed to \code{\link{CreateSeuratObejct}}
 #'
 #' @inheritParams ConvertGeneNames
@@ -162,11 +163,12 @@ prep.from.table <- function(
 
 
   # ---- Add image paths
-  m@tools <- list(imgs = infotable$imgs)
+
 
   if(spot.file == FALSE){
     m@misc$spotfile = FALSE
-  }else{m@misc$spotfile = TRUE}
+  }else{m@misc$spotfile = TRUE
+  m@tools <- list(imgs = infotable$imgs)}
 
   cat(paste("After filtering the dimensions of the experiment is: "))
   print(dim(m))

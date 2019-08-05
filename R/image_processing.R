@@ -14,7 +14,7 @@ LoadImages <- function (
   image.paths = NULL,
   xdim = 400,
   verbose = FALSE,
-  time.resolve = FALSE
+  time.resolve = TRUE
 ) {
   # Check that image paths are present
   if (!"imgs" %in% names(object@tools)) {
