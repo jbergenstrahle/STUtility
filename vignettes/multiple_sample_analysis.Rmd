@@ -642,7 +642,24 @@ de.markers <- FindMarkers(se, ident.1 = "orange", ident.2 = "yellow")
 head(de.markers)
 ```
 
+We get the values for group1 vs group2, i.e. "Wfs1" is determined to be overexpressed in the yellow area vs the orange, i.e (lower region of the [insert anatomical area].  
+
 `pct.1` and `pct.2` is the percentage of capture-spots where the gene is detected in the first and second group. 
+
+Lets check the spatial distribution of Wfs1:
+
+```{r}
+
+MultiFeatureOverlay(se, features = "Wfs1", 
+                    sampleids = paste0(1:8),
+                    palette = "GrRd",
+                    method="raster")
+```
+
+In 6 out of 8 samples, we have a clear "stroke" of expression in the lower part of the [insert anatomical area]
+
+# AAAAADDD det vore snyggt om man kunde VISUALISERA de REGIONER MAN VALT SO MAN VET !
+
 You can exlude `ident.2` to instead perform differential expression between one group vs all other capture-spots.
 
 ```{r}
@@ -650,6 +667,17 @@ de.markers <- FindMarkers(se, ident.1 = "orange")
 head(de.markers)
 #OK DETTA E INTE SA JAKLA SNYGGT IOF ATT MAN ENDAST KAN GE 2 ST AT GANGNE, ERE OK ELLER INTE?
 ```
+
+Lets check the top gene based on adjusted p-value:
+
+```{r}
+
+MultiFeatureOverlay(se, features = "Pou3f1", 
+                    sampleids = paste0(1:8),
+                    palette = "GrRd",
+                    method="raster")
+```
+
 
 See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test. 
 
