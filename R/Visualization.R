@@ -1045,7 +1045,6 @@ SetQuantile <- function(
   return(as.numeric(x = cutoff))
 }
 
-
 #' Function used to scale numerical features
 #'
 #' @param data data.frame containing x, y coordinates and columns with numerical features
@@ -1102,7 +1101,6 @@ feature.scaler <- function(
   return(data)
 }
 
-
 #' Generates a dark theme for STPlot
 #' @importFrom ggplot2 element_rect element_text theme
 
@@ -1114,30 +1112,77 @@ dark_theme <- function() {
         legend.text = element_text(colour = "white"))
 }
 
-
-#' QC histograms on the number of unqiue transcripts and genes per spot
+#' Store rgb values after ST.Dimplot
+#' OBS! could be merged with ST.Dimplot?
 #'
-#' @param se S4 object
+#' @param plotObj A ST.DimPlot output object
+#'
+#' @importFrom plotly ggplotly
+#' @importFrom ggplot2 ggplot_build
+#'
 #' @export
 
-qc.hist <- function(se, metric="transcripts"){
+ST.rgbDimPlot <- function(
+  plotObj){
+  ggBuild <- ggplot_build(gg)
+  rgbTransform <- as.data.frame(t(col2rgb(ggBuild$data[[1]]$colour)))
+  plotObj$layers[[1]]$mapping$rgbs <- paste("R:", round(rgbTransform$red/2.55),
+                                       "% G:", round(rgbTransform$green/2.55),
+                                       "% B:", round(rgbTransform$blue/2.55), "%",
+                                       sep="")
 
-  #OBS OBS ADD NON.SEURAT ALTERNATIVE
-  par(mfrow=c(1,2))
-  hist(cm$nCount_RNA, main="Unique transcripts per spot", xlab="nr of transcripts", breaks="FD")
-  hist(cm$nFeature_RNA, main="Unique genes per spot", xlab="nr of genes", breaks="FD")
+  plot <- ggplotly(gg , tooltip="rgbs")
+  return(plot)
 
 }
 
 
-#' Correlation plots between all samples
+#' Select spots by rgb values after ST.DimPlot
 #'
-#' @param se S4 object
+#' @param object S4 object
+#' @param dimPlot A ST.DimPlot output object
+#' @param label1 Optional name of the 1st group of capture-spots
+#' @param label2 Optional name of the 2nd group of capture-spots
+#'
 #' @export
 
-qc.corr <- function(se, metric="transcripts"){
+labelRGB <- function(object,
+                      dimPlot,
+                      label1 = "label1",
+                      label2 = NULL,
+                      red1=c(0,255),
+                      green1=c(0,255),
+                      blue1=c(0,255),
+                      red2=c(0,255),
+                      green2=c(0,255),
+                      blue2=c(0,255)){
+  # --------------------- Add this part to parameter in ST.Dimplot
+  ggBuild <- ggplot_build(dimPlot)
+  rgbTransform <- as.data.frame(t(col2rgb(ggBuild$data[[1]]$colour)))
+  ggBuild$layers[[1]]$mapping$rgbs <- paste("R:", round(rgbTransform$red/2.55),
+                                            "% G:", round(rgbTransform$green/2.55),
+                                            "% B:", round(rgbTransform$blue/2.55), "%",
+                                            sep="")
 
-  #OBS OBS ADD NON.SEURAT ALTERNATIVE
+  object$rgb.red <- round(rgbTransform$red/2.55)
+  object$rgb.green <- round(rgbTransform$green/2.55)
+  object$rgb.blue <- round(rgbTransform$blue/2.55)
+  # -------------------------------------------------------------
+  object$rgbInfo <- 0
+  object$rgbInfo[which(object$rgb.red > red1[1] & object$rgb.red < red1[2]
+                       & object$rgb.green > green1[1] & object$rgb.green < green1[2]
+                       & object$rgb.blue > blue1[1] & object$rgb.blue < blue1[2])] <- label1
 
+  if(!is.null(label2)){
+    object$rgbInfo[which(object$rgb.red > red2[1] & object$rgb.red < red2[2]
+                         & object$rgb.green > green2[1] & object$rgb.green < green2[2]
+                         & object$rgb.blue > blue2[1] & object$rgb.blue < blue2[2])] <- label2
+  }
 
+  object$rgbInfo  <- as.factor(object$rgbInfo)
+
+  #seuratobject <- AddMetaData(object, metadata=object$rgbInfo)
+  Idents(object = object) <- object$rgbInfo #skriver over?
+
+  return(object)
 }
