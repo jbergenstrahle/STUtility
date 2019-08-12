@@ -277,3 +277,218 @@ AlignImages <- function (
 
   return(object)
 }
+
+
+#' Manual alignment of images
+#'
+#' Creates an interactive shiny application to align images manually
+#'
+#' @param object Seurat object
+#' @param reference.index Specifies reference sample image for alignment(default: 1)
+#' @param verbose Print messages
+#'
+#' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
+#' @importFrom shinyjs useShinyjs reset
+#'
+#' @export
+
+ManualAlignImages <- function (
+  object,
+  reference.index = 1,
+  verbose = FALSE
+) {
+
+  # Obtain point sets from each image
+  scatters <- grid.from.seu(object)
+  fixed.scatter <- scatters[[reference.index]]$scatter
+  counter <- NULL
+  coords.ls <- NULL
+  tr.matrices <- lapply(seq_along(object@tools$masked), function(i) diag(c(1, 1, 1)))
+
+
+  ui <- fluidPage(
+    useShinyjs(),
+    fluidRow(
+      column(3,
+                    sliderInput(
+                      inputId = "angle",
+                      label = "Rotation angle",
+                      value = 0, min = -120, max = 120, step = 0.1
+                    ),
+                    sliderInput(
+                      inputId = "shift_x",
+                      label = "Move along x axis",
+                      value = 0, min = -200, max = 200, step = 1
+                    ),
+                    sliderInput(
+                      inputId = "shift_y",
+                      label = "Move along y axis",
+                      value = 0, min = -200, max = 200, step = 1
+                    ),
+                    sliderInput(
+                      inputId = "size",
+                      label = "Change point size",
+                      value = 0.5, min = 0.1, max = 6, step = 0.1
+                    ),
+                    checkboxInput(inputId = "flip_x",
+                                         label = "Mirror along x axis",
+                                         value = FALSE),
+                    checkboxInput(inputId = "flip_y",
+                                         label = "Mirror along y axis",
+                                         value = FALSE),
+                    selectInput(inputId = "sample", choices = 2:6, label = "Select sample", selected = 2),
+                    actionButton("myBtn", "Return aligned data")
+      ),
+
+      column(8, plotOutput("scatter")
+      )
+    )
+  )
+
+  server <- function(input, output) {
+
+    rotation_angle <- reactive({
+      input$angle
+    })
+
+    translation_xy <- reactive({
+      trxy <- c(input$shift_x, input$shift_y)
+      return(trxy)
+    })
+
+    mirror_xy <- reactive({
+      mirrxy <- c(input$flip_x, input$flip_y)
+      return(mirrxy)
+    })
+
+    pt_size <- reactive({
+      input$size
+    })
+
+    coords_list <- reactive({
+
+      # Obtain point set and spot pixel coordinates
+      ls <- scatter.coords()
+      scatter.t <- ls[[1]]; coords.t <- ls[[2]]
+
+      # Set transformation parameters
+      xt.yt <- translation_xy()
+      xy.alpha <- rotation_angle()
+      mirrxy <-  mirror_xy()
+
+      # Apply reflections
+      center <- apply(scatter.t, 2, mean)
+      tr.mirror <- mirror(mirror.x = mirrxy[1], mirror.y = mirrxy[2], center.cur = center)
+
+      # Apply rotation
+      tr.rotate <- rotate(angle = -xy.alpha, center.cur = center)
+
+      # Apply translation
+      tr.translate <- translate(translate.x = xt.yt[1], translate.y = xt.yt[2])
+
+      # Combine transformations
+      tr <- tr.translate%*%tr.rotate%*%tr.mirror
+
+
+      # Apply transformations
+      scatter.t <- t(tr%*%rbind(t(scatter.t), 1))[, 1:2]
+      coords.t <- t(tr%*%rbind(t(coords.t), 1))[, 1:2]
+
+      return(list(scatter = scatter.t, coords = coords.t, tr = tr))
+    })
+
+    output$scatter <- renderPlot({
+
+      coords.ls <<- coords_list()
+      scatter.t <- coords.ls[[1]]; coords.t <- coords.ls[[2]]
+
+      d <- round((sqrt(400^2 + 400^2) - 400)/2)
+
+      plot(fixed.scatter, xlim = c(-d, 400 + d), ylim = c(-d, 400 + d))
+      points(scatter.t, col = "gray")
+      points(coords.t, col = "red", cex = pt_size())
+
+    }, height = 800, width = 800)
+
+    scatter.coords <- eventReactive(input$sample, {
+      reset("angle"); reset("shift_x"); reset("shift_y"); reset("flip_x"); reset("flip_y")
+      if (!is.null(counter)) {
+        scatters[[counter]] <<- coords.ls[c(1, 2)]
+        if (!is.null(tr.matrices[[counter]])) {
+          tr.matrices[[counter]] <<- coords.ls[[3]]%*%tr.matrices[[counter]]
+          #cat("Sample:", counter, "\n",  tr.matrices[[counter]][1, ], "\n", tr.matrices[[counter]][2, ], "\n", tr.matrices[[counter]][3, ], "\n\n")
+        } else {
+          tr.matrices[[counter]] <<- coords.ls[[3]]
+        }
+      }
+      scatter <- scatters[[as.numeric(input$sample)]]$scatter
+      coords <- scatters[[as.numeric(input$sample)]]$coords
+      counter <<- as.numeric(input$sample)
+      return(list(scatter, coords))
+    })
+
+    observe({
+      if(input$myBtn > 0){
+        if (!is.null(counter)) {
+          scatters[[counter]] <<- coords.ls[c(1, 2)]
+          if (!is.null(tr.matrices[[counter]])) {
+            tr.matrices[[counter]] <<- coords.ls[[3]]%*%tr.matrices[[counter]]
+            cat("Sample:", counter, "\n",  tr.matrices[[counter]][1, ], "\n", tr.matrices[[counter]][2, ], "\n", tr.matrices[[counter]][3, ], "\n\n")
+          } else {
+            tr.matrices[[counter]] <<- coords.ls[[3]]
+          }
+        }
+        stopApp(tr.matrices)
+      }
+    })
+
+  }
+
+  # Returned transformation matrices
+  alignment.matrices <- runApp(list(ui = ui, server = server))
+  if (verbose) cat(paste("Finished image alignment. \n\n"))
+  processed.ids <- which(unlist(lapply(alignment.matrices, function(tr) {!all(tr == diag(c(1, 1, 1)))})))
+
+  # Create lists for transformation
+  processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
+  masks <- object@tools$masked.masks
+  processed.masks <- setNames(ifelse(rep("processed.masks" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed.masks, object@tools$masked.masks), nm = names(object@tools$masked))
+  warped_coords <- object[[c("pixel_x", "pixel_y")]]
+
+  for (i in processed.ids) {
+
+    if (verbose) cat(paste0("Loading masked image for sample ", i, " ... \n"))
+    m <- object@tools$masked[[i]]
+
+    # Obtain alignment matrix
+    tr <- alignment.matrices[[i]]
+
+    map.rot.backward <- generate.map.rot(tr)
+    map.rot.forward <- generate.map.rot(tr, forward = TRUE)
+
+    # Obtain scale factors
+    dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
+    dims.scaled <- dim(object@tools$raw[[i]])
+    sf.xy <- dims.raw/rev(dims.scaled)
+    pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
+
+    # Warp pixels
+    if (verbose) cat(paste0("Warping pixel coordinates for ", i, " ... \n"))
+    warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.rot.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
+    warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
+
+    if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
+    processed.images[[i]] <- Warp(m, map.rot.backward)
+    msk <- masks[[i]]
+    if (verbose) cat(paste0("Warping image mask for ", i, " ... \n"))
+    processed.masks[[i]] <- Warp(msk, map.rot.backward, mask = T)
+    if (verbose) cat(paste0("Finished alignment for sample ", i, " \n\n"))
+  }
+
+  object@tools$processed <- processed.images
+  object@tools$processed.masks <- processed.masks
+  object[[c("warped_x", "warped_y")]] <- warped_coords
+  return(object)
+
+}
+
