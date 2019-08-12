@@ -24,6 +24,8 @@ coordiantes as rows.}
 
 \item{min.spot.count}{filter away capture spots that contains a total read count below this threshold}
 
+\item{spot.file}{OPTIONAL: Turn this off (FALSE) if images or/and spotfiles are not used as input}
+
 \item{annotation}{data.frame with one id.column containing the current gene ids and a matching replace
 column containing the new gene ids}
 

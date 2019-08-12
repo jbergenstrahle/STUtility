@@ -211,7 +211,8 @@ MaskImages <- function (
         modify_at(2, ~ . * 4) %>% imappend("c") %>%
         HSVtoRGB() %>% blur_anisotropic(amplitude = 1e4, sharpness = 0.6, anisotropy = 0.7)
     } else {
-      im <- magick2cimg(im) %>% medianblur(median.blur)
+      im <- magick2cimg(im) %>% medianblur(median.blur) %>% RGBtoHSV() %>%
+        imsplit("c") %>% modify_at(2, ~ . * 4) %>% imappend("c") %>% HSVtoRGB()
     }
 
     #f <- ecdf(im)
