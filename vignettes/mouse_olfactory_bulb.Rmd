@@ -143,3 +143,16 @@ ST.FeaturePlot(object=se,
                pt.size = 1,
                dark.theme = T)
 ```
+
+
+```{r, fig.width=16, fig.height=10}
+
+df <- as.data.frame(se@reductions$umap.3d@cell.embeddings)
+
+gg <- ggplot(df, aes(x=UMAP_1, y=UMAP_2, col=UMAP_3))+geom_point()
+plot_gg(gg,multicore=TRUE,width=5,height=5,scale=250)
+```
+
+
+
+
