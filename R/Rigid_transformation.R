@@ -34,8 +34,8 @@ get.edges <- function (
 #' @param threads number of trheads to use
 #' @return list with transformed x, y coordinates and list of transformation matrices
 #'
-#' @param importFrom Rvcg vcgCreateKDtree vcgSearchKDtree
-#' @param importFrom Morpho computeTransform applyTransform
+#' @importFrom Rvcg vcgCreateKDtree vcgSearchKDtree
+#' @importFrom Morpho computeTransform applyTransform
 
 icpmat <- function (
   set1,
