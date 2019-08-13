@@ -207,7 +207,7 @@ ST.DimPlot <- function(
 #' @return A ggplot object
 #' @export
 
-ST.FeaturePlot <- function(
+ST.FeaturePlot <- function (
   object,
   features,
   spots = NULL,
@@ -235,7 +235,7 @@ ST.FeaturePlot <- function(
   data <- as.data.frame(lapply(data, function(x) {
     new_x <- ifelse(test = sapply(x, function(n) {class(n) == "factor"}), yes = as.character(x), no = x)
     return(new_x)
-  }))
+  }), optional = TRUE)
 
   data.type <- unique(sapply(data, class))
 
@@ -413,9 +413,9 @@ STPlot <- function(
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = variable, shape = shape.by), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = variable), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
     }
 
   }

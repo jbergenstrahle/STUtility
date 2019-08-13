@@ -8,6 +8,7 @@ man/*
 .RData
 .Rhistory
 .DS_Store
+change_comitter.sh
 inst/.DS_Store
 inst/extdata/.DS_Store
 #inst/extdata/counts/*

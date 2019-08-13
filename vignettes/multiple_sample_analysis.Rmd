@@ -175,6 +175,8 @@ NOTE: time.resolve is set to TRUE as deafult in the current version. This will i
 se <- LoadImages(object = se, verbose = T, time.resolve = T)
 #undrar om man inte ska ha den som default egentligen?
 
+# Gud förbjude
+
 ```
 
 Using the loaded images, we can create masks around the tissue area, to hide the array background and allow for better visualization. 
@@ -186,7 +188,7 @@ se <- MaskImages(object = se, verbose = T)
 
 ```
 
-You can then look at the HE images using the ImagePlot() function. The raw images are not loaded but instead we store pointers to the image files to save memory. This allows us to change the size of the working images whenever we want to, but it is important to know that the pointers will die between R sessions. The ImagePlot will therefore return a Seurat object with updated pointers to make sure that the pointers are kept alive if you start a new session.
+You can then look at the HE images using the ImagePlot() function.The ImagePlot function will automatically label the samples from 1 to N where N is the total number of samples. If you are running the function within RStudio you can take advantage of the Viewer panel to explore the images. Setting method="raster" and the plot function will use the default plotting device in R. You can also change the layout of the images by forcing a different number of columns by setting ncols.
 
 
 ```{r, fig.height=6, fig.width=12}
@@ -196,14 +198,15 @@ ImagePlot(se, ncols = 3)
 
 ```
 
-To overlay a spatial feature heatmaps on top of the HE image we use the FeatureOverlay() function. This function is similar to ST.FeaturePlot() but allows only one sample (specified by the sample.index argument) to be handled at the time. 
+To overlay a spatial feature heatmaps on top of the HE image we use the FeatureOverlay() function. This function is similar to ST.FeaturePlot() but allows only one sample (specified by the sample.index argument) to be handled at the time. Note that the features are overlaid on top of the masked HE images where the background has been removed. If you want to use the raw images you can just specify type = "raw" to plot on the original images instead. Sometimes the masking algorithm will fail and you will end up with small pieces of the tissues erased. If this happens you can try to rerun the MaskImages() function with different parameter settings until you are satisfied.
 
 ```{r, fig.height=6, fig.width=13}
-
+# TODO: fix warning
 FeatureOverlay(object = se, 
               features = c("nFeature_RNA", "nCount_RNA"), 
               sample.index = 1,
-              palette = "GrRd")
+              palette = "GrRd",
+              alpha = 0.7)
 
 
 
@@ -340,6 +343,8 @@ The strength of untargeted whole transcriptome capture is the ability to perform
 se <- RunICA(se)
 
 ``` 
+=======
+```
 
 Different dimensionality reductions methods are suported via Seurat (`RunPCA()`, `RunTSNE`, `RunICA()`, `runUMAP()` ) and the output are stored in the Seurat object. 
 

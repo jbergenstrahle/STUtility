@@ -14,7 +14,7 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, blend = FALSE,
 \arguments{
 \item{object}{Seurat object}
 
-\item{dims}{Dimensions to plot, must numeric vectoir specifying number of dimensions to plot}
+\item{dims}{Dimensions to plot, a numeric vector specifying number of dimensions to plot}
 
 \item{spots}{Vector of spots to plot (default is all spots)}
 
