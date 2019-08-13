@@ -339,7 +339,7 @@ The strength of untargeted whole transcriptome capture is the ability to perform
 
 se <- RunICA(se)
 
-```
+``` 
 
 Different dimensionality reductions methods are suported via Seurat (`RunPCA()`, `RunTSNE`, `RunICA()`, `runUMAP()` ) and the output are stored in the Seurat object. 
 
@@ -569,7 +569,7 @@ gg <- ST.DimPlot(object = se, dims = 1:3,
            dark.theme = T,
            delim="x|_")
 
-ST.rgbDimPlot(plot = gg) #make this an parameter  to St.DimPlot instead
+ST.rgbDimPlot(plot = gg) %>% layout(paper_bgcolor = "rgb(0,0,0)") #make this an parameter  to St.DimPlot instead
 
 ```
 
