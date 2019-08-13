@@ -342,7 +342,7 @@ slic <- function (
   km <- suppressWarnings({kmeans(X, X[ind, ], ...)})
 
   #Superpixel image: each pixel is given the colour of the superpixel it belongs to
-  sp <- map(1:spectrum(im),~ km$centers[km$cluster, 2+.]) %>% do.call(c, .) %>% as.cimg(dim = dim(im))
+  sp <- map(1:spectrum(im), ~ km$centers[km$cluster, 2+.]) %>% do.call(c, .) %>% as.cimg(dim = dim(im))
   #Correct for ratio
   sp <- sp/rat
   if (spectrum(im) == 3)

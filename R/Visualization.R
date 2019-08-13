@@ -449,6 +449,174 @@ STPlot <- function(
 }
 
 
+#' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
+#'
+#' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
+#' @param data.type type of data, e.g. numeric or integer
+#' @param group.by specifies column to facet the plots by, e.g. sample
+#' @param shape.by specifies column to shape points by, e.g. morphological region
+#' @param variable name of continuous variable
+#' @param pt.size point size of each ST spot
+#' @param palette color palette used for spatial heatmap
+#' @param rev.cols logical specifying whether colorscale should be reversed
+#' @param ncol number of columns in \code{facet_wrap}
+#' @param spot.colors character vector woth color names that overrides default coloring with ggplot2
+#' @param center.zero should the colorscale be centered around 0? Set to TRUE for scaled data
+#' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
+#' @param plot.title Add title to plot
+#' @param xlim,ylim Set x/y-axis limits
+#' @param ... parameters passed to geom_point()
+#'
+#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn
+#'
+#' @export
+
+TessPlot <- function (
+  data,
+  data.type = NULL,
+  group.by,
+  shape.by,
+  variable,
+  pt.size = 1,
+  palette = "MaYl",
+  rev.cols = F,
+  ncol = NULL,
+  spot.colors = NULL,
+  center.zero = TRUE,
+  center.tissue = F,
+  plot.title = NULL,
+  xlim = NULL,
+  ylim = NULL,
+  ...
+) {
+
+  xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
+
+  # Subset only based on one value's expression
+  p.list <- lapply(1:length(unique(data[, group.by])), function(i) {
+    data.subset <- subset(data, sample == i)
+    #data.subset[, variable] <- data.subset[, variable] + abs(rnorm(n = nrow(data.subset), mean = 1e-30, sd = 1e-30))
+    data.subset[, c("pixel_x", "pixel_y")] <- subset(object[[]], sample == i)[, c("pixel_x", "pixel_y")]
+    data.subset <- data.subset[data.subset[, variable] != 0, ]
+    s.xy <- as.numeric(object@tools$dims[[1]][, 2:3])/c(400, 400)
+    data.subset[, c("pixel_x", "pixel_y")] <- data.subset[, c("pixel_x", "pixel_y")]/s.xy
+    x.scaled <- data.subset[, "pixel_x"]; y.scaled <- data.subset[, "pixel_y"]
+    x <- data.subset[, "x"]; y <- data.subset[, "y"]
+    min.x <- min(x); min.y <- min(y); max.x <- max(x); max.y <- max(y)
+    min.x.scaled <- min(x.scaled); min.y.scaled <- min(y.scaled); max.x.scaled <- max(x.scaled); max.y.scaled <- max(y.scaled)
+    tissue.width.px <- max.x.scaled - min.x.scaled; tissue.height.px <- max.y.scaled - min.y.scaled;
+    tissue.width <- max.x - min.x; tissue.height <- max.y - min.y;
+    # Run interpolation
+    s =  interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height)
+
+    #image2D(z = s$z, colkey = T, resfac = 10, smooth = TRUE, alpha = 1, box = FALSE, inttype = 1,  NAcol = "black", x = c(1:x), y = c(y:1), xlab="", ylab="", yaxt='n', xaxt = "n")
+    z <- t(s$z)
+    x <- 1:ncol(z)
+    y <- 1:nrow(z)
+    gg <- list(x = x, y = y, z = t(z))
+    r <- interp.surface.grid(gg, grid.list = list(x = seq(0, ncol(z), length.out = tissue.width.px), y = seq(0, nrow(z), length.out = tissue.height.px)))
+    x <- rep(r$x, each = ncol(r$z))
+    y <- rep(r$y, nrow(r$z))
+    z <- as.vector(t(r$z))
+    gg <- data.frame(x, y, val = z)
+    gg$val[gg$val == 0] <- NA
+    #gg$a <- scale2range(gg$val, 0, set.max.alpha)
+
+    p <- ggplot(na.omit(gg), aes(x, 64 - y, fill = val)) +
+      geom_raster(interpolate = TRUE) +
+      scale_fill_gradientn(colours = c("dark blue", "cyan", "yellow", "red")) +
+      scale_x_continuous(expand = c(0, 0)) +
+      scale_y_continuous(expand = c(0, 0)) +
+      theme_void() +
+      guides(fill = FALSE)
+
+    tmp.file <- tempfile(pattern = "", fileext = ".png")
+
+    png(width = tissue.width.px, height = tissue.height.px, file = tmp.file)
+    par(mar = c(0, 0, 0, 0))
+    plot(p)
+    dev.off()
+
+    p <- image_read(tmp.file)
+
+    # Create empty image
+    em <- image_read(as.raster(matrix(1, ncol = 400, nrow = 400)))
+    em <- image_composite(image = em, p, offset = paste("+", min.x.scaled, "+", min.y.scaled))
+
+    msk <- as.cimg(object@tools$masked.masks[[1]])
+    masked.plot <- as.raster(magick2cimg(em)*(msk/255))
+    masked.plot[masked.plot == "#000000"] <- "#FFFFFF"
+  })
+
+  # Center tissue along y-axis
+  if (center.tissue) {
+    if (!is.null(group.by)) {
+      data <- do.call(rbind, lapply(split(data, data[, group.by]), function(d) {
+        d[, "y"] <- d[, "y"] - median(d[, "y"]) + ylim[2]/2
+        return(d)
+      }))
+    } else {
+      data[, "y"] <- data[, "y"] - median(data[, "y"]) + ylim[2]/2
+    }
+  }
+
+  # Obtain colors from selected palette
+  cols <- palette.select(palette)(3)
+  if (rev.cols) {
+    cols <- rev(cols)
+  }
+
+  # Create new plot
+  p <- ggplot()
+  if (length(spot.colors) > 0) {
+
+    # Add shape aesthetic and blend colors if blend is active
+    if (!is.null(shape.by)) {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
+    } else {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y")), color = spot.colors, size = pt.size, ...)
+    }
+
+  } else {
+
+    # Add shape aesthetic only
+    if (!is.null(shape.by)) {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
+    } else {
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
+    }
+
+  }
+
+  # Add ST array dimensions
+  p <- p +
+    scale_x_continuous(limits = xlim) +
+    scale_y_continuous(limits = ylim) +
+    theme_void() +
+    labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+
+  # Facet plots by group variable
+  if (!is.null(group.by)) {
+    p <- p +
+      facet_wrap(as.formula(paste("~", group.by)), ncol = ncol)
+  }
+
+  # Center colorscale at 0
+  if (center.zero) {
+    p <- p +
+      scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
+  } else if (any(data.type %in% c("character", "factor"))) {
+    p <- p +
+      labs(color = variable)
+  } else {
+    p <- p +
+      scale_color_gradientn(colours = cols)
+  }
+
+  return(p)
+}
+
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Dimensional reduction plots on HE images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -897,6 +1065,7 @@ MultiDimOverlay <- function(
   p <- image_read(tmp.file)
 
   if (method == "viewer") {
+    print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
     par(mar = c(0, 0, 0, 0))
@@ -968,10 +1137,11 @@ MultiFeatureOverlay <- function(
   p <- image_read(tmp.file)
 
   if (method == "viewer") {
+    print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
     par(mar = c(0, 0, 0, 0))
-    plot(as.raster(p))
+    plot(p)
     unlink(tmp.file)
   } else {
     stop(paste0("Invalid method ", method), call. = FALSE)
