@@ -188,7 +188,7 @@ se <- MaskImages(object = se, verbose = T)
 
 ```
 
-You can then look at the HE images using the ImagePlot() function. The ImagePlot function will automatically label the samples from 1 to N where N is the total number of samples. If you are running the function within RStudio you can take advantage of the Viewer panel to explore the images. Setting method="raster" and the plot function will use the default plotting device in R. You can also change the layout of the images by forcing a different number of columns by setting ncols.
+You can then look at the HE images using the ImagePlot() function.The ImagePlot function will automatically label the samples from 1 to N where N is the total number of samples. If you are running the function within RStudio you can take advantage of the Viewer panel to explore the images. Setting method="raster" and the plot function will use the default plotting device in R. You can also change the layout of the images by forcing a different number of columns by setting ncols.
 
 
 ```{r, fig.height=6, fig.width=12}
@@ -342,6 +342,8 @@ The strength of untargeted whole transcriptome capture is the ability to perform
 
 se <- RunICA(se)
 
+``` 
+=======
 ```
 
 Different dimensionality reductions methods are suported via Seurat (`RunPCA()`, `RunTSNE`, `RunICA()`, `runUMAP()` ) and the output are stored in the Seurat object. 
@@ -572,7 +574,7 @@ gg <- ST.DimPlot(object = se, dims = 1:3,
            dark.theme = T,
            delim="x|_")
 
-ST.rgbDimPlot(plot = gg) #make this an parameter  to St.DimPlot instead
+ST.rgbDimPlot(plot = gg) %>% layout(paper_bgcolor = "rgb(0,0,0)") #make this an parameter  to St.DimPlot instead
 
 ```
 
