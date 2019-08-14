@@ -471,7 +471,7 @@ STPlot <- function(
 #'
 #' @export
 
-TessPlot <- function (
+SmoothPlot <- function (
   data,
   data.type = NULL,
   group.by,
@@ -507,7 +507,7 @@ TessPlot <- function (
     tissue.width.px <- max.x.scaled - min.x.scaled; tissue.height.px <- max.y.scaled - min.y.scaled;
     tissue.width <- max.x - min.x; tissue.height <- max.y - min.y;
     # Run interpolation
-    s =  interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height)
+    s =  akima::interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height)
 
     #image2D(z = s$z, colkey = T, resfac = 10, smooth = TRUE, alpha = 1, box = FALSE, inttype = 1,  NAcol = "black", x = c(1:x), y = c(y:1), xlab="", ylab="", yaxt='n', xaxt = "n")
     z <- t(s$z)
@@ -519,12 +519,12 @@ TessPlot <- function (
     y <- rep(r$y, nrow(r$z))
     z <- as.vector(t(r$z))
     gg <- data.frame(x, y, val = z)
-    gg$val[gg$val == 0] <- NA
+    #gg$val[gg$val == 0] <- NA
     #gg$a <- scale2range(gg$val, 0, set.max.alpha)
 
-    p <- ggplot(na.omit(gg), aes(x, 64 - y, fill = val)) +
+    p <- ggplot(gg, aes(x, 64 - y, fill = val)) +
       geom_raster(interpolate = TRUE) +
-      scale_fill_gradientn(colours = c("dark blue", "cyan", "yellow", "red")) +
+      scale_fill_gradientn(colours = c("dark blue", "cyan", "yellow", "red"), na.value = "#000000") +
       scale_x_continuous(expand = c(0, 0)) +
       scale_y_continuous(expand = c(0, 0)) +
       theme_void() +
@@ -540,12 +540,11 @@ TessPlot <- function (
     p <- image_read(tmp.file)
 
     # Create empty image
-    em <- image_read(as.raster(matrix(1, ncol = 400, nrow = 400)))
+    em <- image_read(as.raster(matrix(0, ncol = object@tools$xdim, nrow = round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim)))))
     em <- image_composite(image = em, p, offset = paste("+", min.x.scaled, "+", min.y.scaled))
 
     msk <- as.cimg(object@tools$masked.masks[[1]])
     masked.plot <- as.raster(magick2cimg(em)*(msk/255))
-    masked.plot[masked.plot == "#000000"] <- "#FFFFFF"
   })
 
   # Center tissue along y-axis
