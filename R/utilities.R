@@ -93,8 +93,10 @@ FilterObjects <- function(object, classes.keep = c('Assay', 'DimReduc')) {
 #' @keywords internal
 
 palette.select <- function(palette, info = F) {
-  palettes <- list(
+  palettes <- list (
     LgBu = colorRampPalette(c("grey", "lightblue", "blue")),
+    GnRd = colorRampPalette(c("green", "black", "red")),
+    BuRd = colorRampPalette(c("blue", "black", "red")),
     GrRd = colorRampPalette(c("lightgray", "mistyrose", "red")),
     magma = colorRampPalette(magma(9)),
     GnBu = colorRampPalette(rev(brewer.pal(9,"GnBu"))),
@@ -115,7 +117,7 @@ palette.select <- function(palette, info = F) {
     RdYlBu = colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))
   )
   if (info) {
-    return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div"), stringsAsFactors = F))
+    return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div"), stringsAsFactors = F))
   }
   if (!palette %in% names(palettes)) {
     stop("Invalid palette name: ", palette, call. = FALSE)

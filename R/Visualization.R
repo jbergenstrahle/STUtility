@@ -13,6 +13,7 @@
 #' @param object Seurat object
 #' @param dims Dimensions to plot, a numeric vector specifying number of dimensions to plot
 #' @param spots Vector of spots to plot (default is all spots)
+#' @param plot.type Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"
 #' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
@@ -39,10 +40,11 @@
 #'
 #' @export
 
-ST.DimPlot <- function(
+ST.DimPlot <- function (
   object,
   dims = c(1, 2),
   spots = NULL,
+  plot.type = "spots",
   blend = FALSE,
   min.cutoff = NA,
   max.cutoff = NA,
@@ -62,8 +64,9 @@ ST.DimPlot <- function(
   verbose = FALSE,
   ...
 ) {
+
   reduction <- reduction %||% {
-    default.reductions <- c('umap', 'tsne', 'pca')
+    default.reductions <- c('umap', 'tsne', 'pca', 'ica')
     object.reductions <- FilterObjects(object = object, classes.keep = 'DimReduc')
     reduc.use <- min(which(x = default.reductions %in% object.reductions))
     default.reductions[reduc.use]
@@ -106,8 +109,13 @@ ST.DimPlot <- function(
   }
 
   # Obtain array coordinates
+  image.type <- NULL
   if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
     data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
+    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
+    image.type <- "processed"
+  } else if ("raw" %in% names(object@tools)) {
+    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]], nm = c("x", "y")))
     xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
   } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
     data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
@@ -146,21 +154,47 @@ ST.DimPlot <- function(
     spot.colors <- NULL
     if (verbose) cat("Plotting dimensions:",
                      ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
+
     # Create plots
-    plots <- lapply(X = dims, FUN = function(d) {
-      plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d, pt.size,
-                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
+    if (plot.type == "spots") {
+      # Normal visualization -------------------------------------------------------------------------------------
+      plots <- lapply(X = dims, FUN = function(d) {
+        plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d, pt.size,
+                       palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
 
-      if (dark.theme) {
-        plot <- plot + dark_theme()
+        if (dark.theme) {
+          plot <- plot + dark_theme()
+        }
+        return(plot)
+      })
+
+      # Draw plots
+      if (return.plot.list) {
+        return(plots)
+      } else {
+        plot_grid(plotlist = plots, ncol = grid.ncol)
       }
-      return(plot)
-    })
 
-    if (return.plot.list) {
-      return(plots)
-    } else {
-      plot_grid(plotlist = plots, ncol = grid.ncol)
+    } else if (plot.type == "smooth") {
+      # Smooth visualization -------------------------------------------------------------------------------------
+      plots <- lapply(X = dims, FUN = function(d) {
+        plot <- SmoothPlot(data, image.type, data.type = "numeric", group.by, d,
+                           palette, rev.cols, ncol, center.zero, xlim, ylim, ...)
+        return(plot)
+      })
+
+      # Draw plots
+      grid.ncol <- grid.ncol %||% round(sqrt(length(x = plots)))
+      grid.nrow <- ceiling(length(x = plots)/grid.ncol)
+
+      stack <- c()
+      for (i in 1:grid.nrow) {
+        i <- i - 1
+        stack <- c(stack, image_append(Reduce(c, plots[(i*grid.ncol + 1):(i*grid.ncol + grid.ncol)])))
+      }
+
+      final_img <- image_append(Reduce(c, stack), stack = T)
+      print(final_img)
     }
   }
 }
@@ -526,7 +560,8 @@ SmoothPlot <- function (
   samplenames <- names(object@tools$raw)
 
   # Set colors
-  cols <- palette.select(palette)(5)
+  ncolors <- ifelse(palette == "heat", 4, 5)
+  cols <- palette.select(palette)(ncolors)
   if (rev.cols) {
     cols <- rev(cols)
   }
@@ -551,7 +586,7 @@ SmoothPlot <- function (
     tissue.width <- max.x - min.x; tissue.height <- max.y - min.y;
 
     # Run interpolation
-    s =  interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
+    s =  akima::interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
 
     z <- t(s$z)
     x <- 1:ncol(z)
