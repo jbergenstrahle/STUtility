@@ -4,9 +4,9 @@
 \alias{ST.FeaturePlot}
 \title{Visualize 'features' on an ST array grid}
 \usage{
-ST.FeaturePlot(object, features, spots = NULL, min.cutoff = NA,
-  max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
-  shape.by = NULL, palette = NULL, rev.cols = FALSE,
+ST.FeaturePlot(object, features, spots = NULL, plot.type = "spots",
+  min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
+  pt.size = 1, shape.by = NULL, palette = NULL, rev.cols = FALSE,
   dark.theme = FALSE, ncol = NULL, delim = NULL,
   return.plot.list = FALSE, grid.ncol = NULL, center.zero = FALSE,
   channels.use = NULL, center.tissue = FALSE, verbose = FALSE, ...)
@@ -20,6 +20,8 @@ ST.FeaturePlot(object, features, spots = NULL, min.cutoff = NA,
 }}
 
 \item{spots}{Vector of spots to plot (default is all spots)}
+
+\item{plot.type}{Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"}
 
 \item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature,
 may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')}

@@ -185,6 +185,7 @@ ST.DimPlot <- function(
 #'     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 #' }
 #' @param spots Vector of spots to plot (default is all spots)
+#' @param plot.type Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param slot Which slot to pull expression data from?
@@ -211,6 +212,7 @@ ST.FeaturePlot <- function (
   object,
   features,
   spots = NULL,
+  plot.type = "spots",
   min.cutoff = NA,
   max.cutoff = NA,
   slot = "data",
@@ -269,8 +271,13 @@ ST.FeaturePlot <- function (
   }
 
   # Obtain array coordinates
+  image.type <- NULL
   if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
     data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
+    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
+    image.type <- "processed"
+  } else if ("raw" %in% names(object@tools)) {
+    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]], nm = c("x", "y")))
     xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
   } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
     data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
@@ -318,20 +325,45 @@ ST.FeaturePlot <- function (
     if (verbose) cat("Plotting features:",
                      ifelse(length(features) == 1, features,  paste0(paste(features[1:(length(features) - 1)], collapse = ", "), " and ", features[length(features)])))
     # Create plots
-    plots <- lapply(X = features, FUN = function(d) {
-      plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
-                     palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
+    if (plot.type == "spots") {
+      # Normal visualization -------------------------------------------------------------------------------------
+      plots <- lapply(X = features, FUN = function(d) {
+        plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
+                       palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
 
-      if (dark.theme) {
-        plot <- plot + dark_theme()
+        if (dark.theme) {
+          plot <- plot + dark_theme()
+        }
+        return(plot)
+      })
+
+      # Draw plots
+      if (return.plot.list) {
+        return(plots)
+      } else {
+        plot_grid(plotlist = plots, ncol = grid.ncol)
       }
-      return(plot)
-    })
 
-    if (return.plot.list) {
-      return(plots)
-    } else {
-      plot_grid(plotlist = plots, ncol = grid.ncol)
+    } else if (plot.type == "smooth") {
+      # Smooth visualization -------------------------------------------------------------------------------------
+      plots <- lapply(X = features, FUN = function(d) {
+        plot <- SmoothPlot(data, image.type, data.type, group.by, d,
+                       palette, rev.cols, ncol, center.zero, xlim, ylim, ...)
+        return(plot)
+      })
+
+      # Draw plots
+      grid.ncol <- grid.ncol %||% round(sqrt(length(x = plots)))
+      grid.nrow <- ceiling(length(x = plots)/grid.ncol)
+
+      stack <- c()
+      for (i in 1:grid.nrow) {
+        i <- i - 1
+        stack <- c(stack, image_append(Reduce(c, plots[(i*grid.ncol + 1):(i*grid.ncol + grid.ncol)])))
+      }
+
+      final_img <- image_append(Reduce(c, stack), stack = T)
+      print(final_img)
     }
   }
 }
@@ -394,6 +426,7 @@ STPlot <- function(
 
   # Obtain colors from selected palette
   cols <- palette.select(palette)(3)
+  if (palette == "heat") cols <- palette.select(palette)(4)
   if (rev.cols) {
     cols <- rev(cols)
   }
@@ -449,170 +482,143 @@ STPlot <- function(
 }
 
 
-#' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
+#' Graphs a smooth interpolation heatmap colored by continuous variable, e.g. dimensional reduction vector
 #'
-#' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
-#' @param data.type type of data, e.g. numeric or integer
-#' @param group.by specifies column to facet the plots by, e.g. sample
-#' @param shape.by specifies column to shape points by, e.g. morphological region
-#' @param variable name of continuous variable
-#' @param pt.size point size of each ST spot
-#' @param palette color palette used for spatial heatmap
-#' @param rev.cols logical specifying whether colorscale should be reversed
-#' @param ncol number of columns in \code{facet_wrap}
-#' @param spot.colors character vector woth color names that overrides default coloring with ggplot2
-#' @param center.zero should the colorscale be centered around 0? Set to TRUE for scaled data
-#' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
-#' @param plot.title Add title to plot
-#' @param xlim,ylim Set x/y-axis limits
-#' @param ... parameters passed to geom_point()
+#' @param image.type Specifies the image is "processed", otherwise NULL
+#' @param darken Adds black color to the bottom of the colorscale to increase the contrast of the colorscale
+#' @param whiten Adds white color to the top of the colorscale to increase the contrast of the colorscale
 #'
-#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn
+#' @inheritParams STPlot
+#'
+#' @importFrom ggplot2 ggplot aes geom_raster scale_x_continuous scale_y_continuous theme_void guides scale_fill_gradient2 labs scale_fill_gradientn ggsave
+#' @importFrom akima interp
+#' @importFrom magick image_read image_border image_annotate image_composite
+#' @importFrom imager as.cimg
+#' @importFrom grDevices as.raster
 #'
 #' @export
 
 SmoothPlot <- function (
   data,
+  image.type,
   data.type = NULL,
   group.by,
-  shape.by,
   variable,
-  pt.size = 1,
   palette = "MaYl",
   rev.cols = F,
   ncol = NULL,
-  spot.colors = NULL,
   center.zero = TRUE,
-  center.tissue = F,
-  plot.title = NULL,
   xlim = NULL,
   ylim = NULL,
+  darken = FALSE,
+  whiten = FALSE,
   ...
 ) {
 
   xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
 
+  image.masks <- NULL
+  if (image.type == "processed") {
+    image.masks <- object@tools$processed.masks
+  } else if ("masked.masks" %in% names(object@tools)) {
+    image.masks <- object@tools$masked.masks
+  }
+  samplenames <- names(object@tools$raw)
+
+  # Set colors
+  cols <- palette.select(palette)(5)
+  if (rev.cols) {
+    cols <- rev(cols)
+  }
+
+  if (darken) cols <- c("black", cols); if (whiten) cols <- c(cols, "white")
+
+  val.limits <- range(data[, variable])
+
+  # Create legend
+  lg <- g_legend(data, variable, center.zero, cols, val.limits)
+
   # Subset only based on one value's expression
   p.list <- lapply(1:length(unique(data[, group.by])), function(i) {
+    xdim <- object@tools$xdim; ydim <- round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim))
     data.subset <- subset(data, sample == i)
-    #data.subset[, variable] <- data.subset[, variable] + abs(rnorm(n = nrow(data.subset), mean = 1e-30, sd = 1e-30))
-    data.subset[, c("pixel_x", "pixel_y")] <- subset(object[[]], sample == i)[, c("pixel_x", "pixel_y")]
-    data.subset <- data.subset[data.subset[, variable] != 0, ]
-    s.xy <- as.numeric(object@tools$dims[[1]][, 2:3])/c(400, 400)
-    data.subset[, c("pixel_x", "pixel_y")] <- data.subset[, c("pixel_x", "pixel_y")]/s.xy
-    x.scaled <- data.subset[, "pixel_x"]; y.scaled <- data.subset[, "pixel_y"]
+    #data.subset <- data.subset[data.subset[, variable] != 0, ]
+    s.xy <- as.numeric(object@tools$dims[[1]][, 2:3])/c(xdim, ydim)
+
+    data.subset[, c("x", "y")] <- data.subset[, c("x", "y")]/s.xy
     x <- data.subset[, "x"]; y <- data.subset[, "y"]
     min.x <- min(x); min.y <- min(y); max.x <- max(x); max.y <- max(y)
-    min.x.scaled <- min(x.scaled); min.y.scaled <- min(y.scaled); max.x.scaled <- max(x.scaled); max.y.scaled <- max(y.scaled)
-    tissue.width.px <- max.x.scaled - min.x.scaled; tissue.height.px <- max.y.scaled - min.y.scaled;
     tissue.width <- max.x - min.x; tissue.height <- max.y - min.y;
-    # Run interpolation
-    s =  akima::interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height)
 
-    #image2D(z = s$z, colkey = T, resfac = 10, smooth = TRUE, alpha = 1, box = FALSE, inttype = 1,  NAcol = "black", x = c(1:x), y = c(y:1), xlab="", ylab="", yaxt='n', xaxt = "n")
+    # Run interpolation
+    s =  interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
+
     z <- t(s$z)
     x <- 1:ncol(z)
     y <- 1:nrow(z)
-    gg <- list(x = x, y = y, z = t(z))
-    r <- interp.surface.grid(gg, grid.list = list(x = seq(0, ncol(z), length.out = tissue.width.px), y = seq(0, nrow(z), length.out = tissue.height.px)))
-    x <- rep(r$x, each = ncol(r$z))
-    y <- rep(r$y, nrow(r$z))
-    z <- as.vector(t(r$z))
-    gg <- data.frame(x, y, val = z)
-    #gg$val[gg$val == 0] <- NA
-    #gg$a <- scale2range(gg$val, 0, set.max.alpha)
+    gg <- data.frame(x = rep(x, each = nrow(z)), y = rep(y, times = ncol(z)), val = as.numeric(z))
+    gg$val[gg$val < val.limits[1]] <- val.limits[1]; gg$val[gg$val > val.limits[2]] <- val.limits[2]
+
 
     p <- ggplot(gg, aes(x, 64 - y, fill = val)) +
       geom_raster(interpolate = TRUE) +
-      scale_fill_gradientn(colours = c("dark blue", "cyan", "yellow", "red"), na.value = "#000000") +
       scale_x_continuous(expand = c(0, 0)) +
       scale_y_continuous(expand = c(0, 0)) +
       theme_void() +
       guides(fill = FALSE)
 
+    # Center colorscale at 0
+    if (center.zero) {
+      p <- p +
+        scale_fill_gradient2(low = cols[1], mid = cols[median(seq_along(cols))], high = cols[length(cols)], midpoint = 0, na.value = "#000000", limits = val.limits)
+    } else if (any(data.type %in% c("character", "factor"))) {
+      p <- p +
+        labs(fill = variable)
+    } else {
+      p <- p +
+        scale_fill_gradientn(colours = cols, na.value = "#000000", limits = val.limits)
+    }
+
     tmp.file <- tempfile(pattern = "", fileext = ".png")
 
-    png(width = tissue.width.px, height = tissue.height.px, file = tmp.file)
+    png(width = xdim, height = ydim, file = tmp.file)
     par(mar = c(0, 0, 0, 0))
     plot(p)
     dev.off()
 
     p <- image_read(tmp.file)
 
-    # Create empty image
-    em <- image_read(as.raster(matrix(0, ncol = object@tools$xdim, nrow = round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim)))))
-    em <- image_composite(image = em, p, offset = paste("+", min.x.scaled, "+", min.y.scaled))
-
-    msk <- as.cimg(object@tools$masked.masks[[1]])
-    masked.plot <- as.raster(magick2cimg(em)*(msk/255))
+    msk <- as.cimg(image.masks[[i]])
+    masked.plot <- as.raster(magick2cimg(p)*(msk/255))
+    masked.plot <- as.raster(image_annotate(image_read(masked.plot), text = samplenames[i], size = round(xdim/10), color = "#FFFFFF"))
+    return(masked.plot)
   })
 
-  # Center tissue along y-axis
-  if (center.tissue) {
-    if (!is.null(group.by)) {
-      data <- do.call(rbind, lapply(split(data, data[, group.by]), function(d) {
-        d[, "y"] <- d[, "y"] - median(d[, "y"]) + ylim[2]/2
-        return(d)
-      }))
-    } else {
-      data[, "y"] <- data[, "y"] - median(data[, "y"]) + ylim[2]/2
-    }
+  # Draw on new device
+  ncol <- ncol %||% ceiling(sqrt(length(p.list)))
+  nrow <- ceiling(length(p.list)/ncol)
+
+  tmp.file <- tempfile(pattern = "", fileext = ".png")
+
+  png(width = xdim*ncol, height = ydim*nrow, file = tmp.file)
+  par(mfrow = c(nrow, ncol), mar = c(0, 0, 0, 0), bg = "#000000")
+  for (p in p.list) {
+    plot(p)
   }
+  dev.off()
 
-  # Obtain colors from selected palette
-  cols <- palette.select(palette)(3)
-  if (rev.cols) {
-    cols <- rev(cols)
-  }
+  im <- image_read(tmp.file)
+  im <- image_border(im, "#000000", paste(xdim/10, xdim/10, sep = "x"))
+  im <- image_annotate(im, text = variable, size = round(xdim/10), color = "#FFFFFF")
 
-  # Create new plot
-  p <- ggplot()
-  if (length(spot.colors) > 0) {
+  # Draw legend
+  tmp.file <- tempfile(pattern = "", fileext = ".png")
+  ggsave(plot = lg, width = 2.8/5, height = 7.8/5, filename = tmp.file, dpi = 150, units = "in")
+  lgim <- image_read(tmp.file)
 
-    # Add shape aesthetic and blend colors if blend is active
-    if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
-    } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y")), color = spot.colors, size = pt.size, ...)
-    }
+  im <- image_composite(image = im, composite_image = lgim, offset = paste0("+", xdim*ncol, "+", (ydim*nrow)/2))
 
-  } else {
-
-    # Add shape aesthetic only
-    if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
-    } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
-    }
-
-  }
-
-  # Add ST array dimensions
-  p <- p +
-    scale_x_continuous(limits = xlim) +
-    scale_y_continuous(limits = ylim) +
-    theme_void() +
-    labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
-
-  # Facet plots by group variable
-  if (!is.null(group.by)) {
-    p <- p +
-      facet_wrap(as.formula(paste("~", group.by)), ncol = ncol)
-  }
-
-  # Center colorscale at 0
-  if (center.zero) {
-    p <- p +
-      scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
-  } else if (any(data.type %in% c("character", "factor"))) {
-    p <- p +
-      labs(color = variable)
-  } else {
-    p <- p +
-      scale_color_gradientn(colours = cols)
-  }
-
-  return(p)
+  return(im)
 }
 
 
@@ -845,7 +851,7 @@ FeatureOverlay <- function(
   data <- as.data.frame(lapply(data, function(x) {
     new_x <- ifelse(test = sapply(x, function(n) {class(n) == "factor"}), yes = as.character(x), no = x)
     return(new_x)
-  }))
+  }), optional = TRUE)
 
   data.type <- unique(sapply(data, class))
 
@@ -937,7 +943,7 @@ FeatureOverlay <- function(
 #'
 #' @export
 
-ST.ImagePlot <- function(
+ST.ImagePlot <- function (
   data,
   data.type,
   shape.by,
@@ -983,9 +989,9 @@ ST.ImagePlot <- function(
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = variable, shape = shape.by), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = variable), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
     }
   }
 
@@ -1000,13 +1006,14 @@ ST.ImagePlot <- function(
   if (center.zero) {
     p <- p +
       scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
-  } else if (data.type %in% c("character", "factor")) {
+  } else if (any(data.type %in% c("character", "factor"))) {
     p <- p +
       labs(color = variable)
   } else {
     p <- p +
       scale_color_gradientn(colours = cols)
   }
+
   return(p)
 }
 
@@ -1354,4 +1361,42 @@ labelRGB <- function(object,
   Idents(object = object) <- object$rgbInfo #skriver over?
 
   return(object)
+}
+
+
+#' Create legend
+#'
+#' Creates a colorscale legend for a dataset in grob format
+#'
+#' @param data data.frame with values that should be mapped onto colorscale
+#' @param variable character string specifying tha name of the column (variable) containing values
+#' @param center.zero Specifies whether or not the colorscale should be centered at zero
+#' @param cols Character vector with color ids to be used in colorscale
+#' @param val.limits Specifies the limits for values in colorscale
+#'
+#' @importFrom ggplot2 ggplot geom_point aes_string scale_fill_gradient2 labs scale_fill_gradientn element_rect element_text ggplot_gtable ggplot_build theme
+
+g_legend <- function (
+  data,
+  variable,
+  center.zero,
+  cols,
+  val.limits
+) {
+  lg <- ggplot() + geom_point(data = data, aes_string("x", "y", fill = paste0("`", variable, "`")), shape = 22, alpha = 0)
+  if (center.zero) {
+    lg <- lg +
+      scale_fill_gradient2(low = cols[1], mid = cols[median(seq_along(cols))], high = cols[length(cols)], midpoint = 0, na.value = "#000000", limits = val.limits)
+  } else if (any(data.type %in% c("character", "factor"))) {
+    lg <- lg +
+      labs(fill = variable)
+  } else {
+    lg <- lg +
+      scale_fill_gradientn(colours = cols, na.value = "#000000", limits = val.limits)
+  }
+  lg <- lg + theme(legend.background = element_rect(fill = "#000000"), legend.key = element_rect(fill = "#FFFFFF"), legend.text = element_text(color = "#FFFFFF"), legend.title = element_text(colour = "#FFFFFF"))
+  tmp <- ggplot_gtable(ggplot_build(lg))
+  leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
+  legend <- tmp$grobs[[leg]]
+  return(legend)
 }

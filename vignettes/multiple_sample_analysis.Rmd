@@ -105,6 +105,7 @@ Lets load the provided infoTable
 ```{r, eval=FALSE}
 
 infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)
+
 ```
 
 
@@ -159,8 +160,7 @@ ST.FeaturePlot(object = se,
                palette = "GrRd",
                ncol = 8, 
                grid.ncol = 1, 
-               pt.size = 0.5, 
-               center.tissue = T)
+               pt.size = 0.5)
 
 ```
 
@@ -289,6 +289,7 @@ Each spot in a Spatial Transcriptomics dataset typically contains RNA from a mix
 library(Matrix)
 library(magrittr)
 library(dplyr)
+library(ggplot2)
 
 # Get raw count data 
 umi_data <- GetAssayData(object = se, slot = "counts", assay = "RNA")
@@ -343,15 +344,16 @@ The strength of untargeted whole transcriptome capture is the ability to perform
 se <- RunICA(se)
 
 ``` 
-=======
-```
+
 
 Different dimensionality reductions methods are suported via Seurat (`RunPCA()`, `RunTSNE`, `RunICA()`, `runUMAP()` ) and the output are stored in the Seurat object. 
 
 We can then plot a variable number of dimensions across the samples.
 
 ```{r, fig.width=16, fig.height=10}
+
 ST.DimPlot(se, dims = 1:5, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = T, pt.size = 0.3, center.zero = T)
+
 ```
 
 To extract the genes that drives the separtion accoring to the dimensionallity reduction, we can use the following function:

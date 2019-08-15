@@ -109,7 +109,7 @@ palette.select <- function(palette, info = F) {
     cividis = colorRampPalette(cividis(9)),
     plasma = colorRampPalette(plasma(9)),
     heat = colorRampPalette(c("dark blue", "cyan", "yellow", "red")),
-    spectral = colorRampPalette(brewer.pal(9,"Spectral")),
+    spectral = colorRampPalette(rev(brewer.pal(9,"Spectral"))),
     RdBu = colorRampPalette(rev(brewer.pal(9,"RdBu"))),
     MaYl = colorRampPalette(c("#FF00FF", "black", "#FFFF00")),
     RdYlBu = colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))
