@@ -22,7 +22,7 @@ Encoding: UTF-8
 LazyData: true
 Imports:
     imager,
-	ggplot2 (>= 3.2.0),
+    ggplot2 (>= 3.2.0),
     magick (>= 2.0),
     Morpho (>= 2.7),
     Seurat (>= 3.0.0),
