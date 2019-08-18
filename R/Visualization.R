@@ -525,12 +525,9 @@ STPlot <- function(
 #' @inheritParams STPlot
 #'
 #' @importFrom ggplot2 ggplot aes geom_raster scale_x_continuous scale_y_continuous theme_void guides scale_fill_gradient2 labs scale_fill_gradientn ggsave
-#' @importFrom akima interp
 #' @importFrom magick image_read image_border image_annotate image_composite
 #' @importFrom imager as.cimg
 #' @importFrom grDevices as.raster
-#'
-#' @export
 
 SmoothPlot <- function (
   data,
@@ -586,7 +583,7 @@ SmoothPlot <- function (
     tissue.width <- max.x - min.x; tissue.height <- max.y - min.y;
 
     # Run interpolation
-    s =  akima::interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
+    s =  interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
 
     z <- t(s$z)
     x <- 1:ncol(z)
