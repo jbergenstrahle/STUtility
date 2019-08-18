@@ -222,6 +222,7 @@ MaskImages <- function (
       cat(paste0("Loaded image ", i, "\n"))
       cat(paste0("Running SLIC algorithm \n"))
     }
+
     out <- slic(im, nS = object@tools$xdim*1.5, compactness)
 
     d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%

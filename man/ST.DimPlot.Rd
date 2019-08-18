@@ -4,12 +4,12 @@
 \alias{ST.DimPlot}
 \title{Dimensional reduction plot on ST coordinates}
 \usage{
-ST.DimPlot(object, dims = c(1, 2), spots = NULL, blend = FALSE,
-  min.cutoff = NA, max.cutoff = NA, pt.size = 1, reduction = NULL,
-  shape.by = NULL, palette = "MaYl", rev.cols = F, dark.theme = F,
-  ncol = NULL, delim = NULL, return.plot.list = F,
-  grid.ncol = NULL, center.zero = T, channels.use = NULL,
-  center.tissue = FALSE, verbose = FALSE, ...)
+ST.DimPlot(object, dims = c(1, 2), spots = NULL, plot.type = "spots",
+  blend = FALSE, min.cutoff = NA, max.cutoff = NA, pt.size = 1,
+  reduction = NULL, shape.by = NULL, palette = "MaYl",
+  rev.cols = F, dark.theme = F, ncol = NULL, delim = NULL,
+  return.plot.list = F, grid.ncol = NULL, center.zero = T,
+  channels.use = NULL, center.tissue = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -17,6 +17,8 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, blend = FALSE,
 \item{dims}{Dimensions to plot, a numeric vector specifying number of dimensions to plot}
 
 \item{spots}{Vector of spots to plot (default is all spots)}
+
+\item{plot.type}{Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"}
 
 \item{blend}{Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)}
 

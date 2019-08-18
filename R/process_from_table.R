@@ -134,6 +134,7 @@ prep.from.table <- function(
   }
 
   if (!is.null(annotation)) {
+    if (class(annotation) != "data.frame") stop("annotation table must be a data.frame", call. = FALSE)
     id.column <- id.column %||% "gene_id"
     replace.column <- id.column %||% "gene_name"
     cnt <- ConvertGeneNames(cnt, annotation, id.column, replace.column)
