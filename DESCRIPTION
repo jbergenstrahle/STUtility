@@ -20,12 +20,13 @@ Description: STutility collects usful tools for Spatial Transcriptomics data ana
 License: MIT + file LICENSE
 Encoding: UTF-8
 LazyData: true
+Depends:
+    Seurat (>= 3.0.0),
+	ggplot2 (>= 3.2.0)
 Imports:
     imager,
-    ggplot2 (>= 3.2.0),
     magick (>= 2.0),
     Morpho (>= 2.7),
-    Seurat (>= 3.0.0),
     Rvcg (>= 0.18),
     viridis (>= 0.5.0),
 Suggests: 
