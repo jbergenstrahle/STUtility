@@ -9,10 +9,11 @@
 get.edges <- function (
   object,
   index,
-  verbose = FALSE
+  verbose = FALSE,
+  type = "masked.masks"
 ) {
   if (verbose) cat(paste0(" Detecting edges of sample ", index, "\n"))
-  im <- object@tools$masked.masks[[index]]
+  im <- object@tools[[type]][[index]]
 
   grad <- imgradient(as.cimg(im))
   grad.sq <- grad %>% map_il(~ .^2)

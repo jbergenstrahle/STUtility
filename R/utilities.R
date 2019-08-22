@@ -90,6 +90,7 @@ FilterObjects <- function(object, classes.keep = c('Assay', 'DimReduc')) {
 #'
 #' @param palette Palette choice for plotting spatial expression histology heatmap
 #' @importFrom viridis viridis cividis magma plasma
+#' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
 
 palette.select <- function(palette, info = F) {

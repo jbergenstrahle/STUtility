@@ -149,10 +149,15 @@ ImagePlot <- function (
     final_img <- image_append(Reduce(c, stack), stack = T)
     print(final_img)
   } else if (method == "raster"){
-    par(mar = c(0, 0, 0, 0), mfrow = c(nrows, ncols))
+    #par(mar = c(0, 0.2, 0, 0.2), mfrow = c(nrows, ncols))
+    layout.matrix <- t(matrix(c(1:length(images), rep(0, nrows*ncols - length(images))), nrow = ncols, ncol = nrows))
+    layout(mat = layout.matrix)
+
     for (rst in lapply(images, as.raster)) {
+      par(mar = c(0, 0.2, 0, 0.2))
       plot(rst)
     }
+    par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
   } else {
     stop(paste0("Invalid display method: ", method), call. = F)
   }
@@ -170,12 +175,8 @@ ImagePlot <- function (
 #' 6. Keep objects which overlaps with adjusted pixel coordinates
 #'
 #' @param obejct Seurat object
-#' @param median.blur Pixel size of median filter used to blur HE images prior to image segmentation
-#' @param object.size.th Threshold used to filter out objects in the background which are not part of the
-#' tissue, e.g. bubbles or other debris
+#' @param iso.blur Sigma value (pixels) for isoblurring of HE images prior to image segmentation
 #' @param verbose Print messages
-#' @param enhanced.masking Runs an additional anisotropic blurring step which can improve the accuracy of masking for
-#' more complicated tissue types but runs significantly slower.
 #'
 #' @inheritParams slic
 #'
@@ -193,10 +194,7 @@ ImagePlot <- function (
 MaskImages <- function (
   object,
   compactness = 1,
-  median.blur = 10,
-  object.size.th = 0.01,
-  verbose = FALSE,
-  enhanced.masking = FALSE
+  verbose = FALSE
 ) {
 
   rasters <- list()
@@ -204,46 +202,30 @@ MaskImages <- function (
   centers <- list()
 
   for (i in seq_along(object@tools$raw)) {
-    im <- image_read(object@tools$raw[[i]])
+    imr <- image_read(object@tools$raw[[i]])
 
-    if (enhanced.masking) {
-      im <- magick2cimg(im) %>% RGBtoHSV() %>% imsplit("c") %>%
-        modify_at(2, ~ . * 4) %>% imappend("c") %>%
-        HSVtoRGB() %>% blur_anisotropic(amplitude = 1e4, sharpness = 0.6, anisotropy = 0.7)
-    } else {
-      im <- magick2cimg(im) %>% medianblur(median.blur) %>% RGBtoHSV() %>%
-        imsplit("c") %>% modify_at(2, ~ . * 4) %>% imappend("c") %>% HSVtoRGB()
-    }
-
-    #f <- ecdf(im)
-    #im <- f(im) %>% as.cimg(dim = dim(im)) %>% plot
+    # segmentation tests
+    im <- magick2cimg(imr)
+    im <- threshold(im)
+    im[, , , 2] <- TRUE; im[, , , 3] <- TRUE
+    im <- isoblur(im, 2)
 
     if (verbose) {
-      cat(paste0("Loaded image ", i, "\n"))
-      cat(paste0("Running SLIC algorithm \n"))
+        cat(paste0("Loaded image ", i, "\n"))
+        cat(paste0("Running SLIC algorithm \n"))
     }
-
     out <- slic(im, nS = object@tools$xdim*1.5, compactness)
-
+    out <- out^4
     d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
-      select(-x,-y)
+      select(-x, -y)
 
     km <- kmeans(d, 2)
-    seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(20)
+    seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(20) %>% threshold()
 
-    # Extract pixel sets
-    px <- seg > 0.5
-
-    sp <- split_connected(px)
-
-    # Check object sizes
-    size.check <- ifelse(length(sp) > 0, max(unlist(lapply(sp, function(x) sum(x > 0))))/length(seg) > object.size.th, FALSE)
-
-    if (!size.check) {
-      seg <- 1 - seg
-      px <- seg > 0.5
-      sp <- split_connected(px)
-    }
+    # Chech that at least one masked region is found
+    sp <- split_connected(seg)
+    if (length(sp) == 0) sp <- imlist(seg)
+    if (length(sp) == 0) stop(paste0("Masking failed for image ", i), call. = FALSE)
 
     # Colect pixel coordinates for spots in meta.data slot
     dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
@@ -251,6 +233,20 @@ MaskImages <- function (
     sf.xy <- dims.raw/rev(dims.scaled)
     pixel_xy <- sapply(subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy, round)
     pixel_coords <- paste(pixel_xy[, 1], pixel_xy[, 2], sep = "x")
+
+    # Check object sizes
+    #size.check <- ifelse(length(sp) > 0, max(unlist(lapply(sp, function(x) sum(x > 0))))/length(seg) > object.size.th, FALSE)
+    pxs.T <- setNames(data.frame(which(seg == TRUE, arr.ind = TRUE)[, 1:2]), nm = c("x", "y"))
+    pxs.F <- setNames(data.frame(which(seg == FALSE, arr.ind = TRUE)[, 1:2]), nm = c("x", "y"))
+    seg.pxs.T <- paste(pxs.T$x, pxs.T$y, sep = "x")
+    seg.pxs.F <- paste(pxs.F$x, pxs.F$y, sep = "x")
+    selected.coords.check <- as.logical(which.max(c(length(intersect(seg.pxs.F, pixel_coords)), length(intersect(seg.pxs.T, pixel_coords)))) - 1)
+
+    if (!selected.coords.check) {
+      seg <- !seg
+      sp <- split_connected(seg)
+      if (length(sp) == 0) sp <- imlist(seg)
+    }
 
     # Select pixelsets overlapping with pixel coordinates in meta.data slot
     inds_inside_tissue <- data.frame()
@@ -264,12 +260,7 @@ MaskImages <- function (
                          y.id = rep(1:nrow(m), ncol(m)),
                          x.id = rep(1:ncol(m), each = nrow(m)))
       inds$idx <- 1:nrow(inds)
-
-      #plot(inds.under.tissue[, 2:3], xlim = c(0, 400), ylim = c(0, 400))
-      #points(pixel_xy, col = "red")
-
       inds.under.tissue <- subset(inds, label == 1)
-
       inds_coords <- paste(inds.under.tissue[, "x.id"], inds.under.tissue[, "y.id"], sep = "x")
       if (length(intersect(pixel_coords, inds_coords)) > 0) {
         inds_inside_tissue <- rbind(inds_inside_tissue, subset(inds, label == 1))
@@ -287,6 +278,7 @@ MaskImages <- function (
 
     rst <- object@tools$raw[[i]]
     rst[(1:length(rst))[-inds_inside_tissue$idx]] <- "#FFFFFF"
+
     #rst <- t(rst)
     rasters[[i]] <- rst
 
