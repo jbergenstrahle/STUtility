@@ -180,7 +180,7 @@ ImagePlot <- function (
 #'
 #' @inheritParams slic
 #'
-#' @importFrom imager magick2cimg medianblur sRGBtoLab as.cimg split_connected add imsplit imappend RGBtoHSV blur_anisotropic HSVtoRGB add
+#' @importFrom imager magick2cimg medianblur sRGBtoLab as.cimg split_connected add imsplit imappend RGBtoHSV blur_anisotropic HSVtoRGB add threshold isoblur imlist
 #' @importFrom magick image_read
 #' @importFrom dplyr select summarize
 #' @importFrom magrittr %>%
