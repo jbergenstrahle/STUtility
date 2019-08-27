@@ -131,21 +131,15 @@ apply.transform <- function (
 #' the transofmration function for all different combinations of reflections and select the
 #' function with the lowest rmse between the aligned set and reference set.
 #'
-#' @param set1 Matrix of x, y coordinates for points in image to be aligned
-#' @param set2 Matrix of x, y coordinates for points in reference
-#' @param forward Logical specifying if the forward map function should be returned
-#' @param xdim,ydim Integer values specifying the image dimensions
+#' @param icps results obtained with \code{\link{find.optimal.transform}}
 #' @return A transformation function that takes x and y coordinates as input and outputs a
 #' list of warped x, y coordinates
 
 generate.map.affine <- function (
-  set1,
-  set2,
-  forward = FALSE,
-  xdim,
-  ydim
+  icps,
+  forward = FALSE
 ) {
-  icps <- find.optimal.transform(set2, set1, xdim, ydim)
+  #icps <- find.optimal.transform(set2, set1, xdim, ydim)
   if (forward) {
     map.affine <- function (x, y) {
       p <- cbind(x, y)
@@ -202,7 +196,6 @@ AlignImages <- function (
   if (verbose) cat(paste0("Selecting image ", reference.index, " as reference for alignment. \n"))
 
   reference.edge <- get.edges(object, index = reference.index)
-  #plot(as.raster(reference.edge))
   indices <- indices %||% (1:length(object@tools$imgs))[-reference.index]
   edge.list <- lapply(indices, function(i) {
     get.edges(object, index = i, verbose = verbose)
@@ -220,8 +213,7 @@ AlignImages <- function (
   im.ref <- as.cimg(object@tools$raw[[reference.index]])
 
   # Create empty lists
-  warp.functions.forward <- lapply(1:length(object@tools$masked), function(i) NULL)
-  warp.functions.backward <- lapply(1:length(object@tools$masked), function(i) NULL)
+  transformations <- setNames(ifelse(rep("transformations" %in% names(object@tools), length(object@tools$imgs)), object@tools$transformations, lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))})), nm = names(object@tools$masked))
   processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
   processed.masks <- object@tools$masked.masks
   warped_coords <- object[[c("pixel_x", "pixel_y")]]
@@ -235,10 +227,14 @@ AlignImages <- function (
     xdim <- object@tools$xdim
     width <- as.numeric(object@tools$dims[[i]][2]); height <- as.numeric(object@tools$dims[[i]][3])
     ydim <- round(height/(width/xdim))
-    map.affine.backward <- generate.map.affine(xyset[[paste0(i)]], xyset.ref, xdim = xdim, ydim = ydim)
-    map.affine.forward <- generate.map.affine(xyset[[paste0(i)]], xyset.ref, xdim = xdim, ydim = ydim, forward = T)
-    warp.functions.backward[[i]] <- map.affine.backward
-    warp.functions.forward[[i]] <- map.affine.forward
+
+    # Obtain optimal transform and create map functions
+    icps <- find.optimal.transform(xyset.ref, xyset[[paste0(i)]], xdim, ydim)
+    tr <- icps$icp$map
+    tr <- tr[-3, -3]
+    transformations[[i]] <- tr%*%transformations[[i]]
+    map.affine.backward <- generate.map.affine(icps)
+    map.affine.forward <- generate.map.affine(icps, forward = T)
 
     # Warp images
     if (verbose) cat(paste0(" Applying rigid transformation ... \n"))
@@ -272,8 +268,7 @@ AlignImages <- function (
 
   object@tools$processed <- processed.images
   object@tools$processed.masks <- processed.masks
-  object@tools$warp.functions.forward <- warp.functions.forward
-  object@tools$warp.functions.backward <- warp.functions.backward
+  object@tools$transformations <- transformations
   object[[c("warped_x", "warped_y")]] <- warped_coords
 
   return(object)
@@ -285,7 +280,9 @@ AlignImages <- function (
 #' Creates an interactive shiny application to align images manually
 #'
 #' @param object Seurat object
+#' @param Image type used for alignment
 #' @param reference.index Specifies reference sample image for alignment(default: 1)
+#' @param edges Uses the tissue edges as points set for alignment
 #' @param verbose Print messages
 #'
 #' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
@@ -295,16 +292,30 @@ AlignImages <- function (
 
 ManualAlignImages <- function (
   object,
+  type = NULL,
   reference.index = 1,
-  verbose = FALSE
+  verbose = FALSE,
+  edges = TRUE
 ) {
 
+  # use processed images as input if available
+  type <- type %||% {
+    if ("processed" %in% names(object@tools)) {
+      "processed"
+    } else if ("masked" %in% names(object@tools)) {
+      "masked"
+    } else {
+      stop(paste0("No masked images are available in the Seurat object"), call. = FALSE)
+    }
+  }
+  if (verbose) cat(paste0("Using ", type, " images as input for alignment ... \n"))
+
   # Obtain point sets from each image
-  scatters <- grid.from.seu(object)
+  scatters <- grid.from.seu(object, type = type, edges = TRUE)
   fixed.scatter <- scatters[[reference.index]]$scatter
   counter <- NULL
   coords.ls <- NULL
-  tr.matrices <- lapply(seq_along(object@tools$masked), function(i) diag(c(1, 1, 1)))
+  tr.matrices <- lapply(seq_along(object@tools[[type]]), function(i) diag(c(1, 1, 1)))
 
 
   ui <- fluidPage(
@@ -385,7 +396,7 @@ ManualAlignImages <- function (
       tr.rotate <- rotate(angle = -xy.alpha, center.cur = center)
 
       # Apply translation
-      tr.translate <- translate(translate.x = xt.yt[1], translate.y = xt.yt[2])
+      tr.translate <- translate(translate.x = xt.yt[1], translate.y = -xt.yt[2])
 
       # Combine transformations
       tr <- tr.translate%*%tr.rotate%*%tr.mirror
@@ -405,9 +416,9 @@ ManualAlignImages <- function (
 
       d <- round((sqrt(400^2 + 400^2) - 400)/2)
 
-      plot(fixed.scatter, xlim = c(-d, 400 + d), ylim = c(-d, 400 + d))
-      points(scatter.t, col = "gray")
-      points(coords.t, col = "red", cex = pt_size())
+      plot(fixed.scatter[, 1], 400 - fixed.scatter[, 2], xlim = c(-d, 400 + d), ylim = c(-d, 400 + d))
+      points(scatter.t[, 1], 400 - scatter.t[, 2], col = "gray")
+      points(coords.t[, 1], 400 - coords.t[, 2], col = "red", cex = pt_size())
 
     }, height = 800, width = 800)
 
@@ -449,10 +460,12 @@ ManualAlignImages <- function (
   alignment.matrices <- runApp(list(ui = ui, server = server))
   if (verbose) cat(paste("Finished image alignment. \n\n"))
   processed.ids <- which(unlist(lapply(alignment.matrices, function(tr) {!all(tr == diag(c(1, 1, 1)))})))
+  print(alignment.matrices)
 
   # Create lists for transformation
+  transformations <- setNames(ifelse(rep("transformations" %in% names(object@tools), length(object@tools$imgs)), object@tools$transformations, lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))})), nm = names(object@tools$masked))
   processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
-  masks <- object@tools$masked.masks
+  masks <- object@tools[[paste0(type, ".masks")]]
   processed.masks <- setNames(ifelse(rep("processed.masks" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed.masks, object@tools$masked.masks), nm = names(object@tools$masked))
   warped_coords <- object[[c("pixel_x", "pixel_y")]]
 
@@ -463,6 +476,7 @@ ManualAlignImages <- function (
 
     # Obtain alignment matrix
     tr <- alignment.matrices[[i]]
+    transformations[[i]] <- tr%*%transformations[[i]]
 
     map.rot.backward <- generate.map.rot(tr)
     map.rot.forward <- generate.map.rot(tr, forward = TRUE)
@@ -486,6 +500,7 @@ ManualAlignImages <- function (
     if (verbose) cat(paste0("Finished alignment for sample ", i, " \n\n"))
   }
 
+  object@tools$transformations <- transformations
   object@tools$processed <- processed.images
   object@tools$processed.masks <- processed.masks
   object[[c("warped_x", "warped_y")]] <- warped_coords
@@ -493,3 +508,75 @@ ManualAlignImages <- function (
 
 }
 
+
+#' Function used to generate a 2D set of points from an HE image
+#'
+#' The defualt segmentation uses the HE image as input and defines any pixel with an intensity value
+#' below a threshold to be a point. The number of points can be downsampeld to limit the maximum number.
+#'
+#' @param object Seurat object
+#' @param type Sets the image type to run segmentation on
+#' @param sammple.index Integer value specifying the index of the sample to be analyzed
+#' @param limit Sets the intensity threshold in the interval [0, 1]
+#' @param maxnum Integer value specifying the maximum number of points
+#' @param edges Extracts the coordinates of the edges instead
+
+scatter_HE <- function (
+  object,
+  type = "masked",
+  sample.index = NULL,
+  limit = 0.5,
+  maxnum = 5e4,
+  edges = FALSE
+){
+  sample.index <- sample.index %||% 1
+
+  if (!type %in% names(object@tools)) stop(paste0(type, " images not fount in Seurat obejct"), call. = FALSE)
+
+  if (edges) {
+    bw.image <- get.edges(object, sample.index, type = type)
+    xyset = which(bw.image > limit, arr.ind = TRUE)
+  } else {
+    bw.image = grayscale(as.cimg(object@tools[[type]][[sample.index]]))
+    xyset = which(bw.image < limit*255, arr.ind = TRUE)
+  }
+  set.seed(1)
+  if (maxnum < nrow(xyset)) {
+    xyset <- xyset[sample(1:nrow(xyset), size = maxnum, replace = FALSE), ]
+  }
+  xyset <- xyset[, 1:2] %>% as.data.frame() %>% setNames(nm = c("x", "y"))
+  return(xyset)
+}
+
+
+#' Creates 2D point patterns for a set of images
+#'
+#' @param obejct Seurat object
+#'
+#' @inheritParams scatter_HE
+
+grid.from.seu <- function (
+  object,
+  type,
+  limit = 0.3,
+  maxnum = 5e4,
+  edges = FALSE
+) {
+
+  if (!type %in% names(object@tools)) stop(paste0(type, " images not fount in Seurat obejct"), call. = FALSE)
+
+  setNames(lapply(1:length(object@tools[[type]]), function(sample.index) {
+    scatter <- scatter_HE(object = se, sample.index = sample.index, maxnum = 1e3, limit = limit, type = type, edges = edges)
+    if (type == "processed") {
+      xy.names <- c("warped_x", "warped_y")
+    } else {
+      xy.names <- c("pixel_x", "pixel_y")
+    }
+    coords <- subset(se[[]], sample == sample.index)[, xy.names]
+    dims.raw <- as.numeric(se@tools$dims[[sample.index]][2:3])
+    dims.scaled <- dim(se@tools$raw[[sample.index]])
+    sf.xy <- dims.raw/rev(dims.scaled)
+    coords <- coords/sf.xy
+    return(list(scatter = scatter, coords = coords))
+  }), nm = names(object@tools$masked))
+}
