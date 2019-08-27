@@ -151,7 +151,7 @@ ImagePlot <- function (
   } else if (method == "raster"){
     #par(mar = c(0, 0.2, 0, 0.2), mfrow = c(nrows, ncols))
     layout.matrix <- t(matrix(c(1:length(images), rep(0, nrows*ncols - length(images))), nrow = ncols, ncol = nrows))
-    layout(mat = layout.matrix)
+    graphics::layout(mat = layout.matrix)
 
     for (rst in lapply(images, as.raster)) {
       par(mar = c(0, 0.2, 0, 0.2))
@@ -174,8 +174,9 @@ ImagePlot <- function (
 #' 5. Split segmented image into objects and filter out objects with a small area
 #' 6. Keep objects which overlaps with adjusted pixel coordinates
 #'
-#' @param obejct Seurat object
+#' @param object Seurat object
 #' @param iso.blur Sigma value (pixels) for isoblurring of HE images prior to image segmentation
+#' @param channels.use Select channel to use for masking (default: 1)
 #' @param verbose Print messages
 #'
 #' @inheritParams slic
@@ -193,7 +194,8 @@ ImagePlot <- function (
 
 MaskImages <- function (
   object,
-  compactness = 1,
+  iso.blur = 2,
+  channels.use = 1,
   verbose = FALSE
 ) {
 
@@ -207,8 +209,13 @@ MaskImages <- function (
     # segmentation tests
     im <- magick2cimg(imr)
     im <- threshold(im)
-    im[, , , 2] <- TRUE; im[, , , 3] <- TRUE
-    im <- isoblur(im, 2)
+
+    rm.channels <- (1:3)[-channels.use]
+    for (ind in rm.channels) {
+      im[, , , ind] <- TRUE
+    }
+    #im[, , , 2] <- TRUE; im[, , , 3] <- TRUE
+    im <- isoblur(im, iso.blur)
 
     if (verbose) {
         cat(paste0("Loaded image ", i, "\n"))

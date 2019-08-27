@@ -18,7 +18,7 @@ get.edges <- function (
   grad <- imgradient(as.cimg(im))
   grad.sq <- grad %>% map_il(~ .^2)
 
-  grad.sq <- imager::add(grad.sq)
+  grad.sq <- add(grad.sq)
   grad.sq <- apply(grad.sq, c(1, 2), max)
   return(grad.sq/max(grad.sq))
 }
@@ -460,14 +460,18 @@ ManualAlignImages <- function (
   alignment.matrices <- runApp(list(ui = ui, server = server))
   if (verbose) cat(paste("Finished image alignment. \n\n"))
   processed.ids <- which(unlist(lapply(alignment.matrices, function(tr) {!all(tr == diag(c(1, 1, 1)))})))
-  print(alignment.matrices)
 
   # Create lists for transformation
   transformations <- setNames(ifelse(rep("transformations" %in% names(object@tools), length(object@tools$imgs)), object@tools$transformations, lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))})), nm = names(object@tools$masked))
   processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
   masks <- object@tools[[paste0(type, ".masks")]]
   processed.masks <- setNames(ifelse(rep("processed.masks" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed.masks, object@tools$masked.masks), nm = names(object@tools$masked))
-  warped_coords <- object[[c("pixel_x", "pixel_y")]]
+  if (type == "processed") {
+    xy.names <- c("warped_x", "warped_y")
+  } else {
+    xy.names <- c("pixel_x", "pixel_y")
+  }
+  warped_coords <- object[[xy.names]]
 
   for (i in processed.ids) {
 
@@ -579,4 +583,59 @@ grid.from.seu <- function (
     coords <- coords/sf.xy
     return(list(scatter = scatter, coords = coords))
   }), nm = names(object@tools$masked))
+}
+
+
+
+#' Creates a transformation matrix that rotates an object
+#' in 2D around it's center of mass
+#'
+#' @param angle Angle given in degrees used for rotation
+#' @param center.cur Coordinates of the current center of mass
+
+rotate <- function (
+  angle,
+  center.cur
+) {
+  alpha <- 2*pi*(angle/360)
+  center.cur <- c(center.cur, 0)
+  points(center.cur[1], center.cur[2], col = "red")
+  tr <- rigid.transl(-center.cur[1], -center.cur[2])
+  tr <- rigid.transf(center.cur[1], center.cur[2], alpha)%*%tr
+  return(tr)
+}
+
+
+#' Creates a transformation matrix that translates an object
+#' in 2D
+#'
+#' @param translate.x,translate.y translation of x, y coordinates
+
+translate <- function (
+  translate.x,
+  translate.y
+) {
+  tr <- rigid.transl(translate.x, translate.y)
+  return(tr)
+}
+
+
+#' Creates a transformation matrix that mirrors an object
+#' in 2D along either the x axis or y axis around its
+#' center of mass
+#'
+#' @param mirror.x,mirror.y Logical specifying whether or not an
+#' object should be reflected
+#' @param center.cur Coordinates of the current center of mass
+
+mirror <- function (
+  mirror.x = FALSE,
+  mirror.y = FALSE,
+  center.cur
+) {
+  center.cur <- c(center.cur, 0)
+  tr <- rigid.transl(-center.cur[1], -center.cur[2])
+  tr <- rigid.refl(mirror.x, mirror.y)%*%tr
+  tr <- rigid.transl(center.cur[1], center.cur[2])%*%tr
+  return(tr)
 }

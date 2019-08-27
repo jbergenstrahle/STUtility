@@ -823,16 +823,16 @@ DimOverlay <- function(
   data[, group.var] <- sample.index
 
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 2)], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors from features ", paste(paste(dims, channels.use, sep = ":"), collapse = ", ")))
 
     spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 1):ncol(data)]
+    data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type = "numeric", group.var, shape.by, variable, image, imdims, pt.size, palette,
                          rev.cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), FALSE, ...)
+                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -1115,18 +1115,18 @@ ST.ImagePlot <- function (
 
       # Add shape aesthetic and blend colors if blend is active
       if (!is.null(shape.by)) {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size)#, ...)
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
       } else {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size)#, ...)
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size, ...)
       }
 
     } else {
 
       # Add shape aesthetic only
       if (!is.null(shape.by)) {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size)#, ...)
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
       } else {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size)#, ...)
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
       }
     }
 
