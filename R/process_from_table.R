@@ -1,4 +1,3 @@
-#' @importFrom SingleCellExperiment SingleCellExperiment
 #' @importFrom Seurat CreateSeuratObject
 "_PACKAGE"
 
