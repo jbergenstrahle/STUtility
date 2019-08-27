@@ -14,3 +14,5 @@ inst/extdata/.DS_Store
 #inst/extdata/counts/*
 R/prep_files.R
 R/3D_alignment.R
+R/MultiCCA.R
+vignettes/MultiCCA_vignette.Rmd

@@ -130,14 +130,13 @@ Here, we demonstrate the creation of the seurat object, while also including som
 ```{r, eval=FALSE}
 #DOUBLE CHECK SO THAT THIS IS CORRECT NOW
 
+#TODO: add warnings if ids missmatch. Check that ids are in the data.frame ...
 se <- prep.from.table(infotable = infoTable, 
                       transpose = T, 
                       min.gene.count = 100, 
                       min.gene.spots = 5,
                       min.spot.count = 500, 
                       annotation = ensids)
-
-
 
 ```
 
@@ -153,7 +152,7 @@ For example, we can visualize the number of RNA features and RNA counts on the S
 NOTE: see the end of the vignette how to handle plotting if you are missing image/spot-files. 
 
 ```{r, fig.height=4, fig.width=12}
-# TODO: check warning message
+# TODO: make sure that levels are set in facets
 
 ST.FeaturePlot(object = se, 
                features = c("nFeature_RNA", "nCount_RNA"), 

@@ -218,6 +218,7 @@ ST.DimPlot <- function (
 #'     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
 #'     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 #' }
+#' @param indices Numeric vector specifying sample indices to include in plot. Default is to show all samples.
 #' @param spots Vector of spots to plot (default is all spots)
 #' @param plot.type Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
@@ -237,7 +238,7 @@ ST.DimPlot <- function (
 #' @inheritParams STPlot
 #' @importFrom cowplot plot_grid
 #' @importFrom scales rescale
-#' @importFrom ggplot2 ggplot theme
+#' @importFrom ggplot2 ggplot theme theme_void
 #'
 #' @return A ggplot object
 #' @export
@@ -245,6 +246,8 @@ ST.DimPlot <- function (
 ST.FeaturePlot <- function (
   object,
   features,
+  split.labels = FALSE,
+  indices = NULL,
   spots = NULL,
   plot.type = "spots",
   min.cutoff = NA,
@@ -263,15 +266,12 @@ ST.FeaturePlot <- function (
   center.zero = FALSE,
   channels.use = NULL,
   center.tissue = FALSE,
+  theme = theme_void(),
   verbose = FALSE,
   ...
 ) {
   spots <- spots %||% colnames(x = object)
   data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
-  data <- as.data.frame(lapply(data, function(x) {
-    new_x <- ifelse(test = sapply(x, function(n) {class(n) == "factor"}), yes = as.character(x), no = x)
-    return(new_x)
-  }), optional = TRUE)
 
   data.type <- unique(sapply(data, class))
 
@@ -337,6 +337,10 @@ ST.FeaturePlot <- function (
     data <- feature.scaler(data, min.cutoff, max.cutoff, spots)
   }
 
+  # Subset by index
+  if (!all(as.character(indices) %in% data[, group.by])) stop(paste0("Index out of range. "), call. = FALSE)
+  if (!is.null(indices)) data <- data[data[, group.by] %in% as.character(indices), ]
+
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
@@ -346,10 +350,11 @@ ST.FeaturePlot <- function (
                             ": \n", paste(paste(features, channels.use, sep = ":"), collapse = "\n")))
 
     spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 2):ncol(data)]
+    data <- data[, (ncol(data) - 3):ncol(data)]
     plot <- STPlot(data, data.type, group.by, shape.by, NULL, pt.size,
                    palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
-                   plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), xlim, ylim, ...)
+                   plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
+                   xlim, ylim, FALSE, theme, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -363,7 +368,8 @@ ST.FeaturePlot <- function (
       # Normal visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(d) {
         plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
-                       palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
+                       palette, rev.cols, ncol, spot.colors, center.zero,
+                       center.tissue, NULL, xlim, ylim, split.labels, theme, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -379,6 +385,7 @@ ST.FeaturePlot <- function (
       }
 
     } else if (plot.type == "smooth") {
+      if (data.type %in% c("factor", "character")) stop(paste0("Smoothing has not yet been implemented for categorical variables"), call. = FALSE)
       # Smooth visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(d) {
         plot <- SmoothPlot(data, image.type, data.type, group.by, d,
@@ -419,13 +426,16 @@ ST.FeaturePlot <- function (
 #' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
 #' @param plot.title Add title to plot
 #' @param xlim,ylim Set x/y-axis limits
+#' @param split.labels Only active if the features are specified by character vectors.
+#' The plot will be split into one plot for each group label, highlighting the labelled spots.
+#' @param theme Object of class "theme" used to change the background theme
 #' @param ... parameters passed to geom_point()
 #'
-#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn
+#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn scale_color_manual
 #'
 #' @export
 
-STPlot <- function(
+STPlot <- function (
   data,
   data.type = NULL,
   group.by,
@@ -441,10 +451,49 @@ STPlot <- function(
   plot.title = NULL,
   xlim = NULL,
   ylim = NULL,
+  split.labels = FALSE,
+  theme = theme_void(),
   ...
 ) {
 
   xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
+
+  gg_color_hue <- function(n) {
+    hues = seq(15, 375, length = n + 1)
+    hcl(h = hues, l = 65, c = 100)[1:n]
+  }
+
+  if (is.null(spot.colors)) {
+    if (class(data[, variable]) == "factor") {
+      label.colors <- gg_color_hue(length(levels(data[, variable])))
+      names(label.colors) <- levels(data[, variable])
+    } else if (class(data[, variable]) == "character") {
+      label.colors <- gg_color_hue(length(unique(data[, variable])))
+      names(label.colors) <- unique(data[, variable])
+    }
+  }
+
+  # Stop if split.labels is activated and there are more than 1 samples
+  if (any(data.type %in% c("character", "factor")) & split.labels) {
+    if (length(unique(as.character(data[, group.by]))) > 1) stop(paste0("Splitting of group labels only work for one sample. Please set a single sample index with indices. "), call. = FALSE)
+    plot.title <- paste0("Sample ", unique(as.character(data[, group.by])), ": ", variable)
+    new.data <- data.frame()
+    # Order by decreasing size
+    if (class(data[, variable]) != "factor") data[, variable] <- factor(data[, variable], levels = unique(data[, variable]))
+    levels.keep <- levels(data[, variable])
+
+    for (lbl in levels.keep) {
+      dt <- data
+      dt[, variable] <- ifelse(dt[, variable] == lbl, lbl, "-")
+      dt[, group.by] <- lbl
+      new.data <- rbind(new.data, dt)
+    }
+
+    data <- new.data
+    levels.keep <- c("-", levels.keep)
+    data[, variable] <- factor(data[, variable], levels = levels.keep)
+    label.colors <- c("-" = "lightgray", label.colors)
+  }
 
   # Center tissue along y-axis
   if (center.tissue) {
@@ -467,6 +516,8 @@ STPlot <- function(
 
   # Create new plot
   p <- ggplot()
+  # Make sure that levels are correct
+  data[, group.by] <- factor(data[, group.by], levels = unique(data[, group.by]))
   if (length(spot.colors) > 0) {
 
     # Add shape aesthetic and blend colors if blend is active
@@ -487,12 +538,15 @@ STPlot <- function(
 
   }
 
-  # Add ST array dimensions
+  # Add ST array dimensions and plot title
   p <- p +
     scale_x_continuous(limits = xlim) +
     scale_y_continuous(limits = ylim) +
-    theme_void() +
+    #theme_void() +
     labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+
+  # Set theme
+  p <- p + theme
 
   # Facet plots by group variable
   if (!is.null(group.by)) {
@@ -501,12 +555,13 @@ STPlot <- function(
   }
 
   # Center colorscale at 0
-  if (center.zero) {
+  if (center.zero & !any(data.type %in% c("character", "factor"))) {
     p <- p +
       scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
   } else if (any(data.type %in% c("character", "factor"))) {
     p <- p +
-      labs(color = variable)
+      labs(color = variable) +
+      scale_color_manual(values = label.colors)
   } else {
     p <- p +
       scale_color_gradientn(colours = cols)
@@ -698,8 +753,12 @@ DimOverlay <- function(
   verbose = FALSE,
   ...
 ) {
+
+  # Check length of sample index
+  if (length(sample.index) > 1) stop(paste0("Only one sample index can be selected."), call. = FALSE)
+
   reduction <- reduction %||% {
-    default.reductions <- c('umap', 'tsne', 'pca')
+    default.reductions <- c('umap', 'tsne', 'pca', 'ica')
     object.reductions <- FilterObjects(object = object, classes.keep = 'DimReduc')
     reduc.use <- min(which(x = default.reductions %in% object.reductions))
     default.reductions[reduc.use]
@@ -761,18 +820,19 @@ DimOverlay <- function(
   }
 
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
+  data[, group.var] <- sample.index
 
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 2)], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors from features ", paste(paste(dims, channels.use, sep = ":"), collapse = ", ")))
 
     spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 1):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, palette,
+    data <- data[, (ncol(data) - 2):ncol(data)]
+    plot <- ST.ImagePlot(data, data.type = "numeric", group.var, shape.by, variable, image, imdims, pt.size, palette,
                          rev.cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), ...)
+                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -785,8 +845,8 @@ DimOverlay <- function(
 
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, palette,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, ...)
+      plot <- ST.ImagePlot(data, data.type = "numeric", group.var, shape.by, d, image, imdims, pt.size, palette,
+                           rev.cols, ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, ...)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -847,8 +907,12 @@ FeatureOverlay <- function(
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
+  split.labels = FALSE,
   ...
 ) {
+
+  # Check length of sample index
+  if (length(sample.index) > 1) stop(paste0("Only one sample index can be selected."), call. = FALSE)
 
   type <- type %||% {
     choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
@@ -880,14 +944,9 @@ FeatureOverlay <- function(
   }
 
   data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
-  data <- as.data.frame(lapply(data, function(x) {
-    new_x <- ifelse(test = sapply(x, function(n) {class(n) == "factor"}), yes = as.character(x), no = x)
-    return(new_x)
-  }), optional = TRUE)
-
   data.type <- unique(sapply(data, class))
 
-  if ((blend & !length(x = features) %in% c(2, 3)) | !all(data.type %in% c("numeric", "integer"))) {
+  if ((blend & !length(x = features) %in% c(2, 3)) & !all(data.type %in% c("numeric", "integer"))) {
     stop(paste0("Blending feature plots only works with two or three features of class numeric/integer. \n",
                 "Number of features provided: ", length(x = features), "\n",
                 "feature class: ", data.type), call. = F)
@@ -920,17 +979,20 @@ FeatureOverlay <- function(
     data <- feature.scaler(data, min.cutoff, max.cutoff, spots)
   }
 
+  # Add index column
+  data[, group.var] <- sample.index
+
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 2)], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors from features ", paste(paste(features, channels.use, sep = ":"), collapse = ", ")))
 
     spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 1):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, palette,
+    data <- data[, (ncol(data) - 2):ncol(data)]
+    plot <- ST.ImagePlot(data, data.type, group.var, shape.by, variable, image, imdims, pt.size, palette,
                          rev.cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), ...)
+                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels)#, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -943,8 +1005,8 @@ FeatureOverlay <- function(
 
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, palette,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, ...)
+      plot <- ST.ImagePlot(data, data.type, group.var, shape.by, d, image, imdims, pt.size, palette,
+                           rev.cols, ncol = NULL, spot.colors, center.zero, NULL, split.labels)#, ...)
 
       if (dark.theme) {
         plot <- plot + dark_theme()
@@ -963,7 +1025,7 @@ FeatureOverlay <- function(
 
 #' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
 #'
-#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn annotation_custom
+#' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn annotation_custom scale_color_manual
 #' @importFrom magick image_info
 #' @importFrom grid rasterGrob unit
 #' @importFrom grDevices as.raster
@@ -978,6 +1040,7 @@ FeatureOverlay <- function(
 ST.ImagePlot <- function (
   data,
   data.type,
+  group.by,
   shape.by,
   variable,
   image,
@@ -989,10 +1052,49 @@ ST.ImagePlot <- function (
   spot.colors = NULL,
   center.zero = T,
   plot.title = NULL,
+  split.labels = FALSE,
   ...
 ) {
+
+  gg_color_hue <- function(n) {
+    hues = seq(15, 375, length = n + 1)
+    hcl(h = hues, l = 65, c = 100)[1:n]
+  }
+
+  if (is.null(spot.colors)) {
+    if (class(data[, variable]) == "factor") {
+      label.colors <- gg_color_hue(length(levels(data[, variable])))
+      names(label.colors) <- levels(data[, variable])
+    } else if ((class(data[, variable]) == "character")) {
+      label.colors <- gg_color_hue(length(unique(data[, variable])))
+      names(label.colors) <- unique(data[, variable])
+    }
+  }
+
+  # Stop if split.labels is activated and there are more than 1 samples
+  if (any(data.type %in% c("character", "factor")) & split.labels) {
+    plot.title <- paste0("Sample ", unique(as.character(data[, group.by])), ": ", variable)
+    new.data <- data.frame()
+    # Order by decreasing size
+    if (class(data[, variable]) != "factor") data[, variable] <- factor(data[, variable], levels = unique(data[, variable]))
+    levels.keep <- levels(data[, variable])
+
+    for (lbl in levels.keep) {
+      dt <- data
+      dt[, variable] <- ifelse(dt[, variable] == lbl, lbl, "-")
+      dt[, group.by] <- lbl
+      new.data <- rbind(new.data, dt)
+    }
+
+    data <- new.data
+    levels.keep <- c("-", levels.keep)
+    data[, variable] <- factor(data[, variable], levels = levels.keep)
+    label.colors <- c("-" = "lightgray", label.colors)
+  }
+
   # Obtain colors from selected palette
   cols <- palette.select(palette)(3)
+  if (palette == "heat") cols <- palette.select(palette)(4)
   if (rev.cols) {
     cols <- rev(cols)
   }
@@ -1005,48 +1107,53 @@ ST.ImagePlot <- function (
   g <- rasterGrob(image, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
 
   # Create new plot
-  p <- ggplot() +
-    annotation_custom(g, -Inf, Inf, -Inf, Inf)
+  plots <- lapply(unique(data[, group.by]), function(v) {
+    p <- ggplot() +
+      annotation_custom(g, -Inf, Inf, -Inf, Inf)
 
-  if (length(spot.colors) > 0) {
+    if (length(spot.colors) > 0) {
 
-    # Add shape aesthetic and blend colors if blend is active
-    if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
+      # Add shape aesthetic and blend colors if blend is active
+      if (!is.null(shape.by)) {
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
+      } else {
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size, ...)
+      }
+
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size, ...)
+
+      # Add shape aesthetic only
+      if (!is.null(shape.by)) {
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
+      } else {
+        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
+      }
     }
 
-  } else {
+    # Add ST array dimensions
+    p <- p +
+      scale_x_continuous(limits = c(0, x_dim), expand = c(0, 0)) +
+      scale_y_continuous(limits = c(0, y_dim), expand = c(0, 0)) +
+      theme_void() +
+      labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
 
-    # Add shape aesthetic only
-    if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
+    # Center colorscale at 0
+    if (center.zero & !any(data.type %in% c("character", "factor"))) {
+      p <- p +
+        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
+    } else if (any(data.type %in% c("character", "factor"))) {
+      p <- p +
+        labs(color = variable) +
+        scale_color_manual(values = label.colors)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
+      p <- p +
+        scale_color_gradientn(colours = cols)
     }
-  }
 
-  # Add ST array dimensions
-  p <- p +
-    scale_x_continuous(limits = c(0, x_dim), expand = c(0, 0)) +
-    scale_y_continuous(limits = c(0, y_dim), expand = c(0, 0)) +
-    theme_void() +
-    labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+    return(p)
+  })
 
-  # Center colorscale at 0
-  if (center.zero) {
-    p <- p +
-      scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
-  } else if (any(data.type %in% c("character", "factor"))) {
-    p <- p +
-      labs(color = variable)
-  } else {
-    p <- p +
-      scale_color_gradientn(colours = cols)
-  }
-
-  return(p)
+  final.plot <- plot_grid(plotlist = plots)
 }
 
 #' Apply DimOverlay to multiple samples
@@ -1259,7 +1366,7 @@ SetQuantile <- function(
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 
-feature.scaler <- function(
+feature.scaler <- function (
   data,
   features,
   min.cutoff,
@@ -1432,3 +1539,4 @@ g_legend <- function (
   legend <- tmp$grobs[[leg]]
   return(legend)
 }
+
