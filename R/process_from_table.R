@@ -126,7 +126,7 @@ prep.from.table <- function(
 
   #----- Add metadata
   metaData <- infotable[, -which(colnames(infotable) %in% c("samples", "spotfiles", "imgs")), drop = F]
-  if(!is.null(ncol(metaData)) & ncol(metaData) > 1){
+  if(!is.null(ncol(metaData)) & ncol(metaData) >= 1){
     for(column in colnames(metaData)){
       meta_data[, column] <- metaData[samples, column]
     }
