@@ -173,12 +173,10 @@ prep.from.table <- function(
     m@misc$spotfile = FALSE
   }else{m@misc$spotfile = TRUE
   m@tools <- list(imgs = infotable$imgs)}
-<<<<<<< HEAD
-=======
+
   #Add info for manual annotation tool:
   m@meta.data$id <- seq(1:dim(m)[2])
   m@meta.data$labels <- "Default"
->>>>>>> master
 
   cat(paste("After filtering the dimensions of the experiment is: "))
   print(dim(m))
