@@ -1,0 +1,60 @@
+---
+title: "Manual Annotation"
+author:
+- Joseph Bergenstråhle, Royal Institute of Technology (KTH)
+- Ludvig Larsson, Royal Institute of Technology (KTH)
+date: ''
+output:
+  pdf_document: default
+  html_document: default
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Info
+
+As default, all capture-spots are annotated as "Default". By using the annotation tool, the user puts labels on the selected capture-spots. After closing the tool, the capture-spot annotatons are update accordingly. 
+
+## Usage
+
+Required: images and spotfile loaded prior to usage.
+The tool opens the shiny application in the default browser. Follow the instructions in the sidepanel. 
+After closing the tool, the seurat is updates with the included annotations. 
+
+```{r, eval=FALSE, echo=TRUE}
+se <- ST.annotation(object=se)
+```
+
+## Demonstration of how the annotations can be used for DEA
+
+Lets use our tool to conduct a simple DEA. First, open the tool and make two selections. Lets call these "one" and "two". Now, we can perform DEA between the capture-spots annotated as "one" vs the capture-spots annotated as "two":
+
+First we add the labels to Seurat identity class 
+
+```{r, eval=FALSE, echo=TRUE}
+
+#OBS need to double check if this overwrite old Idents
+Idents(object = se) <- se$meta.data$labels
+
+```
+
+Then we can use `FindMarkers` to perform DEA for the identity classes
+
+```{r, eval=FALSE, echo=TRUE}
+
+de.markers <- FindMarkers(se, ident.1 = "one", ident.2 = "two")
+head(de.markers)
+```
+
+
+We can exlude `ident.2` to instead perform differential expression between one group vs all other capture-spots.
+
+```{r}
+de.markers <- FindMarkers(se, ident.1 = "one")
+head(de.markers)
+```
+
+
+

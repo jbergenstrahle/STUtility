@@ -62,6 +62,7 @@ prep.from.table <- function(
   i=1
   rownames(infotable) <- paste0(1:nrow(infotable))
 
+
   if(spot.file != FALSE){
     print("Removing all spots outside of tissue - turn this off by parameter spot.file=FALSE")
   }
@@ -127,6 +128,7 @@ prep.from.table <- function(
 
   #----- Add metadata
   metaData <- infotable[, -which(colnames(infotable) %in% c("samples", "spotfiles", "imgs")), drop = F]
+
   if(ncol(metaData) >= 1){
     for(column in colnames(metaData)){
       meta_data[, column] <- metaData[samples, column]
@@ -171,6 +173,12 @@ prep.from.table <- function(
     m@misc$spotfile = FALSE
   }else{m@misc$spotfile = TRUE
   m@tools <- list(imgs = infotable$imgs)}
+<<<<<<< HEAD
+=======
+  #Add info for manual annotation tool:
+  m@meta.data$id <- seq(1:dim(m)[2])
+  m@meta.data$labels <- "Default"
+>>>>>>> master
 
   cat(paste("After filtering the dimensions of the experiment is: "))
   print(dim(m))
