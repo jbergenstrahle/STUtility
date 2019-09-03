@@ -68,12 +68,11 @@ ST.annotation <- function (
       df$annotation <- data.frame(label=object@meta.data$labels, id=object@meta.data$id, stringsAsFactors=F)
       # Observes the second feature input for a change
       observeEvent(input$loadIMG,{
-        anno <- get.anno.plot(object, sampleNr = input$sampleInput)
-        df$cords <- anno[[1]]
-        print(df$cords)
+        gg <- get.anno.plot(object, sampleNr = as.numeric(input$sampleInput))
+        #df$cords <- anno[[1]]
         output$Plot1 <- ggiraph::renderGirafe({
 
-          gg <- anno[[2]]
+          #gg <- anno[[2]]
           x <- girafe(ggobj = gg)
           x <- girafe_options(x,
                               opts_zoom(max=5),
@@ -170,10 +169,10 @@ get.anno.plot <- function(
     )
 
   coordinates$sample <- sampleNr
-  outObs[[1]] <- coordinates
+  outObs[[1]] <- coordinates #REMOVE ALL THESE AND ONLY RETURN GG
   outObs[[2]] <- gg
 
-  return(outObs)
+  return(gg)
 }
 
 
