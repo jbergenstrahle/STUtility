@@ -39,10 +39,6 @@ ST.annotation <- function (
 
   # ===================== UI =======================
   ui <-  pageWithSidebar(
-    # Set theme
-    #theme = shinytheme("spacelab"),
-
-    # Title text
     headerPanel("Manual selection"),
 
     sidebarPanel(
@@ -66,13 +62,10 @@ ST.annotation <- function (
 
       df <- reactiveValues()
       df$annotation <- data.frame(label=object@meta.data$labels, id=object@meta.data$id, stringsAsFactors=F)
-      # Observes the second feature input for a change
+
       observeEvent(input$loadIMG,{
         gg <- get.anno.plot(object, sampleNr = as.numeric(input$sampleInput))
-        #df$cords <- anno[[1]]
         output$Plot1 <- ggiraph::renderGirafe({
-
-          #gg <- anno[[2]]
           x <- girafe(ggobj = gg)
           x <- girafe_options(x,
                               opts_zoom(max=5),
@@ -114,7 +107,6 @@ get.anno.plot <- function(
   object,
   sampleNr
 ) {
-  outObs <- list()
   object.use <- colnames(object[, which(object$"sample" == sampleNr)])
   object <- subset(object, cells = object.use)
   coordinates <- data.frame(x=object@meta.data$pixel_x,
@@ -123,7 +115,7 @@ get.anno.plot <- function(
   image <- image_read(object@tools$imgs[sampleNr])
   old_width <- image_info(image)$width
   image <- image_scale(image, geometry_size_pixels(width=1000, preserve_aspect = T))
-  coordinates[, c("x","y")] <- coordinates[, c("x","y")]*(1000/old_width) #kan andra ordning
+  coordinates[, c("x","y")] <- coordinates[, c("x","y")]*(1000/old_width)
 
   r <- min(dist(coordinates)) / 2
 
@@ -167,11 +159,6 @@ get.anno.plot <- function(
       axis.ticks = element_blank(),
       panel.grid = element_blank()
     )
-
-  coordinates$sample <- sampleNr
-  outObs[[1]] <- coordinates #REMOVE ALL THESE AND ONLY RETURN GG
-  outObs[[2]] <- gg
-
   return(gg)
 }
 
