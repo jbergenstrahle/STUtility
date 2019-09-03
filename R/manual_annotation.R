@@ -8,14 +8,13 @@
 #' theme theme_bw theme_minimal
 #' scale_color_manual scale_fill_manual scale_size
 #' scale_x_continuous scale_y_continuous
-#' @importFrom ggiraph girafe renderGirafe geom_point_interactive
+#' @importFrom ggiraph girafe renderGirafe geom_point_interactive ggiraphOutput
 #' @importFrom shiny pageWithSidebar headerPanel sidebarPanel mainPanel
 #' textInput strong actionButton
-#' ggiraphOutput
 #' reactiveValues observeEvent observe
 #' runApp
 #' @importFrom tibble column_to_rownames rownames_to_column
-#' @importFrom map tidyverse
+#' @importFrom purrr map
 #' @importFrom grid rasterGrob
 #' @importFrom magick geometry_size_pixels image_read
 #' @importFrom zeallot %<-%
@@ -29,7 +28,6 @@
 #'
 #' @export
 #'
-
 
 
 ST.annotation <- function (
@@ -123,7 +121,7 @@ get.anno.plot <- function(
   coordinates <- data.frame(x=object@meta.data$pixel_x,
                             y=object@meta.data$pixel_y,
                             id=object@meta.data$id)
-  image <- image_read(se@tools$imgs[sampleNr])
+  image <- image_read(object@tools$imgs[sampleNr])
   old_width <- image_info(image)$width
   image <- image_scale(image, geometry_size_pixels(width=1000, preserve_aspect = T))
   coordinates[, c("x","y")] <- coordinates[, c("x","y")]*(1000/old_width) #kan andra ordning
