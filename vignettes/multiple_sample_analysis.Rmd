@@ -42,7 +42,7 @@ library(Seurat)
 
 
 
-load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/testDatatoLoad.RData")
+#load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/testDatatoLoad.RData")
 
 ```
 
@@ -104,7 +104,7 @@ Lets load the provided infoTable
 
 ```{r, eval=FALSE}
 
-infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)
+infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)[c(1, 5, 6, 7), ]
 
 ```
 
@@ -171,7 +171,7 @@ NOTE: time.resolve is set to TRUE as deafult in the current version. This will i
 
 ```{r, eval=FALSE}
 
-se <- LoadImages(object = se, verbose = T, time.resolve = T)
+system.time({se <- LoadImages(object = se, verbose = T)})#, time.resolve = T)
 #undrar om man inte ska ha den som default egentligen?
 
 # Gud förbjude
