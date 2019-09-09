@@ -5,23 +5,32 @@ author:
 - Ludvig Larsson, Royal Institute of Technology (KTH)
 date: ''
 output:
-  pdf_document: default
   html_document: default
+  pdf_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+```{r, eval=TRUE, echo=FALSE}
+
+load("~/Documents/temp_for_anno_vignette.RData")
+
+```
+
 ## Info
 
-As default, all capture-spots are annotated as "Default". By using the annotation tool, the user puts labels on the selected capture-spots. After closing the tool, the capture-spot annotatons are update accordingly. 
+As default, all capture-spots are annotated as "Default". By using the annotation tool, the user puts labels on the selected capture-spots. After closing the tool, the capture-spot annotations are updated accordingly. 
 
 ## Usage
 
 Required: images and spotfile loaded prior to usage.
-The tool opens the shiny application in the default browser. Follow the instructions in the sidepanel. 
-After closing the tool, the seurat is updates with the included annotations. 
+The tool opens the shiny application in the default browser. Follow the instructions in the side panel. 
+After closing the tool, the seurat object is updated with the annotation (stored in object@meta.data$labels) 
+
+By parameter `res` the user can choose the resolution of the image (higher = more computationally heavy).
+Default is set to 1500px, lower this if loading takes to long or running into memory issued. 
 
 ```{r, eval=FALSE, echo=TRUE}
 se <- ST.annotation(object=se)
@@ -33,28 +42,30 @@ Lets use our tool to conduct a simple DEA. First, open the tool and make two sel
 
 First we add the labels to Seurat identity class 
 
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE}
 
-#OBS need to double check if this overwrite old Idents
-Idents(object = se) <- se$meta.data$labels
+#OBS overwrite old Idents?
+Seurat::Idents(object = se) <- se@meta.data$labels
 
 ```
 
 Then we can use `FindMarkers` to perform DEA for the identity classes
 
-```{r, eval=FALSE, echo=TRUE}
+```{r, eval=TRUE, echo=TRUE}
 
-de.markers <- FindMarkers(se, ident.1 = "one", ident.2 = "two")
+de.markers <- Seurat::FindMarkers(se, ident.1 = "one", ident.2 = "two")
 head(de.markers)
 ```
 
 
-We can exlude `ident.2` to instead perform differential expression between one group vs all other capture-spots.
+We can exude `ident.2` to instead perform differential expression between one group vs all other capture-spots.
 
 ```{r}
-de.markers <- FindMarkers(se, ident.1 = "one")
+de.markers <- Seurat::FindMarkers(se, ident.1 = "one")
 head(de.markers)
 ```
 
+
+See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test. 
 
 
