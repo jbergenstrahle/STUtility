@@ -207,6 +207,7 @@ MaskImages <- function (
   object,
   iso.blur = 2,
   channels.use = 1,
+  compactness = 1,
   verbose = FALSE
 ) {
 
@@ -526,7 +527,10 @@ AlignImages <- function (
 #' @param Image type used for alignment
 #' @param reference.index Specifies reference sample image for alignment(default: 1)
 #' @param edges Uses the tissue edges as points set for alignment
+#' @param maxnum
 #' @param verbose Print messages
+#'
+#' @inheritFrom grid.from.seu
 #'
 #' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
 #' @importFrom shinyjs useShinyjs reset
@@ -537,8 +541,9 @@ ManualAlignImages <- function (
   object,
   type = NULL,
   reference.index = 1,
+  edges = TRUE,
   verbose = FALSE,
-  edges = TRUE
+  maxnum = 1e3
 ) {
 
   # use processed images as input if available
@@ -554,11 +559,12 @@ ManualAlignImages <- function (
   if (verbose) cat(paste0("Using ", type, " images as input for alignment ... \n"))
 
   # Obtain point sets from each image
-  scatters <- grid.from.seu(object, type = type, edges = TRUE)
+  scatters <- grid.from.seu(object, type = type, edges = edges, maxnum = maxnum)
   fixed.scatter <- scatters[[reference.index]]$scatter
   counter <- NULL
   coords.ls <- NULL
-  tr.matrices <- lapply(seq_along(object@tools[[type]]), function(i) diag(c(1, 1, 1)))
+  tr.matrices <- ifelse(rep(type %in% c("processed", "prossesed.masks"), length(object@tools$imgs)), se@tools$transformations, lapply(seq_along(object@tools[[type]]), function(i) diag(c(1, 1, 1))))
+  #tr.matrices <- lapply(seq_along(object@tools[[type]]), function(i) diag(c(1, 1, 1)))
 
 
   ui <- fluidPage(
@@ -591,7 +597,7 @@ ManualAlignImages <- function (
              checkboxInput(inputId = "flip_y",
                            label = "Mirror along y axis",
                            value = FALSE),
-             selectInput(inputId = "sample", choices = 2:6, label = "Select sample", selected = 2),
+             selectInput(inputId = "sample", choices = (1:length(scatters))[-reference.index], label = "Select sample", selected = reference.index),
              actionButton("myBtn", "Return aligned data")
       ),
 
@@ -704,12 +710,21 @@ ManualAlignImages <- function (
   if (verbose) cat(paste("Finished image alignment. \n\n"))
   processed.ids <- which(unlist(lapply(alignment.matrices, function(tr) {!all(tr == diag(c(1, 1, 1)))})))
 
+  if (length(processed.ids) == 0) stop("None of the samples were processed", call. = FALSE)
+
   # Create lists for transformation
-  transformations <- setNames(ifelse(rep("transformations" %in% names(object@tools), length(object@tools$imgs)), object@tools$transformations, lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))})), nm = names(object@tools$masked))
-  processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
-  masks <- object@tools[[paste0(type, ".masks")]]
-  processed.masks <- setNames(ifelse(rep("processed.masks" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed.masks, object@tools$masked.masks), nm = names(object@tools$masked))
-  if (type == "processed") {
+  transformations <- setNames(ifelse(rep("transformations" %in% names(object@tools) & type != "masked", length(object@tools$imgs)), object@tools$transformations, lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))})), nm = names(object@tools$masked))
+
+  type <- type %||% match.arg(several.ok = T, names(object@tools), choices = c("processd", "masked"))[1]
+  if (!type %in% names(object@tools)) stop(paste0(type, " images not present in Seurat object"), call. = F)
+
+  im.type <- ifelse(type %in% c("processed.masks", "masked.masks"), gsub(pattern = ".masks", replacement = "", x = type), type)
+  processed.images <- object@tools[[im.type]]
+
+  msk.type <- ifelse(type %in% c("processed", "masked"), paste0(type, ".masks"), type)
+  processed.masks <- masks <- object@tools[[msk.type]]
+
+  if (type %in% c("processed", "processed.masks")) {
     xy.names <- c("warped_x", "warped_y")
   } else {
     xy.names <- c("pixel_x", "pixel_y")

@@ -13,7 +13,7 @@
 
 scatter_HE <- function (
   object,
-  type = "masked",
+  type = "masked.masks",
   sample.index = NULL,
   limit = 0.5,
   maxnum = 5e4,
@@ -28,7 +28,11 @@ scatter_HE <- function (
     xyset = which(bw.image > limit, arr.ind = TRUE)
   } else {
     bw.image = grayscale(as.cimg(object@tools[[type]][[sample.index]]))
-    xyset = which(bw.image < limit*255, arr.ind = TRUE)
+    if (type %in% c("processed.masks", "masked.masks")) {
+      xyset = which(bw.image > limit*255, arr.ind = TRUE)
+    } else {
+      xyset = which(bw.image < limit*255, arr.ind = TRUE)
+    }
   }
   set.seed(1)
   if (maxnum < nrow(xyset)) {
@@ -49,15 +53,15 @@ grid.from.seu <- function (
   object,
   type,
   limit = 0.3,
-  maxnum = 5e4,
+  maxnum = 1e3,
   edges = FALSE
 ) {
 
   if (!type %in% names(object@tools)) stop(paste0(type, " images not fount in Seurat obejct"), call. = FALSE)
 
   setNames(lapply(1:length(object@tools[[type]]), function(sample.index) {
-    scatter <- scatter_HE(object = se, sample.index = sample.index, maxnum = 1e3, limit = limit, type = type, edges = edges)
-    if (type == "processed") {
+    scatter <- scatter_HE(object = se, sample.index = sample.index, maxnum = maxnum, limit = limit, type = type, edges = edges)
+    if (type %in% c("processed", "processed.masks")) {
       xy.names <- c("warped_x", "warped_y")
     } else {
       xy.names <- c("pixel_x", "pixel_y")
