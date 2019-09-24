@@ -31,7 +31,7 @@
 #'
 
 
-ST.annotation <- function (
+ManualAnnotation <- function (
   object,
   res = 1500,
   verbose = FALSE

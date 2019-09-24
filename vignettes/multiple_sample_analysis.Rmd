@@ -36,7 +36,6 @@ devtools::install_github(
 
 #REMOVE THIS FROM VIGNETTE
 library(STutility)
-library(Seurat)
 
 #load("F:\JoeDocs\PhD\STUtility\testDatatoLoad.RData")
 

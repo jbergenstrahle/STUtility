@@ -43,7 +43,7 @@ parse.spot.file = function(path, delim="\t", ...) {
 #'
 #' @export
 
-prep.from.table <- function(
+InputFromTable <- function(
   infotable,
   transpose=TRUE,
   topN=0,
