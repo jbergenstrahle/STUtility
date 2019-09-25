@@ -1,5 +1,5 @@
 ---
-title: "A comprehensive guide to Spatial Transcriptomics data analysis"
+title: "STUtility - Vignette"
 author:
 - Joseph Bergenstråhle, Royal Institute of Technology (KTH)
 - Ludvig Larsson, Royal Institute of Technology (KTH)
@@ -13,13 +13,8 @@ output:
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## Using STUtility for multiple sample analysis
 
-As with all biological data, using multiple samples add power to the analysis and is a necessity to enable comprehensive insight which otherwise suffers from stochastic uncertainty. In this example tutorial, we display how you can input multiple samples, look for aggravating circumstances like batch effects and missing data, apply methods to correct such if present, get a holistic picture of your data as well as conduct more in depth analysis in various ways (more on this later). 
-
-Along the different subsections, references to publications are given to display examples of how the different strategies have been applied previously on ST data.
-
-### Installation
+# Installation
 
 Using devtools, execute the following from the R console:
 
@@ -32,16 +27,9 @@ devtools::install_github(
 
 ```
 
-```{r}
+```{r, echo=FALSE}
 
-#REMOVE THIS FROM VIGNETTE
 library(STutility)
-
-#load("F:\JoeDocs\PhD\STUtility\testDatatoLoad.RData")
-
-
-
-#load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/testDatatoLoad.RData")
 
 ```
 
@@ -63,21 +51,41 @@ An introductory animation is avaiable on our website: http://www.spatialtranscri
 
 The gene expression data consists of a count matrix with genes in rows and capture "spots" in columns. Each spot represents a small area on an ST array from which the captured transcripts have been barcoded with a unique sequence. The Cy3 image gives an idea of how this grid system of spots is arranged in an ST array.
 
-Bild på Cy3 - vi lar val ha nagon som bara har en snygg workflow bild att langa fram har?
+[Bild på Cy3}
 
 The unique barcode makes it possible to map the transcripts onto a spatial position on the tissue section and would be equivalent to a cell specific barcode in scRNA-seq data but can tag a mixture of transcripts from multiple cells. The spatial position of a spot is an (x, y) coordinate that defines the centroid of the spot area. These spatial coordinates are stored in the spot ids (column names) and allows us to visualize gene expression (and other spot features) in the array grid system. However, if you want to overlay a visualization on top the HE image you want to make sure that the spot coordinates are exact in relation to morphological features of the image. When the spots are printed onto the ST array surface, they will sometimes deviate from the (x, y) coordinates given by the spot ids and should therefore be adjusted. In addition to the spot adjustment, you will also need to label the spots that are located directly under the tissue. Spot adjustment and selection can be done autamatically using our [ST spot detector](https://github.com/SpatialTranscriptomicsResearch/st_spot_detector) web tool which outputs a table of adjusted coordinates and labels for the spots under tissue.
 
+## A note on using STUtility for multiple sample analysis
+
+The STUtility tool was developed with the goal of mutliple sample inputs. As with all biological data, using multiple samples add power to the analysis and is a necessity to enable comprehensive insight which otherwise suffers from stochastic uncertainty. Within this vignette, we display how you can input multiple samples, look for aggravating circumstances like batch effects and missing data, apply methods to correct such if present, get a holistic picture of your data as well as conduct more in depth analysis in various ways.
+
+## A note on the fundamental backbone of STUtility - The Seurat workflow
+
+We have extensively tried different methods and workflows for handling ST data. While all roads lead to Rome, as of the date of this writing we find the Seurat approach [https://satijalab.org/seurat/] to be the most suited for this type of data. Seurat is an R package designed for single-cell RNAseq data. Obviously, this deviates from the data that the ST technology currently produce, as the resolution on the array implies that each capture-spot consists of transcripts originating from multiple cells. Nevertheless, the characteristics of the ST data resembles that of scRNAseq to a large extent. 
+
+## A note about the new 10X Visium array
+
+In late 2018, the company Spatial Transcriptomics was aquired by 10X Genomics, which since then have been developing the new version of the technological platform that our research group have been using in the past years, called _Visium_. There are some changes in the experimental protocol for the Visium, and the type of output and subsequently input to this R tool. Since our goal is to have this R tool compatible to past and future versions of the technology, both are supported. If you are working with the Visium platform, please see section [xxxx] "Input from 10X Visium". 
+
+## A note about the naming conventions used
+
+For users familiar with the Seurat workflow, there are a number of Seruat plotting functions, e.g. `Seeurat::FeaturePlot()`, those plottingfunctions all have a "ST version", which is called upon by adding "ST." prior to the original function name e.g. `STutility::ST.FeaturePlot()`.
+
+The external STUtility functions are following a PascalCase convention. 
+
+# Getting started
+
+## Original ST platform
+
 ### Input files
 
-Accordingly, after an ST experiment, we have the following three output files:
+After a typical ST experiment, we have the following three output files:
 
 1. Count file
 2. Spot detector output 
 3. H&E image
 
 To use the full range of functions within STutility, all three files are needed for each sample. However, all data analysis steps that do not involve the H&E image can be performed with only the count file as input. 
-
-## Input multiple samples
 
 ---
 
@@ -107,12 +115,9 @@ infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";"
 
 ```
 
-
-```{r, eval=TRUE, echo=FALSE}
+```{r, eval=FALSE, echo=FALSE}
 infoTable
 ```
-
-We have extensively tried different methods and workflows for handling ST data. While all roads lead to Rome, as of the date of this writing we find the Seurat approach [https://satijalab.org/seurat/] to be the most suited for this type of data. Seurat is an R package designed for single-cell RNAseq data. Obviously, this deviates from the data that the ST technology currently produce, as the resolution on the array implies that each capture-spot consists of transcripts originating from multiple cells. Nevertheless, the characteristics of the ST data resembles that of scRNAseq to a large extent. 
 
 The provided count matrix consists of EnsambleIDs as gene names. Gene symbols are often a preference for easier reading, and we provide a transformation table accordingly. 
 
@@ -130,7 +135,7 @@ Here, we demonstrate the creation of the seurat object, while also including som
 #DOUBLE CHECK SO THAT THIS IS CORRECT NOW
 
 #TODO: add warnings if ids missmatch. Check that ids are in the data.frame ...
-se <- prep.from.table(infotable = infoTable, 
+se <- InputFromTable(infotable = infoTable, 
                       transpose = T, 
                       min.gene.count = 100, 
                       min.gene.spots = 5,
@@ -140,7 +145,28 @@ se <- prep.from.table(infotable = infoTable,
 ```
 
 
-## How to handle plotting and tissue image background
+```{r, eval=TRUE, echo=FALSE}
+
+#Load preloaded data
+load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/saved/multiple_sample_analysis_prealigned.RData")
+
+```
+
+## The 10X Visium platform
+
+This section will be updated upon the release of the Visium commercial product
+
+# Loading and handling images
+
+With the Seurat object created, we are ready to load the H&E images from the file paths provided in the infoTable. The LoadImages() function allow you to load the images into the Seurat object and will automatically save a scaled down version of each image that you can use for plotting.
+
+
+```{r, eval=TRUE, echo=TRUE}
+
+se <- LoadImages(se)
+
+```
+
 
 ---
 
@@ -162,7 +188,7 @@ ST.FeaturePlot(object = se,
 
 ```
 
-If we want to overlay these spatial heatmaps on the HE image it is much easier to focus on one sample at the time. Handling large images gets clumsy so we recommend to work with downscaled versions of the images that takes up less memory. First, we have to load the images into the Seurat object. The LoadImages() function allow you to load the images into the Seurat object and will automatically save a scaled down version of each image that you can use for plotting.
+If we want to overlay these spatial heatmaps on the HE image it is much easier to focus on one sample at the time. Handling large images gets clumsy so we recommend to work with downscaled versions of the images that takes up less memory.
 
 OBS: We have noted that some systems experience memory problems due to large size image information not being cleared when removing old obejcts. If this is the case, the user can set `time.resolve=TRUE`, which will add a small garbage collection step to avoid this issue.
 
@@ -170,26 +196,22 @@ NOTE: time.resolve is set to TRUE as deafult in the current version. This will i
 
 ```{r, eval=FALSE}
 
-system.time({se <- LoadImages(object = se, verbose = T)})#, time.resolve = T)
-#undrar om man inte ska ha den som default egentligen?
-
-# Gud förbjude
-
+system.time({se <- LoadImages(object = se, verbose = T)})
 ```
 
 Using the loaded images, we can create masks around the tissue area, to hide the array background and allow for better visualization. 
 
-```{r, eval=FALSE}
+```{r, eval=TRUE}
 # TODO: Take care of warnings 
 
 se <- MaskImages(object = se, verbose = T)
 
 ```
 
-You can then look at the HE images using the ImagePlot() function.The ImagePlot function will automatically label the samples from 1 to N where N is the total number of samples. If you are running the function within RStudio you can take advantage of the Viewer panel to explore the images. Setting method="raster" and the plot function will use the default plotting device in R. You can also change the layout of the images by forcing a different number of columns by setting ncols.
+You can look at the HE images using the ImagePlot() function.The ImagePlot function will automatically label the samples from 1 to N where N is the total number of samples. If you are running the function within RStudio you can take advantage of the Viewer panel to explore the images. Setting method="raster" and the plot function will use the default plotting device in R. You can also change the layout of the images by forcing a different number of columns by setting ncols.
 
 
-```{r, fig.height=6, fig.width=12}
+```{r, eval=TRUE, fig.height=6, fig.width=12}
 
 # Plot HE images
 ImagePlot(se, ncols = 3)
@@ -212,28 +234,18 @@ FeatureOverlay(object = se,
 
 ### Individual transformations to images
 
-If you follow along the test set in this vignette, you will notice that the samples are not quite aligned with respect to each other on the array. We have implemented a process to align the images.
+If you follow along the test set in this vignette, you will notice that the samples are not quite aligned with respect to each other on the array. We have implemented a process to automatically align the images.
 
 To demonstrate the effect:
-
-```{r, fig.width=12, fig.height=12, eval=FALSE}
-ImagePlot(se, method = "raster")
-```
 
 ```{r, fig.width=12, fig.height=12, eval=TRUE, echo=FALSE}
 ImagePlot(se, method = "raster", type="masked") #For convience vignette hmtl look
 ```
 
-Call the automatic alignment:
+Call the automatic alignment
 
-```{r, fig.width=12, fig.height=12, eval=FALSE}
+```{r, eval=TRUE, fig.width=12, fig.height=12, eval=FALSE}
 se <- AlignImages(se, verbose = T)
-
-#OBS: vcgCreateKDtree not loaded by deafult (Rvcg package)
-#computeTransform not loaded bby deafult (Morpho package)
-#fixed by keywords internal ?
-#Morpho måste läggas till som dependency, eller kanske suggested
-
 
 ## Mirror image number 5 along y axis
 #transforms <- list("5" = list("mirror.y" = T, "mirror.x" = T))
@@ -254,7 +266,7 @@ The new alignments are stored in the Seurat object, and subsequent plotting func
 ```{r, fig.width=6, fig.height = 6}
 
 MultiFeatureOverlay(se, features = "Nrgn", 
-                    sampleids = paste0(1:8),
+                    sampleids = paste0(1:4),
                     palette = "GrRd")
 
 #TODO:  "masked", "raw" eller "processed" add to documentation. 
@@ -263,14 +275,14 @@ MultiFeatureOverlay(se, features = "Nrgn",
 
 The `type` parameter can be set to "masked", "raw" or "processed", to override the deafult use of processed masked images. 
 
-```{r, fig.height = 6, fig.width = 12}
+```{r, eval=FALSE, fig.height = 6, fig.width = 12}
 
 FeatureOverlay(object = se, features = c("Nrgn", "Cck"), 
-               palette = "GrRd", sample.index = 5,
+               palette = "GrRd", sample.index = 2,
                type="raw")
 
 FeatureOverlay(object = se, features = c("Nrgn", "Cck"), 
-               palette = "GrRd", sample.index = 5,
+               palette = "GrRd", sample.index = 2,
                type="processed")
 
 ```
@@ -337,7 +349,7 @@ se <- SCTransform(se, vars.to.regress = c("sample", "nFeature_RNA"))
 
 The strength of untargeted whole transcriptome capture is the ability to perform unsupervised analysis and the ability to find spatial gene expression patterns. We've found good use of the dimensionally reduction method "ICA" (Independent Component Analysis) to find spatial expression pattens. An example is demonstrated below:
 
-```{r, fig.width=16, fig.height=10}
+```{r, fig.width=16, fig.height=10, eval=FALSE}
 
 se <- RunICA(se)
 
@@ -354,7 +366,7 @@ ST.DimPlot(se, dims = 1:5, ncol = 8, grid.ncol = 1, reduction = "ica", dark.them
 
 ```
 
-To extract the genes that drives the separtion accoring to the dimensionallity reduction, we can use the following function:
+To extract the genes that drives the separtion accoring to the dimensionallity reduction, we can use the `ProjectDim()` function. Where we specify the dimensions of interest (here IC_1 and IC_3, which are regions that seems to confer a clear spatial expression histology. 
 
 ```{r}
 
@@ -362,9 +374,8 @@ ProjectDim(se, reduction = "ica", dims=c(1,3))
 
 ```
 
-Where we specify the dimensions of interest (here IC_1 and IC_3, which are regions that seems to confer a clear spatial expression histology. 
 
-### Clustering
+## Clustering
 
 Clustering is a standard procedure in genomic analysis, and the methods for doing so are numerous. Here we demonstrate an example where we use the result of ICA to perform clustering. In the priveous section, we demonstrated how to plot a subset of dimensions from the ICA output. Going through this list, we can notice the dimensions that are "spatially active", i.e. that seems to confer a spatial pattern along their axis. We can extract these dimensions:
 
@@ -378,13 +389,13 @@ And then use them to construct a Shared Nearset Neighbor (SSN) Graph.
 se <- FindNeighbors(object = se, dims = keep.dims, verbose = FALSE, reduction = "ica")
 ```
 
-And then clustering using a modularity optimizer
+Followed by clustering using a modularity optimizer
 
 ```{r, eval=FALSE}
 se <- FindClusters(object = se, verbose = FALSE)
 ```
 
-We can plot the clusters spatially
+And plotting of the clusters spatially
 
 ```{r, fig.height = 10, fig.width = 10}
 
@@ -413,27 +424,35 @@ MultiFeatureOverlay(se, features = "Hbb-bs",
 Plot features in t-SNE space or on ST array coordinates
 
 ```{r, fig.width = 12, fig.height = 4}
-
+se <- RunPCA(se)
+se <- RunTSNE(se, reduction="pca")
 fts <- c("Slc18a2", "Slc6a5")
 FeaturePlot(se, features = fts, reduction = "tsne", cols = c("lightgray", "mistyrose", "red"), order = TRUE)
 ST.FeaturePlot(se, features = fts, ncol = 8, grid.ncol = 1, palette = "GrRd", pt.size = 0.5)
 
 ```
 
-### RGB dimensionality reduction plots
+## RGB dimensionality reduction plots
 
-One approach to visualize the result of dimensionallity reduction is to use the first three dimensions and transfrom the values into RGB color space. This 3dim space can then be utilized for spatial visualization.
+One approach to visualize the result of dimensionallity reduction is to use the first three dimensions and transfrom the values into RGB color space. This 3 dimensional space can then be utilized for spatial visualization.
 We demonstrate the teqnique with UMAP, using our ICA dimensions as input:
+
+```{r, eval=FALSE}
+
+se <- RunUMAP(object = se, dims = keep.dims, verbose = FALSE, n.components = 3, reduction = "ica", reduction.name = "umap.3d")
+
+```
+
+We use the first three dimensions for plotting:
 
 ```{r, fig.height = 10, fig.width = 10}
 
-se <- RunUMAP(object = se, dims = keep.dims, verbose = FALSE, n.components = 3, reduction = "ica", reduction.name = "umap.3d")
 
 ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T)
 
 ```
 
-Once, again the `ProjectDim()` function is used to display the genes that are most strongly correlated with the coordinate system. Note in the function call above that we used our own defined `reduction.name`, which are subsequently stored in the Seurat object. 
+Once again the `ProjectDim()` function can be used to display the genes that are most strongly correlated with the coordinate system. Note in the function call above that we defined `reduction.name`, which are subsequently stored in the Seurat object in the reduction slot: 
 
 ```{r}
 
@@ -441,10 +460,11 @@ ProjectDim(se, reduction = "umap.3d")
 
 ```
 
-As seen in the plot above, there are clear spatial patterns that are confirm by the histology of the tissue. 
+As seen in the plot above, there are clear spatial patterns that are confirmed by the histology of the tissue. 
 Lets take an example, looking at the first UMAP coordinate (red color) - we note a clear patten [bra beskrivning av vad vi ser]
 
-Lets use the Allen brain atlas to see how well our data match. Lets take the gene with highest correlation to the red color, i.e. "Cck". 
+We can utilize an external data source, the Allen brain atlas, to see how well our data match. 
+Lets take the gene with highest correlation to the red color, i.e. "Cck". 
 
 https://mouse.brain-map.org/gene/show/12209
 
@@ -452,7 +472,8 @@ Expression: [Expression data - Allen brain atlas](Allen_expression_data.PNG)
 
 ISH: [ISH data - Allen brain atlas](Allen_ISH_data.PNG)
 
-## QC
+
+# QC
 
 ---
 
@@ -498,8 +519,9 @@ ST.FeaturePlot(object=se,
 
 The dimensionallity reduction (e.g. via UMAP) projection onto RGB space works excellent as a batch effect check. Here we show four samples of mouse hippocampus that clearly display a batch effect subject to samples prepared on different arrays:
 
-```{r}
+```{r, eval=FALSE, echo=FALSE}
 
+#THIS PART IS NOW REMOVED
 #Load hippo samples
 
 infoTabel2 <- read.table("~/STUtility/inst/extdata/metaData_hippo_batch_check.csv", sep=";", header=T, stringsAsFactors = F)
@@ -545,7 +567,7 @@ ggP <- ggplotly(gg + dark_theme() , tooltip="rgbs")
 ```
 
 
-## Batch effects and how to act
+Correction of batch effects
 
 ---
 
@@ -556,7 +578,7 @@ ggP <- ggplotly(gg + dark_theme() , tooltip="rgbs")
 ```
 
 
-## Regional analysis - Supervised DEA
+# Regional analysis - Supervised DEA
 
 ---
 
@@ -566,7 +588,7 @@ https://satijalab.org/seurat/v3.0/de_vignette.html
 
 Lets use the RGB UMAP strategy to select a region of interest. 
 
-```{r}
+```{r, eval=FALSE}
 
 #Eventuellt interaktiv Rplot
 gg <- ST.DimPlot(object = se, dims = 1:3, 
@@ -586,7 +608,7 @@ And the yellow cells as:
 
 Red: >85%, Green: 65-75%, Blue: 20-30%. 
 
-```{r}
+```{r, eval=FALSE}
 
 se <- labelRGB(object = se, dimPlot = gg, 
                 label1="orange", red1=c(85,255), green1=c(30,40), blue1=c(10,20),
@@ -596,7 +618,7 @@ se <- labelRGB(object = se, dimPlot = gg,
 
 
 
-```{r}
+```{r, eval=FALSE}
 de.markers <- FindMarkers(se, ident.1 = "orange", ident.2 = "yellow")
 
 head(de.markers)
@@ -608,7 +630,7 @@ We get the values for group1 vs group2, i.e. "Wfs1" is determined to be overexpr
 
 Lets check the spatial distribution of Wfs1:
 
-```{r}
+```{r, eval=FALSE}
 
 MultiFeatureOverlay(se, features = "Wfs1", 
                     sampleids = paste0(1:8),
@@ -621,17 +643,9 @@ MultiFeatureOverlay(se, features = "Wfs1",
 
 In 6 out of 8 samples, we have a clear "stroke" of expression in the lower part of the [insert anatomical area]
 
-# AAAAADDD det vore snyggt om man kunde VISUALISERA de REGIONER MAN VALT SO MAN VET !
-
-```{r}
-
-#TODO: AAAAADDD det vore snyggt om man kunde VISUALISERA de REGIONER MAN VALT SO MAN VET !
-
-```
-
 You can exlude `ident.2` to instead perform differential expression between one group vs all other capture-spots.
 
-```{r}
+```{r, eval=FALSE}
 de.markers <- FindMarkers(se, ident.1 = "orange")
 head(de.markers)
 #OK DETTA E INTE SA JAKLA SNYGGT IOF ATT MAN ENDAST KAN GE 2 ST AT GANGNE, ERE OK ELLER INTE?
@@ -639,7 +653,7 @@ head(de.markers)
 
 Lets check the top gene based on adjusted p-value:
 
-```{r}
+```{r, eval=FALSE}
 
 MultiFeatureOverlay(se, features = "Pou3f1", 
                     sampleids = paste0(1:8),
@@ -650,7 +664,15 @@ MultiFeatureOverlay(se, features = "Pou3f1",
 
 See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test. 
 
-## Other 
+# Regional analysis - Supervised DEA after manual annotation
+
+# Manual annotation
+
+There are different alternatives for manual annotation of the tissue. 
+
+
+
+# Other situations, tips & tricks
 
 ### Extraction of data
 
@@ -660,7 +682,7 @@ The core of STUtility is the Seurat object, where all information from the diffe
 
 No problem. However, the count matrix needs to have some sort of coordinate info in order to actually plot the data spatially. Normally this information is kept in the colnames of the count matrix, e.g. "XxY" with X=xcoordiante and Y=ycoordinate. Creating the Seurat object with the `prep.from.table` function will result in the addition of "_z" to the columnames of the input matrix, where "z" is the sample number. When calling the spatial plots (i.e. ST.xxxPlot), use the parameter `delim` to specifiy the type of colnames you have in the Seurat object. If the names are according to the outline above, this would imply `delim = "x|_"`.  
 
-### Saving of images 
+### Saving of images to a pdf file
 
 For saving images, we usally use the built in function `pdf()` within R. All ploting functions in STutility returns a ggplot object. Accordingly just, initiate the pdf function, make the plot and then turn off the graphic device:
 
@@ -674,7 +696,7 @@ dev.off()
 
 ```
 
-## Acknowledgement
+# Acknowledgements
 
 STUtility relies heavily on the Seurat package, currently version 3.0 As such, we would like to take the opportunity to thank the excellent folks at Satija Lab for their efforts and contribution to the space. The bioinformatic folks at Scilifelab working on Spatial Transcriptomics from the early days of it's inception have gone over numerous ways of handling this type of data in our neverending pursuit of placing transcriptomic information in its spatial context. So far, the Seurat approach to transformation demonstrated here is our preferred method. Furhermore, we picture that the suitability will not deterioate when the capture spot resolution of the spatial methods keeps getting smaller and smaller in size, eventually reaching the single-cell level that Seurat in reality is developed for to begin with. 
 
