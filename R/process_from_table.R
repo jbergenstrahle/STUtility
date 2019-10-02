@@ -157,7 +157,7 @@ InputFromTable <- function(
   print(paste("Spots removed: ", before[2] - after[2] ))
   print(paste("Genes removed: ", before[1] - after[1]))
 
-  m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
+  m <- CreateSeuratObject(counts = cnt, meta.data = meta_data, ...)
 
   #Filter top genes
   if (topN > 0){

@@ -16,3 +16,4 @@ R/prep_files.R
 R/3D_alignment.R
 R/MultiCCA.R
 vignettes/MultiCCA_vignette.Rmd
+se_object
