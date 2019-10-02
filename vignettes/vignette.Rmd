@@ -5,16 +5,23 @@ author:
 - Ludvig Larsson, Royal Institute of Technology (KTH)
 date: ''
 output:
-  pdf_document: default
   html_document:
-    toc: true
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: true
+      smooth_scroll: true
     theme: united
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 ```
-
 
 # Installation
 
@@ -51,11 +58,7 @@ An introductory animation is avaiable on our website: http://www.spatialtranscri
 
 ### Spot adjustment and selection
 
-The gene expression data consists of a count matrix with genes in rows and capture "spots" in columns. Each spot represents a small area on an ST array from which the captured transcripts have been barcoded with a unique sequence. The Cy3 image gives an idea of how this grid system of spots is arranged in an ST array.
-
-![](cy3.jpg)
-
-The unique barcode makes it possible to map the transcripts onto a spatial position on the tissue section and would be equivalent to a cell specific barcode in scRNA-seq data but can tag a mixture of transcripts from multiple cells. The spatial position of a spot is an (x, y) coordinate that defines the centroid of the spot area. These spatial coordinates are stored in the spot ids (column names) and allows us to visualize gene expression (and other spot features) in the array grid system. However, if you want to overlay a visualization on top the HE image you want to make sure that the spot coordinates are exact in relation to morphological features of the image. When the spots are printed onto the ST array surface, they will sometimes deviate from the (x, y) coordinates given by the spot ids and should therefore be adjusted. In addition to the spot adjustment, you will also need to label the spots that are located directly under the tissue. Spot adjustment and selection can be done autamatically using our [ST spot detector](https://github.com/SpatialTranscriptomicsResearch/st_spot_detector) web tool which outputs a table of adjusted coordinates and labels for the spots under tissue.
+The gene expression data consists of a count matrix with genes in rows and capture "spots" in columns. Each spot represents a small area on an ST array from which the captured transcripts have been barcoded with a unique sequence. The unique barcode makes it possible to map the transcripts onto a spatial position on the tissue section and would be equivalent to a cell specific barcode in scRNA-seq data but can tag a mixture of transcripts from multiple cells. The spatial position of a spot is an (x, y) coordinate that defines the centroid of the spot area. These spatial coordinates are stored in the spot ids (column names) and allows us to visualize gene expression (and other spot features) in the array grid system. However, if you want to overlay a visualization on top the HE image you want to make sure that the spot coordinates are exact in relation to morphological features of the image. When the spots are printed onto the ST array surface, they will sometimes deviate from the (x, y) coordinates given by the spot ids and should therefore be adjusted. In addition to the spot adjustment, you will also need to label the spots that are located directly under the tissue. Spot adjustment and selection can be done autamatically using our [ST spot detector](https://github.com/SpatialTranscriptomicsResearch/st_spot_detector) web tool which outputs a table of adjusted coordinates and labels for the spots under tissue.
 
 ## A note on using STUtility for multiple sample analysis
 
@@ -363,9 +366,9 @@ Different dimensionality reductions methods are suported via Seurat (`RunPCA()`,
 
 We can then plot a variable number of dimensions across the samples.
 
-```{r, fig.width=16, fig.height=10}
+```{r, fig.height=24, fig.width=24}
 
-ST.DimPlot(se, dims = 1:5, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = T, pt.size = 0.3, center.zero = T)
+ST.DimPlot(se, dims = 1:8, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = F, pt.size = 1, center.zero = T,palette = "RdBu")
 
 ```
 
@@ -431,7 +434,7 @@ se <- RunPCA(se)
 se <- RunTSNE(se, reduction="pca")
 fts <- c("Slc18a2", "Slc6a5")
 FeaturePlot(se, features = fts, reduction = "tsne", cols = c("lightgray", "mistyrose", "red"), order = TRUE)
-ST.FeaturePlot(se, features = fts, ncol = 8, grid.ncol = 1, palette = "GrRd", pt.size = 0.5)
+ST.FeaturePlot(se, features = fts, ncol = 8, grid.ncol = 1, palette = "GrRd", pt.size = 1)
 
 ```
 
@@ -471,11 +474,18 @@ Lets take the gene with highest correlation to the red color, i.e. "Cck".
 
 https://mouse.brain-map.org/gene/show/12209
 
-Expression: [Expression data - Allen brain atlas](Allen_expression_data.PNG)
+![Expression data - Allen brain atlas](Allen_expression_data.PNG)
 
-ISH: [ISH data - Allen brain atlas](Allen_ISH_data.PNG)
+![ISH data - Allen brain atlas](Allen_ISH_data.PNG)
 
+```{r}
+MultiFeatureOverlay(se, features = "Cck", 
+                    sampleids = paste0(1:8),
+                    palette = "GrRd")
 
+```
+
+ 
 # QC
 
 ---
@@ -593,101 +603,9 @@ Correction of batch effects
 ```
 
 
-# Regional analysis - Supervised DEA
+# Supervised DEA between regions
 
-
----
-
-==================== PROBABLY REMOVE THIS PART ==================================
-
-Once again, we make use of the Seurat 
-
-https://satijalab.org/seurat/v3.0/de_vignette.html
-
-Lets use the RGB UMAP strategy to select a region of interest. 
-
-```{r, eval=FALSE}
-
-#Eventuellt interaktiv Rplot
-gg <- ST.DimPlot(object = se, dims = 1:3, 
-           reduction = "umap.3d", blend = T, 
-           dark.theme = T,
-           delim="x|_")
-
-ST.rgbDimPlot(plot = gg) %>% layout(paper_bgcolor = "rgb(0,0,0)") #make this an parameter  to St.DimPlot instead
-
-```
-
-Example: look at the inner section of (the hundora). Our hypothesis is that there is a difference between the uppern and lower part, displed by the dark orange and the more yellow part. It might even be so that across time, one expression program would turn to the next (obs, we dont have a time serier here). Lets conduct a differential expression between these two regions, or rather "colors". We can define a color interval to perform our selection, guided by the hover information we obtain from the picture. Lets define the orange cells as:  
-
-Red: >85%, Green: 30-40%, Blue: 10-20%.
-
-And the yellow cells as:
-
-Red: >85%, Green: 65-75%, Blue: 20-30%. 
-
-```{r, eval=FALSE}
-
-se <- labelRGB(object = se, dimPlot = gg, 
-                label1="orange", red1=c(85,255), green1=c(30,40), blue1=c(10,20),
-                label2 = "yellow", red2=c(85,255), green2=c(67,75), blue2=c(20,30))
-
-```
-
-
-
-```{r, eval=FALSE}
-de.markers <- FindMarkers(se, ident.1 = "orange", ident.2 = "yellow")
-
-head(de.markers)
-```
-
-We get the values for group1 vs group2, i.e. "Wfs1" is determined to be overexpressed in the yellow area vs the orange, i.e (lower region of the [insert anatomical area].  
-
-`pct.1` and `pct.2` is the percentage of capture-spots where the gene is detected in the first and second group. 
-
-Lets check the spatial distribution of Wfs1:
-
-```{r, eval=FALSE}
-
-MultiFeatureOverlay(se, features = "Wfs1", 
-                    sampleids = paste0(1:8),
-                    palette = "GrRd",
-                    method="raster")
-
-
-
-```
-
-In 6 out of 8 samples, we have a clear "stroke" of expression in the lower part of the [insert anatomical area]
-
-You can exlude `ident.2` to instead perform differential expression between one group vs all other capture-spots.
-
-```{r, eval=FALSE}
-de.markers <- FindMarkers(se, ident.1 = "orange")
-head(de.markers)
-#OK DETTA E INTE SA JAKLA SNYGGT IOF ATT MAN ENDAST KAN GE 2 ST AT GANGNE, ERE OK ELLER INTE?
-```
-
-Lets check the top gene based on adjusted p-value:
-
-```{r, eval=FALSE}
-
-MultiFeatureOverlay(se, features = "Pou3f1", 
-                    sampleids = paste0(1:8),
-                    palette = "GrRd",
-                    method="raster")
-```
-
-
-See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test. 
-
-
-====================
-
-# Regional analysis - Supervised DEA after manual annotation
-
-# Manual annotation
+## Manual annotation
 
 STUtility include two different alternatives for manual annotation of the tissue. 
 
@@ -712,22 +630,45 @@ NB: The images used for the manual annotation are loaded as _raw images_ from th
 
 ## Annotation by providing colored images
 
-### Using the annotations for Seurat workflow DEA
+### Using the annotations for Seurat workflow DEG analysis
 
-`FindMarkers()`
+The manual annotations could e.g. be used for supervised analysis of gene expression markers. Within Seurat it's easy to conduct such analysis by first setting the capture-spots identity classes to the annotation level. 
 
+```{r, eval=TRUE}
+
+Idents(se) <- se@meta.data$labels
+
+```
+
+Remember, the labels include _all_ capture-spots, which by defaul have label "Default". To conduct DEA for the identity classes, we utilize the `FindMarkers()` function, and specify the two different levels which we want to compare against.
+
+```{r, eval=TRUE}
+
+FindMarkers(se, ident.1 = "Epithelial", ident.2 = "Stroma")
+
+```
+
+Exluding `ident.2` results in differential expression between one group vs all other capture-spots.
+
+```{r, eval=FALSE}
+
+FindMarkers(se, ident.1 = "Epithelial")
+
+```
+
+See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test.
 
 # Other situations, tips & tricks
 
-### Extraction of data
+## Extraction of data
 
 The core of STUtility is the Seurat object, where all information from the different functions are saved. Accordingly, it's convinient to extract this information by opeing the different slots within the object. See https://satijalab.org/seurat/ for extensive information.
 
-### What if I don't have spot file coordinates?
+## What if I don't have spot file coordinates?
 
 No problem. However, the count matrix needs to have some sort of coordinate info in order to actually plot the data spatially. Normally this information is kept in the colnames of the count matrix, e.g. "XxY" with X=xcoordiante and Y=ycoordinate. Creating the Seurat object with the `prep.from.table` function will result in the addition of "_z" to the columnames of the input matrix, where "z" is the sample number. When calling the spatial plots (i.e. ST.xxxPlot), use the parameter `delim` to specifiy the type of colnames you have in the Seurat object. If the names are according to the outline above, this would imply `delim = "x|_"`.  
 
-### Saving of images to a pdf file
+## Saving of images to a pdf file
 
 For saving images, we usally use the built in function `pdf()` within R. All ploting functions in STutility returns a ggplot object. Accordingly just, initiate the pdf function, make the plot and then turn off the graphic device:
 
