@@ -527,7 +527,7 @@ AlignImages <- function (
 #' @param Image type used for alignment
 #' @param reference.index Specifies reference sample image for alignment(default: 1)
 #' @param edges Uses the tissue edges as points set for alignment
-#' @param maxnum
+#' @param maxnum Maximum grid number
 #' @param verbose Print messages
 #'
 #' @inheritFrom grid.from.seu

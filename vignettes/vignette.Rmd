@@ -124,6 +124,8 @@ infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";"
 infoTable
 ```
 
+### Loading the samples
+
 The provided count matrix consists of EnsambleIDs as gene names. Gene symbols are often a preference for easier reading, and we provide a transformation table accordingly. 
 
 ```{r, eval=FALSE}
@@ -159,7 +161,43 @@ load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/s
 
 ## The 10X Visium platform
 
-This section will be updated upon the release of the Visium commercial product
+### Input files
+
+After running the 10X SpaceRanger pipeline, the output includes:
+
+1. Count file in H5 format
+2. Barcode position file 
+3. H&E image
+
+To use the full range of functions within STutility, all three files are needed for each sample. However, all data analysis steps that do not involve the H&E image can be performed with only the count file as input. 
+
+---
+
+To follow along this tutorial, download the test data set at TODO:[insert test data set link]. The downloadable content consists of count files, output from our spot detector tool, H&E stained images as well as an "infoTable" to read in the files into R.
+
+### The infoTable
+
+Reading in 10x files, hdf5r 
+
+```{r, echo=FALSE, eval=FALSE}
+#visium <- Read10X_h5("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/10xVisium/142079_filtered.h5")
+
+infoTable <- read.table("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/infoTable_10x.csv", sep=",", header=T, stringsAsFactors = F)
+
+se <- InputFromTable(infotable = infoTable, 
+                      transpose = F,  #Transpose är F för 10x Visium
+                      min.gene.count = 100, 
+                      min.gene.spots = 5,
+                      min.spot.count = 500)
+
+#OBS NEED TO SCALE PIXEL COORDS ! do that before of after function?
+
+
+```
+
+### Loading the samples
+
+
 
 # Loading and handling images
 
@@ -644,7 +682,9 @@ Remember, the labels include _all_ capture-spots, which by defaul have label "De
 
 ```{r, eval=TRUE}
 
-FindMarkers(se, ident.1 = "Epithelial", ident.2 = "Stroma")
+de.markers <- FindMarkers(se, ident.1 = "Epithelial", ident.2 = "Stroma")
+
+head(de.markers)
 
 ```
 
@@ -656,7 +696,7 @@ FindMarkers(se, ident.1 = "Epithelial")
 
 ```
 
-See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test.
+See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter options that can be used to increase the speed of the DE test as well as conducting the DE analysis using alternative tests.
 
 # Other situations, tips & tricks
 
