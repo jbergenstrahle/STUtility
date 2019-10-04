@@ -131,28 +131,30 @@ apply.transform <- function (
 #' the transofmration function for all different combinations of reflections and select the
 #' function with the lowest rmse between the aligned set and reference set.
 #'
-#' @param icps results obtained with \code{\link{find.optimal.transform}}
+#' @param tr results obtained with \code{\link{find.optimal.transform}}
 #' @return A transformation function that takes x and y coordinates as input and outputs a
 #' list of warped x, y coordinates
 
 generate.map.affine <- function (
-  icps,
+  tr, #icps,
   forward = FALSE
 ) {
   #icps <- find.optimal.transform(set2, set1, xdim, ydim)
   if (forward) {
     map.affine <- function (x, y) {
       p <- cbind(x, y)
-      os <- icps$os
-      xy <- apply.transform(map = solve(icps$icp$map), p)
-      xy <- t(abs(t(xy) - os))
+      #os <- icps$os
+      #xy <- apply.transform(map = solve(tr), p)
+      #xy <- t(abs(t(xy) - os))
+      xy <- t(solve(tr)%*%t(cbind(p, 1)))
       list(x = xy[, 1], y = xy[, 2])
     }
   } else {
     map.affine <- function (x, y) {
       p <- cbind(x, y)
-      p <- t(abs(t(p) - icps$os))
-      xy <- apply.transform(map = icps$icp$map, p)
+      #p <- t(abs(t(p) - icps$os))
+      #xy <- apply.transform(map = tr, p)
+      xy <- t(tr%*%t(cbind(p, 1)))
       list(x = xy[, 1], y = xy[, 2])
     }
   }

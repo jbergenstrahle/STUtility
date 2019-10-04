@@ -213,7 +213,7 @@ MaskImages <- function (
 
   rasters <- list()
   masks <- list()
-  centers <- list()
+  #centers <- list()
 
   for (i in seq_along(object@tools$raw)) {
     imr <- image_read(object@tools$raw[[i]])
@@ -302,13 +302,13 @@ MaskImages <- function (
     rasters[[i]] <- rst
 
     # Find tissue center
-    center <- which(seg[, , 1, 1] > 0, arr.ind = T) %>% as.data.frame() %>% summarize(center.x = mean(row), center.y = mean(col))
-    centers[[i]] <- center
+    #center <- which(seg[, , 1, 1] > 0, arr.ind = T) %>% as.data.frame() %>% summarize(center.x = mean(row), center.y = mean(col))
+    #centers[[i]] <- center
   }
 
   object@tools$masked <- setNames(rasters, nm = names(object@tools$raw))
   object@tools$masked.masks <- setNames(masks, nm = names(object@tools$raw))
-  object@tools$centers <- setNames(centers, nm = names(object@tools$raw))
+  #object@tools$centers <- setNames(centers, nm = names(object@tools$raw))
 
   return(object)
 }
@@ -317,7 +317,7 @@ MaskImages <- function (
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Warp Images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# TODO: give examples, fix transformation of pixel coordinates
+# TODO: Fix center
 
 #' Warps images using various transformations
 #'
@@ -326,8 +326,6 @@ MaskImages <- function (
 #' @param verbose Print messages
 #'
 #' @return Seurat object with processed imaged
-#'
-#' @export
 
 WarpImages <- function (
   object,
@@ -453,7 +451,7 @@ AlignImages <- function (
   im.ref <- as.cimg(object@tools$raw[[reference.index]])
 
   # Create empty lists
-  transformations <- setNames(ifelse(rep("transformations" %in% names(object@tools), length(object@tools$imgs)), object@tools$transformations, lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))})), nm = names(object@tools$masked))
+  transformations <- setNames(lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))}), nm = names(object@tools$masked))
   processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
   processed.masks <- object@tools$masked.masks
   warped_coords <- object[[c("pixel_x", "pixel_y")]]
@@ -471,10 +469,21 @@ AlignImages <- function (
     # Obtain optimal transform and create map functions
     icps <- find.optimal.transform(xyset.ref, xyset[[paste0(i)]], xdim, ydim)
     tr <- icps$icp$map
-    tr <- tr[-3, -3]
-    transformations[[i]] <- tr%*%transformations[[i]]
-    map.affine.backward <- generate.map.affine(icps)
-    map.affine.forward <- generate.map.affine(icps, forward = T)
+    # Collect rotation matrix
+    tr <- tr[-3, -3]#; tr[1:2, 3] <- 0
+    reflect.x <- icps$os[1] == xdim; reflect.y <- icps$os[2] == ydim
+    center.new <- apply(xyset[[paste0(i)]], 2, mean)
+    if (reflect.x) {
+      center.new[1] <- xdim - center.new[1]
+    }
+    if (reflect.y) {
+      center.new[2] <- ydim - center.new[2]
+    }
+    tr.refl <- combine.tr(center.cur = apply(xyset[[paste0(i)]], 2, mean), center.new = center.new, alpha = 0, mirror.x = reflect.x, mirror.y = reflect.y)
+    tr <- tr%*%tr.refl
+    transformations[[i]] <- tr
+    map.affine.backward <- generate.map.affine(tr)
+    map.affine.forward <- generate.map.affine(tr, forward = T)
 
     # Warp images
     if (verbose) cat(paste0(" Applying rigid transformation ... \n"))
@@ -527,10 +536,10 @@ AlignImages <- function (
 #' @param Image type used for alignment
 #' @param reference.index Specifies reference sample image for alignment(default: 1)
 #' @param edges Uses the tissue edges as points set for alignment
-#' @param maxnum
+#' @param maxnum Maximum number of points in scatter
 #' @param verbose Print messages
 #'
-#' @inheritFrom grid.from.seu
+#' @inheritParams grid.from.seu
 #'
 #' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
 #' @importFrom shinyjs useShinyjs reset

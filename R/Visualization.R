@@ -270,15 +270,18 @@ ST.FeaturePlot <- function (
   verbose = FALSE,
   ...
 ) {
+
+  # Collect data
   spots <- spots %||% colnames(x = object)
   data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
-
   data.type <- unique(sapply(data, class))
 
+  # Stop if feature classes are mixed
   if (length(data.type) > 1 & !all(data.type %in% c("numeric", "integer"))) {
     stop("Mixed classes (", paste(unique(sapply(data, class)), collapse = ", "), ") are not allowed in features ... ")
   }
 
+  # If blend option is set, stop if the number of features are not equal to 2 or 3
   if (!blend && length(x = features) %in% c(2, 3) & !all(data.type %in% c("numeric", "integer"))) {
     stop("Blending feature plots only works with two or three numeric features")
   }
@@ -297,6 +300,7 @@ ST.FeaturePlot <- function (
     group.by <- NULL
   }
 
+  # Add shape column if specified
   if (!is.null(x = shape.by)) {
     if (!shape.by %in% colnames(object[[]])) {
       stop(paste0("Shaping variable (shape.by) ", shape.by, " not found in meta.data slot"), call. = F)
@@ -305,26 +309,10 @@ ST.FeaturePlot <- function (
   }
 
   # Obtain array coordinates
-  image.type <- NULL
-  if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
-    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
-    image.type <- "processed"
-  } else if ("raw" %in% names(object@tools)) {
-    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]], nm = c("x", "y")))
-    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
-  } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
-    xlim <- ylim <- NULL
-  } else {
-    if(is.null(delim)) {
-      stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
-    }
-    coords <- GetCoords(colnames(object), delim)
-    data <- cbind(data, coords[, c("x", "y")])
-    xlim <- ylim <- NULL
-  }
+  image.type <- "empty"
+  c(data, xlim, ylim, image.type) %<-% obtain.array.coords(object, data, image.type, delim)
 
+  # Raise error if features are not present in Seurat object
   if (ncol(x = data) < 3) {
     stop("None of the requested features were found: ",
          paste(features, collapse = ", "),
@@ -627,18 +615,22 @@ SmoothPlot <- function (
 
   # Subset only based on one value's expression
   p.list <- lapply(1:length(unique(data[, group.by])), function(i) {
-    xdim <- object@tools$xdim; ydim <- round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim))
     data.subset <- subset(data, sample == i)
-    #data.subset <- data.subset[data.subset[, variable] != 0, ]
-    s.xy <- as.numeric(object@tools$dims[[1]][, 2:3])/c(xdim, ydim)
+    if ("xdim" %in% names(object@tools)) {
+      xdim <- object@tools$xdim; ydim <- round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim))
+      #data.subset <- data.subset[data.subset[, variable] != 0, ]
+      s.xy <- as.numeric(object@tools$dims[[1]][, 2:3])/c(xdim, ydim)
+      data.subset[, c("x", "y")] <- data.subset[, c("x", "y")]/s.xy
+    } else {
+      xdim <- 67; ydim <- 64
+    }
 
-    data.subset[, c("x", "y")] <- data.subset[, c("x", "y")]/s.xy
     x <- data.subset[, "x"]; y <- data.subset[, "y"]
     min.x <- min(x); min.y <- min(y); max.x <- max(x); max.y <- max(y)
-    tissue.width <- max.x - min.x; tissue.height <- max.y - min.y;
+    tissue.width <- max.x - min.x; tissue.height <- max.y - min.y
 
     # Run interpolation
-    s =  interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
+    s =  akima::interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
 
     z <- t(s$z)
     x <- 1:ncol(z)
@@ -675,11 +667,17 @@ SmoothPlot <- function (
 
     p <- image_read(tmp.file)
 
-    msk <- as.cimg(image.masks[[i]])
-    masked.plot <- as.raster(magick2cimg(p)*(msk/255))
-    masked.plot <- as.raster(image_annotate(image_read(masked.plot), text = samplenames[i], size = round(xdim/10), color = "#FFFFFF"))
-    return(masked.plot)
+    if (image.type != "empty") {
+      msk <- as.cimg(image.masks[[i]])
+      masked.plot <- as.raster(magick2cimg(p)*(msk/255))
+      masked.plot <- as.raster(image_annotate(image_read(masked.plot), text = samplenames[i], size = round(xdim/10), color = "#FFFFFF"))
+      return(masked.plot)
+    } else {
+      return(as.raster(p))
+    }
   })
+
+  xdim <- ydim <- 400
 
   # Draw on new device
   ncol <- ncol %||% ceiling(sqrt(length(p.list)))
@@ -731,7 +729,7 @@ SmoothPlot <- function (
 #' @return A ggplot object
 #' @export
 
-DimOverlay <- function(
+DimOverlay <- function (
   object,
   dims = c(1:2),
   sample.index = 1,
@@ -766,20 +764,25 @@ DimOverlay <- function(
 
   type <- type %||% {
     choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
-    choices[min(as.integer(na.omit(match(names(object@tools), choices))))]
+    match.arg(choices, names(object@tools), several.ok = T)[1]
   }
 
   # Check that selected image type is present in Seurat object
   msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
-  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"), call. = FALSE)
+  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using DimOverlay() on '", type, "' images"), call. = FALSE)
 
-  # Check that image pointer is alive)
+  # Check that sample.index is OK
   if (!sample.index %in% names(object@tools[[type]])) {
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
-  image <- as.raster(image_annotate(image_read(object@tools[[type]][[sample.index]]), text = paste(sample.index), size = round(object@tools$xdim/10)))
+
+  # Load image and place sample index in top left corner
+  image <- as.raster(image_annotate(image_read(object@tools[[type]][[sample.index]]),
+                                    text = paste(sample.index),
+                                    size = round(object@tools$xdim/10)))
   imdims <- object@tools$dims[[sample.index]]
 
+  # Select spots matching sample index
   group.var = "sample"
   if (group.var %in% colnames(object[[]])) {
     sample.index <- ifelse(class(sample.index) == "numeric", unique(object[[group.var, drop = T]])[sample.index], sample.index)
@@ -793,6 +796,7 @@ DimOverlay <- function(
     if (verbose) cat("Selecting all spots")
   }
 
+  # Collect dim-red data
   signs <- sign(dims); dims <- abs(dims)
   data <- Embeddings(object = object[[reduction]])[spots, dims, drop = FALSE]
   data <- as.data.frame(x = t(t(data)*signs))
@@ -1540,3 +1544,35 @@ g_legend <- function (
   return(legend)
 }
 
+
+#' Obtain array coordinates
+#'
+#' @param object Seurat object
+#'
+obtain.array.coords <- function (
+  object,
+  data,
+  image.type,
+  delim
+) {
+
+  if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
+    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
+    image.type <- "processed"
+  } else if ("raw" %in% names(object@tools)) {
+    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]], nm = c("x", "y")))
+    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
+  } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
+    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
+    xlim <- ylim <- NULL
+  } else {
+    if(is.null(delim)) {
+      stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
+    }
+    coords <- GetCoords(colnames(object), delim)
+    data <- cbind(data, coords[, c("x", "y")])
+    xlim <- ylim <- NULL
+  }
+  return(list(data, xlim, ylim, image.type))
+}
