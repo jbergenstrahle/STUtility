@@ -530,7 +530,7 @@ AlignImages <- function (
 #' @param maxnum Maximum grid number
 #' @param verbose Print messages
 #'
-#' @inheritFrom grid.from.seu
+#' @inheritParams grid.from.seu
 #'
 #' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
 #' @importFrom shinyjs useShinyjs reset

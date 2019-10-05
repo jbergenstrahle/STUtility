@@ -175,14 +175,24 @@ To use the full range of functions within STutility, all three files are needed 
 
 To follow along this tutorial, download the test data set at TODO:[insert test data set link]. The downloadable content consists of count files, output from our spot detector tool, H&E stained images as well as an "infoTable" to read in the files into R.
 
-### The infoTable
+### 10x infoTable
 
-Reading in 10x files, hdf5r 
+The same format is used as the original ST platform, see \@ref(The-infoTable)
 
 ```{r, echo=FALSE, eval=FALSE}
 #visium <- Read10X_h5("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/10xVisium/142079_filtered.h5")
 
 infoTable <- read.table("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/infoTable_10x.csv", sep=",", header=T, stringsAsFactors = F)
+
+
+
+```
+
+### Loading the samples
+
+To read in the 10x Visium .h5 files, the package `hdf5r` needs to be installed (`BiocManager::install("hdf5r")`). By default 10X Visium output format implies setting `transpose=F`. [There is a specified scaling factor for the H&E image. The picture with suffix "high_res" uses the default scaling factor of 0.1039393. However, is other pictures are used, specify the scaling factor when calling the _InputFromTable()_ function. All scalingfactors are found in the scalefactors_json.json which you have in your 10X output folder] (OBS CHECK HOW THE WORKFLOW 10X IS SUPPOSED TO BE)
+
+```{r, echo=FALSE, eval=FALSE}
 
 se <- InputFromTable(infotable = infoTable, 
                       transpose = F,  #Transpose är F för 10x Visium
@@ -190,13 +200,9 @@ se <- InputFromTable(infotable = infoTable,
                       min.gene.spots = 5,
                       min.spot.count = 500)
 
-#OBS NEED TO SCALE PIXEL COORDS ! do that before of after function?
 
 
 ```
-
-### Loading the samples
-
 
 
 # Loading and handling images
@@ -243,6 +249,8 @@ system.time({se <- LoadImages(object = se, verbose = T)})
 ```
 
 Using the loaded images, we can create masks around the tissue area, to hide the array background and allow for better visualization. 
+
+OBS; The masking currently does _not_ work satisfactory for 10X visum slides
 
 ```{r, eval=TRUE}
 # TODO: Take care of warnings 
@@ -407,7 +415,7 @@ We can then plot a variable number of dimensions across the samples.
 ```{r, fig.height=24, fig.width=24}
 
 ST.DimPlot(se, dims = 1:8, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = F, pt.size = 1, center.zero = T,palette = "RdBu")
-
+#ST.DimPlot(se, dims = 1:5, reduction = "ica", dark.theme = T, cols = c("black", "cyan", "white"), center.zero = F, ncol = 4, grid.ncol = 1)
 ```
 
 To extract the genes that drives the separtion accoring to the dimensionallity reduction, we can use the `ProjectDim()` function. Where we specify the dimensions of interest (here IC_1 and IC_3, which are regions that seems to confer a clear spatial expression histology. 
