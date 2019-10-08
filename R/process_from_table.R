@@ -191,7 +191,7 @@ InputFromTable <- function(
   print(paste("Genes removed: ", before[1] - after[1]))
 
   if(is.vector(meta_data)){
-    meta_data <- data.frame(meta_data, row.names = colnames(cnt))
+    meta_data <- data.frame(sample=meta_data, row.names = colnames(cnt))
   }
   m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
 
