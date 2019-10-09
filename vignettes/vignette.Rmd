@@ -42,6 +42,8 @@ library(STutility)
 
 ```
 
+# Info
+
 ## Short background of the Spatial Transcriptomics method 
 
 ---
@@ -498,7 +500,6 @@ se <- RunUMAP(object = se, dims = keep.dims, verbose = FALSE, n.components = 3, 
 We use the first three dimensions for plotting:
 
 ```{r, fig.height = 10, fig.width = 10}
-
 
 ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T)
 
