@@ -103,6 +103,8 @@ InputFromTable <- function(
         spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
         spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
         spotFileData[[i]] <- spotsData #Save pixel coords etc
+        #OBS 10x ajd_x etc DOES NOT WORK ATM
+        #Loading images and pixel coords work!
 
       }else{
         spotsData <- as.data.frame(parse.spot.file(infotable[which(infotable$samples==path), "spotfiles"]))
