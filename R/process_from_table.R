@@ -26,6 +26,7 @@ parse.spot.file = function(path, delim="\t", ...) {
   }
 }
 
+
 #' Create S4 object from info table.
 #' This function is a wrapper to create a complete S4 object with all the samples and metadata
 #'
@@ -37,6 +38,8 @@ parse.spot.file = function(path, delim="\t", ...) {
 #' @param min.spot.count filter away capture spots that contains a total read count below this threshold
 #' @param topN OPTIONAL: Filter out the top most expressed genes
 #' @param spot.file OPTIONAL: Turn this off (FALSE) if images or/and spotfiles are not used as input
+#' @param visium For 10X Visium input. Does not need to be specified if using .h5 files as input
+#' @param scaleVisium 10X visium scale factor for pixel coordinates, default set to 0.1039393
 #' @param ... parameters passed to \code{\link{CreateSeuratObejct}}
 #'
 #' @inheritParams ConvertGeneNames
@@ -54,6 +57,8 @@ InputFromTable <- function(
   annotation = NULL,
   id.column = NULL,
   replace.column = NULL,
+  visium=F,
+  scaleVisium=0.1039393,
   ...
 ){
   counts <- list()
@@ -70,21 +75,51 @@ InputFromTable <- function(
   for(path in countPaths) {
     cat(paste0("Loading ", path, "\n"))
     if(transpose==FALSE){
-      counts[[path]] <- st.load.matrix(path)
-    } else{counts[[path]] <- t(st.load.matrix(path))}
+
+      if(length(grep(path, pattern=".h5")) == 1){ #If --> 10x file path
+        counts[[path]] <- st.load.matrix(path, visium=T)
+        visium=T
+        }else{
+          counts[[path]] <- st.load.matrix(path)
+            }
+    }else{
+
+      if(length(grep(path, pattern=".h5")) == 1){
+        counts[[path]] <- t(st.load.matrix(path, visium=T))
+        visium=T
+      }else{
+        counts[[path]] <- t(st.load.matrix(path))
+          }
+      }
 
     if(spot.file != FALSE){ #Remove spots outside of tissue
-      spotsData <- as.data.frame(parse.spot.file(infotable[which(infotable$samples==path), "spotfiles"]))
-      if ("selected" %in% colnames(spotsData)) {
-        spotsData <- subset(spotsData, selected == 1)
+
+      if(visium==T){
+        spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples==path), "spotfiles"], delim=","), stringsAsFactors = F)
+        rownames(spotsData) <- as.character(spotsData[,1])
+        colnames(spotsData) <- c("barcode", "visium", "new_y", "new_x", "pixel_y", "pixel_x") #OBS, what is column nr2,3,4?
+        spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
+        counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+        spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
+        spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
+        spotFileData[[i]] <- spotsData #Save pixel coords etc
+        #OBS 10x ajd_x etc DOES NOT WORK ATM
+        #Loading images and pixel coords work!
+
+      }else{
+        spotsData <- as.data.frame(parse.spot.file(infotable[which(infotable$samples==path), "spotfiles"]))
+        if ("selected" %in% colnames(spotsData)) {
+          spotsData <- subset(spotsData, selected == 1)
+        }
+        rownames(spotsData) <- paste(spotsData$x, spotsData$y, sep="x")
+        spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
+        counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+        spotFileData[[i]] <- spotsData #Save pixel coords etc
       }
-      rownames(spotsData) <- paste(spotsData$x, spotsData$y, sep="x")
-      spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
-      counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
-      spotFileData[[i]] <- spotsData #Save pixel coords etc
     }
 
     i=i+1
+    visium=F #If mutiple files from both orginial ST and 10x Visium is used as input
   }
 
   # ---- Merge counts
@@ -157,18 +192,18 @@ InputFromTable <- function(
   print(paste("Spots removed: ", before[2] - after[2] ))
   print(paste("Genes removed: ", before[1] - after[1]))
 
+  if(is.vector(meta_data)){
+    meta_data <- data.frame(sample=meta_data, row.names = colnames(cnt), stringsAsFactors = F)
+  }
   m <- CreateSeuratObject(counts = cnt, meta.data = meta_data, ...)
 
   #Filter top genes
   if (topN > 0){
-    m <- m[order(rowSums(as.matrix(m[["RNA"]]@counts)), decreasing=TRUE),]
+    m <- m[order(rowSums(as.matrix(m[["RNA"]]@counts)), decreasing=TRUE), ]
     m <- m[1:topN, ]
   }
 
-
   # ---- Add image paths
-
-
   if(spot.file == FALSE){
     m@misc$spotfile = FALSE
   }else{m@misc$spotfile = TRUE
