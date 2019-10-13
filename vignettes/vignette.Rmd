@@ -117,6 +117,7 @@ infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";"
 
 ```
 
+
 ```{r, eval=FALSE, echo=FALSE}
 infoTable
 ```

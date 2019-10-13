@@ -92,6 +92,9 @@ FilterObjects <- function(object, classes.keep = c('Assay', 'DimReduc')) {
 #' @importFrom viridis viridis cividis magma plasma
 #' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
+#'
+#' @export
+#'
 
 palette.select <- function(palette, info = F) {
   palettes <- list (

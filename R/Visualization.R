@@ -37,6 +37,7 @@
 #' @importFrom ggplot2 ggplot facet_wrap vars sym
 #' @importFrom viridis magma
 #' @importFrom Seurat FetchData Embeddings
+#' @importFrom zeallot %<-%
 #'
 #' @export
 
@@ -52,8 +53,9 @@ ST.DimPlot <- function (
   reduction = NULL,
   shape.by = NULL,
   palette = "MaYl",
-  rev.cols = F,
-  dark.theme = F,
+  cols = NULL,
+  rev.cols = FALSE,
+  dark.theme = FALSE,
   ncol = NULL,
   delim = NULL,
   return.plot.list = F,
@@ -109,25 +111,8 @@ ST.DimPlot <- function (
   }
 
   # Obtain array coordinates
-  image.type <- NULL
-  if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
-    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
-    image.type <- "processed"
-  } else if ("raw" %in% names(object@tools)) {
-    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]], nm = c("x", "y")))
-    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
-  } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
-    xlim <- ylim <- NULL
-  } else {
-    if(is.null(delim)) {
-      stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
-    }
-    coords <- GetCoords(colnames(object), delim)
-    data <- cbind(data, coords[, c("x", "y")])
-    xlim <- ylim <- NULL
-  }
+  image.type <- "empty"
+  c(data, xlim, ylim, image.type) %<-% obtain.array.coords(object, data, image.type, delim)
 
   # Scale data values
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
@@ -144,7 +129,7 @@ ST.DimPlot <- function (
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- STPlot(data, data.type = "numeric", group.by, shape.by, NULL,
-                   pt.size, palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, xlim, ylim,
+                   pt.size, palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue, xlim, ylim,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
@@ -160,7 +145,7 @@ ST.DimPlot <- function (
       # Normal visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d, pt.size,
-                       palette, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
+                       palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -239,6 +224,7 @@ ST.DimPlot <- function (
 #' @importFrom cowplot plot_grid
 #' @importFrom scales rescale
 #' @importFrom ggplot2 ggplot theme theme_void
+#' @importFrom zeallot %<-%
 #'
 #' @return A ggplot object
 #' @export
@@ -257,6 +243,7 @@ ST.FeaturePlot <- function (
   pt.size = 1,
   shape.by = NULL,
   palette = NULL,
+  cols = NULL,
   rev.cols = FALSE,
   dark.theme = FALSE,
   ncol = NULL,
@@ -340,7 +327,7 @@ ST.FeaturePlot <- function (
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 3):ncol(data)]
     plot <- STPlot(data, data.type, group.by, shape.by, NULL, pt.size,
-                   palette, rev.cols, ncol, spot.colors, center.zero, center.tissue,
+                   palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
                    xlim, ylim, FALSE, theme, ...)
     if (dark.theme) {
@@ -356,7 +343,7 @@ ST.FeaturePlot <- function (
       # Normal visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(d) {
         plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
-                       palette, rev.cols, ncol, spot.colors, center.zero,
+                       palette, cols, rev.cols, ncol, spot.colors, center.zero,
                        center.tissue, NULL, xlim, ylim, split.labels, theme, ...)
 
         if (dark.theme) {
@@ -377,7 +364,7 @@ ST.FeaturePlot <- function (
       # Smooth visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(d) {
         plot <- SmoothPlot(data, image.type, data.type, group.by, d,
-                       palette, rev.cols, ncol, center.zero, xlim, ylim, ...)
+                       palette, cols, rev.cols, ncol, center.zero, xlim, ylim, ...)
         return(plot)
       })
 
@@ -401,23 +388,27 @@ ST.FeaturePlot <- function (
 #' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
 #'
 #' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
-#' @param data.type type of data, e.g. numeric or integer
-#' @param group.by specifies column to facet the plots by, e.g. sample
-#' @param shape.by specifies column to shape points by, e.g. morphological region
-#' @param variable name of continuous variable
-#' @param pt.size point size of each ST spot
-#' @param palette color palette used for spatial heatmap
-#' @param rev.cols logical specifying whether colorscale should be reversed
-#' @param ncol number of columns in \code{facet_wrap}
-#' @param spot.colors character vector woth color names that overrides default coloring with ggplot2
-#' @param center.zero should the colorscale be centered around 0? Set to TRUE for scaled data
+#' @param data.type Type of data, e.g. numeric or integer
+#' @param group.by Specifies column to facet the plots by, e.g. sample
+#' @param shape.by Specifies column to shape points by, e.g. morphological region
+#' @param variable Name of continuous variable
+#' @param pt.size Point size of each ST spot
+#' @param palette Color palette used for spatial heatmap (see \code{?palette.select} for available options).
+#' Disabled if a color vector is provided (see \code{cols} below).
+#' @param cols A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
+#' create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
+#' option.
+#' @param rev.cols Logical specifying whether colorscale should be reversed
+#' @param ncol Number of columns in \code{facet_wrap}
+#' @param spot.colors Character vector woth color names that overrides default coloring with ggplot2
+#' @param center.zero Should the colorscale be centered around 0? Set to TRUE for scaled data
 #' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
 #' @param plot.title Add title to plot
 #' @param xlim,ylim Set x/y-axis limits
 #' @param split.labels Only active if the features are specified by character vectors.
 #' The plot will be split into one plot for each group label, highlighting the labelled spots.
 #' @param theme Object of class "theme" used to change the background theme
-#' @param ... parameters passed to geom_point()
+#' @param ... Parameters passed to geom_point()
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn scale_color_manual
 #'
@@ -431,6 +422,7 @@ STPlot <- function (
   variable,
   pt.size = 1,
   palette = "MaYl",
+  cols = NULL,
   rev.cols = F,
   ncol = NULL,
   spot.colors = NULL,
@@ -495,9 +487,11 @@ STPlot <- function (
     }
   }
 
-  # Obtain colors from selected palette
-  cols <- palette.select(palette)(3)
-  if (palette == "heat") cols <- palette.select(palette)(4)
+  # Obtain colors from selected palette or from provided cols
+  cols <- cols %||% {
+    ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(3))
+  }
+
   if (rev.cols) {
     cols <- rev(cols)
   }
@@ -579,6 +573,7 @@ SmoothPlot <- function (
   group.by,
   variable,
   palette = "MaYl",
+  cols = NULL,
   rev.cols = F,
   ncol = NULL,
   center.zero = TRUE,
@@ -600,8 +595,10 @@ SmoothPlot <- function (
   samplenames <- names(object@tools$raw)
 
   # Set colors
-  ncolors <- ifelse(palette == "heat", 4, 5)
-  cols <- palette.select(palette)(ncolors)
+  # Obtain colors from selected palette or from provided cols
+  cols <- cols %||% {
+    ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(5))
+  }
   if (rev.cols) {
     cols <- rev(cols)
   }
@@ -617,7 +614,7 @@ SmoothPlot <- function (
   p.list <- lapply(1:length(unique(data[, group.by])), function(i) {
     data.subset <- subset(data, sample == i)
     if ("xdim" %in% names(object@tools)) {
-      xdim <- object@tools$xdim; ydim <- round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/object@tools$xdim))
+      xdim <- 400; ydim <- round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/xdim))
       #data.subset <- data.subset[data.subset[, variable] != 0, ]
       s.xy <- as.numeric(object@tools$dims[[1]][, 2:3])/c(xdim, ydim)
       data.subset[, c("x", "y")] <- data.subset[, c("x", "y")]/s.xy
