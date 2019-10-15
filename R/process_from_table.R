@@ -195,7 +195,7 @@ InputFromTable <- function(
   if(is.vector(meta_data)){
     meta_data <- data.frame(sample=meta_data, row.names = colnames(cnt), stringsAsFactors = F)
   }
-  m <- CreateSeuratObject(counts = cnt, meta.data = meta_data)
+  m <- CreateSeuratObject(counts = cnt, meta.data = meta_data, ...)
 
   #Filter top genes
   if (topN > 0){

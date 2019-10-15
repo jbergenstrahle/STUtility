@@ -122,6 +122,7 @@ infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";"
 
 ```
 
+
 ```{r, eval=FALSE, echo=FALSE}
 infoTable
 ```
@@ -227,15 +228,16 @@ For example, we can visualize the number of RNA features and RNA counts on the S
 
 NOTE: see the end of the vignette how to handle plotting if you are missing image/spot-files. 
 
-```{r, fig.height=4, fig.width=12}
+```{r, fig.height=12, fig.width=8}
 # TODO: make sure that levels are set in facets
 
 ST.FeaturePlot(object = se, 
                features = c("nFeature_RNA", "nCount_RNA"), 
-               palette = "GrRd",
-               ncol = 8, 
-               grid.ncol = 1, 
-               pt.size = 0.5)
+               palette = "heat",
+               ncol = 1, 
+               grid.ncol = 2, 
+               pt.size = 0.5, 
+               dark.theme = T)
 
 ```
 
@@ -267,7 +269,7 @@ You can look at the HE images using the ImagePlot() function.The ImagePlot funct
 ```{r, fig.width=12, fig.height=12, eval=TRUE, echo=TRUE}
 
 # Plot HE images
-ImagePlot(se, ncols = 3, method="raster")
+ImagePlot(se, ncols = 3, method = "raster")
 
 ```
 
@@ -295,7 +297,11 @@ To demonstrate the effect:
 ImagePlot(se, method = "raster", type="masked") #For convience vignette hmtl look
 ```
 
-Call the automatic alignment
+Call the automatic alignment.
+
+The automatic alignment method first tries to detect the tissue edges from each image. By default, the first image (`reference.index = 1`) is used as a reference but you can specify any sample with the `reference.index`option. Then, for each image, a transformation matrix is learned that can be used to map coordinates to the reference image. This alignment method will sometimes fail and in that case you can align the images manually instead using the `ManualAlignImages()` function. This is typically required when; (1) the tissue is bigger than the image and therefore outside the frame, (2) the tissue has a symmetrical shape (for example if the tissue has a round shape, it will be difficult to find an optimal alignment using the tissue edges), (3) the masking has failed.
+
+The actual transformation is done using the `imwarp()` function from the imager R package using a "backward" transformation strategy. This method makes sure that every pixel is painted using linear interpolation so the aligned images will experience some quality loss.
 
 ```{r, eval=TRUE, fig.width=12, fig.height=12}
 se <- AlignImages(se, verbose = F)

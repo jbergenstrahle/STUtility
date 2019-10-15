@@ -60,15 +60,15 @@ grid.from.seu <- function (
   if (!type %in% names(object@tools)) stop(paste0(type, " images not fount in Seurat obejct"), call. = FALSE)
 
   setNames(lapply(1:length(object@tools[[type]]), function(sample.index) {
-    scatter <- scatter_HE(object = se, sample.index = sample.index, maxnum = maxnum, limit = limit, type = type, edges = edges)
+    scatter <- scatter_HE(object = object, sample.index = sample.index, maxnum = maxnum, limit = limit, type = type, edges = edges)
     if (type %in% c("processed", "processed.masks")) {
       xy.names <- c("warped_x", "warped_y")
     } else {
       xy.names <- c("pixel_x", "pixel_y")
     }
-    coords <- subset(se[[]], sample == sample.index)[, xy.names]
-    dims.raw <- as.numeric(se@tools$dims[[sample.index]][2:3])
-    dims.scaled <- dim(se@tools$raw[[sample.index]])
+    coords <- subset(object[[]], sample == sample.index)[, xy.names]
+    dims.raw <- as.numeric(object@tools$dims[[sample.index]][2:3])
+    dims.scaled <- dim(object@tools$raw[[sample.index]])
     sf.xy <- dims.raw/rev(dims.scaled)
     coords <- coords/sf.xy
     return(list(scatter = scatter, coords = coords))
