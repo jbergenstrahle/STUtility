@@ -98,13 +98,13 @@ InputFromTable <- function(
         spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples==path), "spotfiles"], delim=","), stringsAsFactors = F)
         rownames(spotsData) <- as.character(spotsData[,1])
         colnames(spotsData) <- c("barcode", "visium", "new_y", "new_x", "pixel_y", "pixel_x") #OBS, what is column nr2,3,4?
+        spotsData$new_x <- as.numeric(spotsData$new_x)
+        spotsData$new_y <- as.numeric(spotsData$new_y)
         spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
         counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
         spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
         spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
         spotFileData[[i]] <- spotsData #Save pixel coords etc
-        #OBS 10x ajd_x etc DOES NOT WORK ATM
-        #Loading images and pixel coords work!
 
       }else{
         spotsData <- as.data.frame(parse.spot.file(infotable[which(infotable$samples==path), "spotfiles"]))

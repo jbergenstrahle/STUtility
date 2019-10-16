@@ -235,7 +235,7 @@ ST.FeaturePlot(object = se,
                features = c("nFeature_RNA", "nCount_RNA"), 
                palette = "heat",
                ncol = 1, 
-               grid.ncol = 2, 
+               grid.ncol = 2,
                pt.size = 0.5, 
                dark.theme = T)
 
@@ -728,6 +728,10 @@ See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter op
 ## Extraction of data
 
 The core of STUtility is the Seurat object, where all information from the different functions are saved. Accordingly, it's convenient to extract this information by opening the different slots within the object. See https://satijalab.org/seurat/ for extensive information.
+
+## Subsetting - the plots are not looking good after subsetting the Seurat object!
+
+We know, in the current version of STUtility, it's required to run `LoadImages()` again after subsetting.
 
 ## What if I don't have spot file coordinates?
 
