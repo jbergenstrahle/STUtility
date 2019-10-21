@@ -76,7 +76,7 @@ In late 2018, the company Spatial Transcriptomics was acquired by 10X Genomics, 
 
 ## A note about the naming conventions used
 
-For users familiar with the Seurat workflow, there are a number of Seruat plotting functions, e.g. `Seeurat::FeaturePlot()`, those plotting functions all have a "ST version", which is called upon by adding "ST." prior to the original function name e.g. `STutility::ST.FeaturePlot()`.
+For users familiar with the Seurat workflow, there are a number of Seruat plotting functions, e.g. `Seurat::FeaturePlot()`, those plotting functions all have a "ST version", which is called upon by adding "ST." prior to the original function name e.g. `STutility::ST.FeaturePlot()`.
 
 The external STUtility functions are following a PascalCase convention. 
 
@@ -245,7 +245,7 @@ ST.FeaturePlot(object = se,
                features = c("nFeature_RNA", "nCount_RNA"), 
                palette = "heat",
                ncol = 1, 
-               grid.ncol = 2, 
+               grid.ncol = 2,
                pt.size = 0.5, 
                dark.theme = T)
 
@@ -523,7 +523,25 @@ ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme
 
 ```
 
-Once again the `ProjectDim()` function can be used to display the genes that are most strongly correlated with the coordinate system. Note in the function call above that we defined `reduction.name`, which are subsequently stored in the Seurat object in the reduction slot: 
+The `DimOverlay()` can be used to overlay the RGB projection onto the H&E image. By default, a single dim.component is used and plotted as a heatmap:
+
+```{r, fig.height = 10, fig.width = 10}
+
+DimOverlay(se, reduction = "umap.3d", sample.index = 1, dims=c(1,2,3))
+
+```
+
+Setting the setting `blend=T` will combine the dimensional vectors
+
+```{r, fig.height = 10, fig.width = 10}
+
+DimOverlay(se, reduction = "umap.3d", sample.index = 1, dims=c(1,2,3), blend=T, pt.size=4)
+
+```
+
+The user can also choose to invert the colors, which can be performed on individual dimensional components, by adding a minus "-" in front of the vector. See more alternatives in the subsection [Playing around with colors]
+
+Again, the `ProjectDim()` function can be used to display the genes that are most strongly correlated with the coordinate system. Note in the function call above that we defined `reduction.name`, which are subsequently stored in the Seurat object in the reduction slot: 
 
 ```{r}
 
@@ -639,23 +657,7 @@ gg <- ST.DimPlot(object = se.batch.effect, dims = 1:3,
            reduction = "umap.3d", blend = T, 
            dark.theme = T,
            delim="x|_")
-# ----------------------- Denna del kan kanske laggas in i ST.Dimplot eller STplot?
-# lagga in en flagga -> plotly = T/F
-test <- ggplot_build(gg) #test$data[[1]]$colour
-rgbTransform <- as.data.frame(t(col2rgb(test$data[[1]]$colour)))
-gg$layers[[1]]$mapping$rgbs <- paste("R:", round(rgbTransform$red/2.55), 
-                                          "% G:", round(rgbTransform$green/2.55), 
-                                          "% B:", round(rgbTransform$blue/2.55), "%",
-                                          sep="")
 
-dark_theme <- function() {
-  theme(plot.background = element_rect(fill = "black"),
-        plot.title = element_text(colour = "white"),
-        strip.text = element_text(colour = 'white'),
-        legend.title = element_text(colour = "white"),
-        legend.text = element_text(colour = "white"))
-}
-ggP <- ggplotly(gg + dark_theme() , tooltip="rgbs")
 
 # ---------------------------------------------------------------------------------
 ```
@@ -699,6 +701,10 @@ NB: The images used for the manual annotation are loaded as _raw images_ from th
 
 ## Annotation by providing colored images
 
+### Using the annotations to extract specific caputure-spots
+
+[add info - subset spots]
+
 ### Using the annotations for Seurat workflow DEG analysis
 
 The manual annotations could e.g. be used for supervised analysis of gene expression markers. Within Seurat it's easy to conduct such analysis by first setting the capture-spots identity classes to the annotation level. 
@@ -735,9 +741,53 @@ See https://satijalab.org/seurat/v3.0/de_vignette.html for various pre-filter op
 
 The core of STUtility is the Seurat object, where all information from the different functions are saved. Accordingly, it's convenient to extract this information by opening the different slots within the object. See https://satijalab.org/seurat/ for extensive information.
 
+## Subsetting - the plots are not looking good after subsetting the Seurat object!
+
+We know, in the current version of STUtility, it's required to run `LoadImages()` again after subsetting.
+
 ## What if I don't have spot file coordinates?
 
 No problem. However, the count matrix needs to have some sort of coordinate info in order to actually plot the data spatially. Normally this information is kept in the colnames of the count matrix, e.g. "XxY" with X=xcoordinate and Y=ycoordinate. Creating the Seurat object with the `prep.from.table` function will result in the addition of "_z" to the column names of the input matrix, where "z" is the sample number. When calling the spatial plots (i.e. ST.xxxPlot), use the parameter `delim` to specify the type of colnames you have in the Seurat object. If the names are according to the outline above, this would imply `delim = "x|_"`.  
+
+## Playing around with colors
+
+- blend T
+- channel.use
+flippa ordningen på rgb
+eg Chanels.use = c("green", "blue", "red")
+- smooth
+- tesselation
+- Capping the legends (heatmap)
+
+## I used the RGB projection technique, but find it hard to wrap my head around the color contribution of the blend
+
+The colors of each capture-spot can be extracted, but might be a bit inconvenient to look at multiple areas. We propose the following procedure if you want to "hover around" the plot and look at the R, G and B contribution to see where in the 3Dim space the capture spot is located. This make use of the R package `plotly`. See example code below.
+
+```{r, eval=FALSE, echo=TRUE}
+library(plotly)
+gg <- ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T, pt.size=3)
+ggBuild <- ggplot_build(gg)
+rgbTransform <- as.data.frame(t(col2rgb(ggBuild$data[[1]]$colour))) #Here you can find all the colors
+
+#We can also use these to plot an interactive plot with the colors as hover tooltip:
+gg$layers[[1]]$mapping$rgbs <- paste("R:", round(rgbTransform$red/2.55), 
+                                          "% G:", round(rgbTransform$green/2.55), 
+                                          "% B:", round(rgbTransform$blue/2.55), "%",
+                                          sep="")
+
+dark_theme <- function() {
+  theme(plot.background = element_rect(fill = "black"),
+        plot.title = element_text(colour = "white"),
+        strip.text = element_text(colour = 'white'),
+        legend.title = element_text(colour = "white"),
+        legend.text = element_text(colour = "white"))
+}
+
+
+ggplotly(gg + dark_theme() , tooltip="rgbs") #This will open the interactive view plane
+
+
+```
 
 ## Saving of images to a pdf file
 
