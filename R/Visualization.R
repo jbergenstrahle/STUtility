@@ -113,6 +113,7 @@ ST.DimPlot <- function (
   # Obtain array coordinates
   image.type <- "empty"
   c(data, xlim, ylim, image.type) %<-% obtain.array.coords(object, data, image.type, delim)
+  print(xlim)
 
   # Scale data values
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
@@ -436,7 +437,8 @@ STPlot <- function (
   ...
 ) {
 
-  xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
+  #xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
+  xlim <- xlim %||% c(0, 150); ylim <- ylim %||% c(0, 150)
 
   gg_color_hue <- function(n) {
     hues = seq(15, 375, length = n + 1)
@@ -504,18 +506,18 @@ STPlot <- function (
 
     # Add shape aesthetic and blend colors if blend is active
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), shape = shape.by), color = spot.colors, size = pt.size)#, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y")), color = spot.colors, size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y")), color = spot.colors, size = pt.size)#, ...)
     }
 
   } else {
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size)#, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`")), size = pt.size)#, ...)
     }
 
   }
@@ -537,16 +539,18 @@ STPlot <- function (
   }
 
   # Center colorscale at 0
-  if (center.zero & !any(data.type %in% c("character", "factor"))) {
-    p <- p +
-      scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
-  } else if (any(data.type %in% c("character", "factor"))) {
-    p <- p +
-      labs(color = variable) +
-      scale_color_manual(values = label.colors)
-  } else {
-    p <- p +
-      scale_color_gradientn(colours = cols)
+  if (is.null(spot.colors)) {
+    if (center.zero & !any(data.type %in% c("character", "factor"))) {
+      p <- p +
+        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
+    } else if (any(data.type %in% c("character", "factor"))) {
+      p <- p +
+        labs(color = variable) +
+        scale_color_manual(values = label.colors)
+    } else {
+      p <- p +
+        scale_color_gradientn(colours = cols)
+    }
   }
 
   return(p)
@@ -864,7 +868,7 @@ DimOverlay <- function (
 }
 
 
-
+# TODO: add cols options to overlay functions
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Feature plots on HE images

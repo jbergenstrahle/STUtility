@@ -143,7 +143,7 @@ ImagePlot <- function (
   if (annotate) {
     images <- setNames(lapply(seq_along(images ), function(i) {image_annotate(images[[i]], text = names(images)[i], size = round(object@tools$xdim/10))}), nm = names(images))
   }
-  ncols <- ncols %||% round(sqrt(length(x = images)))
+  ncols <- ncols %||% ceiling(sqrt(length(x = images)))
   nrows <- ceiling(length(x = images)/ncols)
 
   if (method == "viewer") {
@@ -208,6 +208,7 @@ MaskImages <- function (
   iso.blur = 2,
   channels.use = 1,
   compactness = 1,
+  add.contrast = TRUE,
   verbose = FALSE
 ) {
 
@@ -226,6 +227,7 @@ MaskImages <- function (
     for (ind in rm.channels) {
       im[, , , ind] <- TRUE
     }
+
     #im[, , , 2] <- TRUE; im[, , , 3] <- TRUE
     im <- isoblur(im, iso.blur)
 
@@ -234,7 +236,7 @@ MaskImages <- function (
         cat(paste0("Running SLIC algorithm \n"))
     }
     out <- slic(im, nS = object@tools$xdim*1.5, compactness)
-    out <- out^4
+    if (add.contrast) out <- out^4
     d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
       select(-x, -y)
 
@@ -492,14 +494,14 @@ AlignImages <- function (
     inds <- which(imat.msk != 255)
 
     # Obtain scale factors
-    dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
-    dims.scaled <- dim(object@tools$raw[[i]])
-    sf.xy <- dims.raw/dims.scaled
+    width.raw <- as.numeric(object@tools$dims[[i]][2])
+    width.scaled <- dim(object@tools$raw[[i]])[i]
+    sf.xy <- width.raw/width.scaled
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp coordinates
     warped_xy <- map.affine.forward(pixel_xy[, 1], pixel_xy[, 2])
-    warped_coords[rownames(pixel_xy), ] <- sapply(setNames(as.data.frame(t(t(do.call(cbind, warped_xy))*sf.xy)), nm = c("x", "y")), round, 2)
+    warped_coords[rownames(pixel_xy), ] <- sapply(setNames(as.data.frame(do.call(cbind, warped_xy)*sf.xy), nm = c("x", "y")), round, 2)
 
     if (verbose) cat(paste0(" Cleaning up background ... \n"))
     imrst <- as.raster(imat)

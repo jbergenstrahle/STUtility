@@ -191,6 +191,16 @@ infoTable <- read.table("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STuti
 
 ```
 
+```{r infotable}
+
+samples <- list.files(path = "~/Hippocampus_Visium/", recursive = T, pattern = "filtered_feature_bc_matrix.h5", full.names = T)
+imgs <- list.files(path = "~/Hippocampus_Visium/", recursive = T, pattern = "hires_image.png", full.names = T)
+spotfiles <- list.files(path = "~/Hippocampus_Visium/", recursive = T, pattern = "list.txt", full.names = T)
+
+infoTable <- data.frame(imgs, samples, spotfiles, stringsAsFactors = F)
+
+```
+
 ### Loading the samples
 
 To read in the 10x Visium .h5 files, the package `hdf5r` needs to be installed (`BiocManager::install("hdf5r")`). By default 10X Visium output format implies setting `transpose=F`. [There is a specified scaling factor for the H&E image. The picture with suffix "high_res" uses the default scaling factor of 0.1039393. However, is other pictures are used, specify the scaling factor when calling the _InputFromTable()_ function. All scaling factors are found in the scalefactors_json.json which you have in your 10X output folder] (OBS CHECK HOW THE WORKFLOW 10X IS SUPPOSED TO BE)
@@ -269,6 +279,7 @@ You can look at the HE images using the ImagePlot() function.The ImagePlot funct
 ```{r, fig.width=12, fig.height=12, eval=TRUE, echo=TRUE}
 
 # Plot HE images
+TODO: fix warning when images are not loaded
 ImagePlot(se, ncols = 3, method = "raster")
 
 ```
@@ -419,6 +430,7 @@ se <- RunICA(se)
 Different dimensionality reductions methods are supported via Seurat (`RunPCA()`, `RunTSNE`, `RunICA()`, `runUMAP()` ) and the output are stored in the Seurat object. 
 
 We can then plot a variable number of dimensions across the samples.
+
 
 ```{r, fig.height=24, fig.width=24}
 
