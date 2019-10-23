@@ -3,13 +3,13 @@
 #' Using an HSV encoding of feature values, this functions can be used to color
 #' code expression profiles of multiple features and visualize spatially.
 #'
-#' @details Using RGB encoding, we can show up to 3 features at the same time in the
+#' Using RGB encoding, we can show up to 3 features at the same time in the
 #' "red", "green" and "blue" color channels. Whenever two or three features overlap,
 #' the color will be a mix of the three channels, e.g. 50% green and 50% red will give a yellow color.
 #' This strategy is very effective when looking at features values with significant
 #' overlap but is limited to show maximum three features.
 #'
-#' @section If we want to show more than three features in the same plot, this
+#' If we want to show more than three features in the same plot, this
 #' function provides a strategy to do this as long as the overlap between features
 #' is relatively low. First, a color is assigned to each of N features by cutting
 #' the hue (H) into N values with an even interval. The feature values (e.g. gene expression)

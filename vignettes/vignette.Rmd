@@ -139,7 +139,9 @@ ensids <- read.table(file = list.files(system.file("extdata", package = "STutili
 
 We are now ready to load our samples and create a "seurat" object. 
 
-Here, we demonstrate the creation of the seurat object, while also including some filtering by only keeping the genes that are found in at least 5 capture spots and a total count value >= 100. We also only keep the spots that contains >= 500 total transcripts. (Note: by default `prep.from.table()` will remove spots that are located outside of the tissue according to the infoTable. If your infoTable do not include paths to spotfiles, or, if you want to simply omit this step: set `spot.file=FALSE`). 
+Here, we demonstrate the creation of the seurat object, while also including some filtering by only keeping the genes that are found in at least 5 capture spots and a total count value >= 100. We also only keep the spots that contains >= 500 total transcripts. (Note: by default `InputFromTable()` will remove spots that are located outside of the tissue according to the infoTable. If your infoTable do not include paths to spotfiles, or, if you want to simply omit this step: set `spot.file=FALSE`). 
+
+Note that you have to specify which platform the data comes from. The default platform is 10X Visium but if you wish to run data from another platform there is support for "1k" and "2k" arrays. You can also mix datasets from different platforms by specifying one of; "Visium", "1k" or "2k" in a separate column of the infoTable named "platform". You just have to make sure that the datasets have gene symbols which follows the same nomenclature.
 
 ```{r, eval=FALSE}
 #DOUBLE CHECK SO THAT THIS IS CORRECT NOW
@@ -150,7 +152,8 @@ se <- InputFromTable(infotable = infoTable,
                       min.gene.count = 100, 
                       min.gene.spots = 5,
                       min.spot.count = 500, 
-                      annotation = ensids)
+                      annotation = ensids, 
+                      platform = "2k", pattern.remove = "^mt-")
 
 ```
 
@@ -208,12 +211,9 @@ To read in the 10x Visium .h5 files, the package `hdf5r` needs to be installed (
 ```{r, echo=FALSE, eval=FALSE}
 
 se <- InputFromTable(infotable = infoTable, 
-                      transpose = F,  #Transpose är F för 10x Visium
                       min.gene.count = 100, 
                       min.gene.spots = 5,
                       min.spot.count = 500)
-
-
 
 ```
 

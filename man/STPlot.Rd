@@ -7,7 +7,7 @@
 STPlot(data, data.type = NULL, group.by, shape.by, variable,
   pt.size = 1, palette = "MaYl", cols = NULL, rev.cols = F,
   ncol = NULL, spot.colors = NULL, center.zero = TRUE,
-  center.tissue = F, plot.title = NULL, xlim = NULL, ylim = NULL,
+  center.tissue = F, plot.title = NULL, dims = NULL,
   split.labels = FALSE, theme = theme_void(), ...)
 }
 \arguments{
@@ -42,7 +42,7 @@ option.}
 
 \item{plot.title}{Add title to plot}
 
-\item{xlim, ylim}{Set x/y-axis limits}
+\item{dims}{List of dimensions for x and y scales}
 
 \item{split.labels}{Only active if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}

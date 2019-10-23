@@ -28,7 +28,7 @@ The plot will be split into one plot for each group label, highlighting the labe
 
 \item{spots}{Vector of spots to plot (default is all spots)}
 
-\item{plot.type}{Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"}
+\item{plot.type}{Specify the type of plot to use (default: "spots"). Available options are; "spots"}
 
 \item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature,
 may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')}

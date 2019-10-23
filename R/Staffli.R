@@ -28,15 +28,15 @@
 Staffli <- setClass (
   Class = 'Staffli',
   slots = c(
-    imgs = 'character',
+    imgs = 'ANY',
     rasterlists = 'list',
     scatter.data = 'data.frame',
     transformations = 'list',
     meta.data = 'data.frame',
     xdim = 'numeric',
-    limits = 'numeric',
+    limits = 'list',
     dims = 'list',
-    platform = 'character',
+    platforms = 'ANY',
     samplenames = 'character',
     version = 'package_version'
   )
@@ -62,18 +62,29 @@ CreateStaffliObject <- function (
   imgs = NULL,
   meta.data,
   xdim = 400,
-  platform = 'Visium'
+  platforms = NULL
 ) {
   if (!all(c("x", "y", "sample") %in% colnames(meta.data))) stop(paste0("Invalid meta.data; one of 'x', 'y' or 'sample' is missing"), call. = FALSE)
+  samples <- unique(meta.data[, "sample"])
 
-  if (platform == 'Visium') {
-    limits <- c(71, 71)
-  } else if (platform == '1k') {
-    limits <- c(33, 35)
-  } else if (platform == '1k') {
-    limits <- c(67, 64)
-  } else {
-    stop(paste0(platform, " is not a valid option ... \n"), call. = FALSE)
+  # Define platforms if NULL
+  platforms <- platforms %||% rep("Visium", length(x = samples))
+
+  # Check that platforms match samples
+  if (length(x = samples) != length(x = platforms)) stop("Length of platforms does not match the number of samples", call. = FALSE)
+
+  limits <- list()
+  for (i in seq_along(platforms)) {
+    platform <- platforms[i]
+    if (platform == 'Visium') {
+      limits[[i]] <- c(128, 78)
+    } else if (platform == '1k') {
+      limits[[i]] <- c(33, 35)
+    } else if (platform == '2k') {
+      limits[[i]] <- c(67, 64)
+    } else {
+      stop(paste0(platform, " is not a valid option ... \n"), call. = FALSE)
+    }
   }
 
   object <- new (
@@ -81,9 +92,9 @@ CreateStaffliObject <- function (
     imgs = imgs,
     meta.data = meta.data,
     xdim = xdim,
-    limits = limits,
-    platform = platform,
-    samplenames = unique(meta.data[, "sample"]),
+    limits = setNames(limits, samples),
+    platforms = platforms,
+    samplenames = samples,
     version = packageVersion(pkg = 'STUtility')
   )
 
@@ -94,11 +105,145 @@ CreateStaffliObject <- function (
 # Staffli methods
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+setGeneric("iminfo", function(object) {
+  standardGeneric("iminfo")
+})
+
+
+setMethod (
+  f = "iminfo",
+  signature = "Staffli",
+  definition = function(object) {
+    object@dims
+  }
+)
+
+
+setGeneric("scaled.imdims", function(object, type = "raw") {
+  standardGeneric("scaled.imdims")
+})
+
+
+setMethod (
+  f = "scaled.imdims",
+  signature = "Staffli",
+  definition = function(object, type = "raw") {
+    lapply(object[type], dim)
+  }
+)
+
+
 setMethod (
   f = "names",
   signature = "Staffli",
   definition = function(x) {
     x@samplenames
+  }
+)
+
+
+setGeneric("rasterlists", function(object) {
+  standardGeneric("rasterlists")
+})
+
+
+setMethod (
+  f = "rasterlists",
+  signature = "Staffli",
+  definition = function(object) {
+    names(object@rasterlists)
+  }
+)
+
+
+setMethod (
+  f = "rasterlists",
+  signature = "Seurat",
+  definition = function(object) {
+    if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+    st.object <- object@tools$Staffli
+    names(st.object@rasterlists)
+  }
+)
+
+
+setGeneric("samplenames", function(object) {
+  standardGeneric("samplenames")
+})
+
+
+setMethod (
+  f = "samplenames",
+  signature = "Staffli",
+  definition = function(object) {
+    object@samplenames
+  }
+)
+
+
+setMethod (
+  f = "samplenames",
+  signature = "Seurat",
+  definition = function(object) {
+    if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+    st.object <- object@tools$Staffli
+    st.object@samplenames
+  }
+)
+
+
+setGeneric("GetStaffli", function(object) {
+  standardGeneric("GetStaffli")
+})
+
+
+setMethod (
+  f = "GetStaffli",
+  signature = "Seurat",
+  definition = function(object) {
+    if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+    object@tools$Staffli
+  }
+)
+
+
+setMethod (
+  f = "[[",
+  signature = "Staffli",
+  definition = function(x, i, j, drop = F) {
+    x@meta.data[i, j, drop]
+  }
+)
+
+
+setMethod (
+  f = "[[<-",
+  signature = "Staffli",
+  definition = function(x, i, j, ..., value) {
+    x@meta.data[i, j] <- value
+    return(x)
+  }
+)
+
+
+setMethod (
+  f = "[",
+  signature = "Staffli",
+  definition = function(x, i) {
+    x@rasterlists[[i]]
+  }
+)
+
+
+setMethod (
+  f = "[<-",
+  signature = "Staffli",
+  definition = function(x, i, ..., value) {
+    if (length(x@rasterlists[[i]]) != length(value) | class(x@rasterlists[[i]]) != class(value)) {
+      stop("Invalid class or the lists are of different lengths", call. = FALSE)
+    }
+    x@rasterlists[[i]] <- value
+    return(x)
   }
 )
 
@@ -110,13 +255,13 @@ setMethod (
     cat("An object of class", class(x = object), "\n")
     cat(
       nrow(object@meta.data),
-      'features across',
+      'spots across',
       length(unique(object@meta.data[, "sample"])),
       'samples. \n'
     )
     if (length(object@rasterlists) > 0) {
       cat(
-        'Available image representations: \n\t',
+        '\nAvailable image representations: \n  ',
         paste(names(object@rasterlists), collapse = ", "),
         '\n'
       )
@@ -125,22 +270,30 @@ setMethod (
 )
 
 
-#' @importFrom imager as.cimg
-#'
 setMethod (
   f = "plot",
   signature = "Staffli",
   definition = function(x, type = NULL, ...) {
     object <- x
-    ncols <- ceiling(length(x = object@imgs)); nrows <- ceiling(length(x = object@imgs)/ncols)
-    if (length(x@rasterlists) == 0) {
+    ncols <- ceiling(sqrt(length(x = names(object)))); nrows <- ceiling(length(x = names(object))/ncols)
+    if (length(object@rasterlists) == 0) {
       par(mfrow = c(nrows, ncols))
-      for (s in object@samplenames) {
-        d <- subset(object@meta.data, sample == s)
-        plot(d[, c("x", "y")], ...)
+      for (s in names(object)) {
+        d <- subset(object[[]], sample == s)
+        plot(d[, "x"], object@limits[[s]][2] - d[, "y"], xlim = c(0, object@limits[[s]][1]), ylim = c(0, object@limits[[s]][2]), ann = FALSE)
       }
     } else {
-      type <- type %||% "raw"
+      # Check that type is OK
+      choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
+      if (!is.null(type)) {
+        if (!type %in% names(st.object@rasterlists) | !type %in% choices) stop(paste0("type '", type, "' not present in Seurat object"), call. = FALSE)
+      }
+
+      type <- type %||% {
+        choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
+        match.arg(arg = choices, choices = names(object@rasterlists), several.ok = TRUE)[1]
+      }
+
       if (type == "raw") {
         xy <- c("pixel_x", "pixel_y")
       } else if (type %in% c("masked", "masked.masks")) {
@@ -150,80 +303,16 @@ setMethod (
         if (!"processed" %in% names(object@rasterlists)) stop("Masked images not available in Staffli object", call. = FALSE)
         xy <- c("warped_x", "warped_y")
       }
-      par(mfrow = c(nrows, ncols))
-      for (s in object@samplenames) {
-        d <- subset(object@meta.data, sample == s)
-        im <- object@rasterlists[[type]][[s]] %>% as.cimg()
+      par(mfrow = c(nrows, ncols), mar = c(0, 0, 0, 0))
+      for (s in names(object)) {
+        d <- subset(object[[]], sample == s)
+        im <- object[type][[s]] %>% as.cimg()
         plot(im, axes = FALSE)
-        points(d[, xy]/(object@dims[[s]]$width/object@xdim), ...)
+        points(d[, xy]/(iminfo(object)[[s]]$width/object@xdim), ...)
       }
     }
   }
 )
-
-
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Staffli functions
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-
-#' @param object Object of class Staffli
-#' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
-#' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 1000 pixels)
-#' @param verbose Print messages
-#'
-#' @importFrom magick image_read
-#'
-#' @export
-
-LoadImages.Staffli <- function (
-  object,
-  image.paths = NULL,
-  xdim = 400,
-  verbose = FALSE,
-  time.resolve = TRUE
-) {
-
-  # Check that image paths are present
-  image.paths <- image.paths %||% object@imgs
-  if (length(x = image.paths) == 0) stop("No images provided. Provide images using image.paths \n", call. = FALSE)
-  if (length(x = image.paths) != length(unique(object@meta.data[, "sample"]))) stop(paste0("Number of images (", length(x = image.paths), ") must match the number of samples (", length(unique(object@meta.data[, "sample"])), ")\n"), call. = FALSE)
-
-  # Check that the image with is no more than 2000 pixels
-  if (xdim > 2000) stop("xdim cannot be larger than 2000")
-
-  if (verbose) cat(paste0("Loading images for ", length(x = object@samplenames), " samples: \n"))
-
-  # Read images using the 'magick' library
-  imgs <- c()
-  dims <- list()
-  for (i in seq_along(object@imgs)) {
-    path <- object@imgs[i]
-    if (verbose) cat("  Reading ", path , " for sample ", object@meta.data[, "sample"][i], " ... \n", sep = "")
-    im <- image_read(path)
-    dims <- c(dims, list(image_info(im)))
-    if (verbose) {
-      info <- dims[[i]]
-      width <- as.numeric(info[2]); height <- as.numeric(info[3])
-      ydim <- round(height/(width/xdim))
-      cat("  Scaling down sample ", unique(object@meta.data[, "sample"])[i], " image from ", paste(width, height, sep = "x"), " pixels to ", paste(xdim, ydim, sep = "x"), " pixels \n", sep = "")
-    }
-    im <- image_scale(im, paste0(xdim))
-    #tmpf <- tempfile()
-    #image_write(im, path = tmpf)
-    #im <- image_read(tmpf)
-    imgs <- c(imgs, list(as.raster(im)))
-    if (time.resolve) {
-      gc()
-      sleepy(5)
-    }
-  }
-
-  object@dims <- setNames(dims, nm = object@samplenames)
-  object@rasterlists$raw <- setNames(imgs, nm = object@samplenames)
-  object@xdim <- xdim
-
-  return(object)
-}
 
 
 

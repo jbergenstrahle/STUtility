@@ -4,7 +4,7 @@
 #' The defualt segmentation uses the HE image as input and defines any pixel with an intensity value
 #' below a threshold to be a point. The number of points can be downsampeld to limit the maximum number.
 #'
-#' @param object Seurat object
+#' @param object Staffli object
 #' @param type Sets the image type to run segmentation on
 #' @param sammple.index Integer value specifying the index of the sample to be analyzed
 #' @param limit Sets the intensity threshold in the interval [0, 1]
@@ -21,13 +21,13 @@ scatter_HE <- function (
 ){
   sample.index <- sample.index %||% 1
 
-  if (!type %in% names(object@tools)) stop(paste0(type, " images not fount in Seurat obejct"), call. = FALSE)
+  if (!type %in% rasterlists(object)) stop(paste0(type, " images not found in Staffli object"), call. = FALSE)
 
   if (edges) {
     bw.image <- get.edges(object, sample.index, type = type)
     xyset = which(bw.image > limit, arr.ind = TRUE)
   } else {
-    bw.image = grayscale(as.cimg(object@tools[[type]][[sample.index]]))
+    bw.image = grayscale(as.cimg(object[type][[sample.index]]))
     if (type %in% c("processed.masks", "masked.masks")) {
       xyset = which(bw.image > limit*255, arr.ind = TRUE)
     } else {
@@ -45,21 +45,18 @@ scatter_HE <- function (
 
 #' Creates 2D point patterns for a set of images
 #'
-#' @param obejct Seurat object
+#' @param obejct Staffli object
 #'
 #' @inheritParams scatter_HE
 
-grid.from.seu <- function (
+grid.from.staffli <- function (
   object,
   type,
   limit = 0.3,
   maxnum = 1e3,
   edges = FALSE
 ) {
-
-  if (!type %in% names(object@tools)) stop(paste0(type, " images not fount in Seurat obejct"), call. = FALSE)
-
-  setNames(lapply(1:length(object@tools[[type]]), function(sample.index) {
+  l <- setNames(lapply(1:length(names(object)), function(sample.index) {
     scatter <- scatter_HE(object = object, sample.index = sample.index, maxnum = maxnum, limit = limit, type = type, edges = edges)
     if (type %in% c("processed", "processed.masks")) {
       xy.names <- c("warped_x", "warped_y")
@@ -67,10 +64,10 @@ grid.from.seu <- function (
       xy.names <- c("pixel_x", "pixel_y")
     }
     coords <- subset(object[[]], sample == sample.index)[, xy.names]
-    dims.raw <- as.numeric(object@tools$dims[[sample.index]][2:3])
-    dims.scaled <- dim(object@tools$raw[[sample.index]])
-    sf.xy <- dims.raw/rev(dims.scaled)
+    dims.raw <- iminfo(object)[[sample.index]][2:3] %>% as.numeric()
+    dims.scaled <- scaled.imdims(object)[[sample.index]]
+    sf.xy <- dims.raw[1]/dims.scaled[1]
     coords <- coords/sf.xy
     return(list(scatter = scatter, coords = coords))
-  }), nm = names(object@tools$masked))
+  }), nm = names(object))
 }
