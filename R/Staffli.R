@@ -1,3 +1,6 @@
+#' @include generics.R
+NULL
+
 #' The Staffli Class
 #'
 #' The Staffli object is a representation of images for Spatial Transcriptomics experiments

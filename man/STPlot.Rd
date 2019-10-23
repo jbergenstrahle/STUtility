@@ -4,18 +4,16 @@
 \alias{STPlot}
 \title{Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
-STPlot(data, data.type = NULL, group.by, shape.by, variable,
-  pt.size = 1, palette = "MaYl", cols = NULL, rev.cols = F,
-  ncol = NULL, spot.colors = NULL, center.zero = TRUE,
-  center.tissue = F, plot.title = NULL, dims = NULL,
-  split.labels = FALSE, theme = theme_void(), ...)
+STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
+  palette = "MaYl", cols = NULL, rev.cols = F, ncol = NULL,
+  spot.colors = NULL, center.zero = TRUE, center.tissue = F,
+  plot.title = NULL, dims = NULL, split.labels = FALSE,
+  theme = theme_void(), ...)
 }
 \arguments{
 \item{data}{data.frame containing (x, y) coordinates, a group vector and a continuous variable vector}
 
 \item{data.type}{Type of data, e.g. numeric or integer}
-
-\item{group.by}{Specifies column to facet the plots by, e.g. sample}
 
 \item{shape.by}{Specifies column to shape points by, e.g. morphological region}
 

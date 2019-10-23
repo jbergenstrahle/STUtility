@@ -39,3 +39,24 @@ Suggests:
 	shinyjs (>= 1.0)
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
+Collate: 
+    '2D_point_pattern.R'
+    '3D_alignment.R'
+    'HSVencoding.R'
+    'Image_resolution_switch.R'
+    'MultiCCA.R'
+    'NMF_global_functions.R'
+    'NMF_tests.R'
+    'QC.R'
+    'Rigid_transformation.R'
+    'generics.R'
+    'Staffli.R'
+    'Visualization.R'
+    'facet_grid_SC.R'
+    'image_processing.R'
+    'image_processing_utilities.R'
+    'manual_annotation.R'
+    'pre_processing.R'
+    'prep_files.R'
+    'process_from_table.R'
+    'utilities.R'

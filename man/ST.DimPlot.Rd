@@ -8,8 +8,8 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, plot.type = "spots",
   blend = FALSE, min.cutoff = NA, max.cutoff = NA, pt.size = 1,
   reduction = NULL, shape.by = NULL, palette = "MaYl", cols = NULL,
   rev.cols = FALSE, dark.theme = FALSE, ncol = NULL, delim = NULL,
-  return.plot.list = F, grid.ncol = NULL, center.zero = T,
-  channels.use = NULL, center.tissue = FALSE, verbose = FALSE, ...)
+  grid.ncol = NULL, center.zero = T, channels.use = NULL,
+  center.tissue = FALSE, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -45,8 +45,6 @@ option.}
 \item{ncol}{Number of columns in \code{facet_wrap}}
 
 \item{delim}{delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data}
-
-\item{return.plot.list}{should the plots be returned as a list? By default, the plots are arranged into a grid}
 
 \item{grid.ncol}{Number of columns for display when combining plots}
 
