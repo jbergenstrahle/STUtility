@@ -153,7 +153,8 @@ se <- InputFromTable(infotable = infoTable,
                       min.gene.spots = 5,
                       min.spot.count = 500, 
                       annotation = ensids, 
-                      platform = "2k", pattern.remove = "^mt-")
+                      platform = "2k", 
+                     pattern.remove = "^mt-")
 
 ```
 

@@ -128,6 +128,9 @@ ImagePlot <- function (
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
   st.object <- object@tools$Staffli
 
+  # Check if images are available
+  if (length(rasterlists(st.object)) == 0) stop(paste0("No images are available in this Seurat object. Please Run LoadImages() first."), call. = FALSE)
+
   # Check that type is OK
   choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
   if (!is.null(type)) {
