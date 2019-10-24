@@ -5,10 +5,10 @@
 \title{Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
 STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
-  palette = "MaYl", cols = NULL, rev.cols = F, ncol = NULL,
-  spot.colors = NULL, center.zero = TRUE, center.tissue = F,
-  plot.title = NULL, dims = NULL, split.labels = FALSE,
-  theme = theme_void(), ...)
+  pt.alpha = 1, palette = "MaYl", cols = NULL, rev.cols = F,
+  ncol = NULL, spot.colors = NULL, center.zero = TRUE,
+  center.tissue = F, plot.title = NULL, dims = NULL,
+  split.labels = FALSE, theme = theme_void(), ...)
 }
 \arguments{
 \item{data}{data.frame containing (x, y) coordinates, a group vector and a continuous variable vector}
@@ -20,6 +20,8 @@ STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
 \item{variable}{Name of continuous variable}
 
 \item{pt.size}{Point size of each ST spot}
+
+\item{pt.alpha}{Opacity of each ST spot}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{?palette.select} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}

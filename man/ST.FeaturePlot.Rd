@@ -7,11 +7,10 @@
 ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
   spots = NULL, plot.type = "spots", min.cutoff = NA,
   max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
-  shape.by = NULL, palette = NULL, cols = NULL, rev.cols = FALSE,
-  dark.theme = FALSE, ncol = NULL, delim = NULL,
-  return.plot.list = FALSE, grid.ncol = NULL, center.zero = FALSE,
-  channels.use = NULL, center.tissue = FALSE, theme = theme_void(),
-  verbose = FALSE, ...)
+  pt.alpha = 1, shape.by = NULL, palette = NULL, cols = NULL,
+  rev.cols = FALSE, dark.theme = FALSE, ncol = NULL,
+  grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
+  center.tissue = FALSE, theme = theme_void(), verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -39,6 +38,8 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 
 \item{pt.size}{Adjust point size for plotting}
 
+\item{pt.alpha}{Adjust opacity for plotting}
+
 \item{shape.by}{If NULL, all points are circles (default). You can specify any
 cell attribute (that can be pulled with FetchData) allowing for both
 different colors and different shapes on cells}
@@ -53,10 +54,6 @@ option.}
 \item{rev.cols}{Logical specifying whether colorscale should be reversed}
 
 \item{ncol}{Number of columns in \code{facet_wrap}}
-
-\item{delim}{delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data}
-
-\item{return.plot.list}{should the plots be returned as a list? By default, the plots are arranged into a grid}
 
 \item{grid.ncol}{Number of columns for display when combining plots}
 

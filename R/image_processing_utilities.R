@@ -1,3 +1,6 @@
+#' @include generics.R Staffli.R
+NULL
+
 #' @rdname improc.utils
 #' @method get.edges Staffli
 #'
@@ -34,7 +37,7 @@ get.edges.Staffli <- function (
 }
 
 #' @rdname improc.utils
-#' @method get.edges Staffli
+#' @method get.edges Seurat
 #'
 #' @return  A list of data.frames with edge coordinates
 #' @examples

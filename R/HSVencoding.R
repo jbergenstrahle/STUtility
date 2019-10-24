@@ -32,11 +32,8 @@
 #' @param slot Which slot to pull expression data from?
 #' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param pt.size Adjust point size for plotting
-#' @param shape.by If NULL, all points are circles (default). You can specify any
-#' cell attribute (that can be pulled with FetchData) allowing for both
-#' different colors and different shapes on cells
-#' @param delim delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data
-#' @param return.plot.list should the plots be returned as a list? By default, the plots are arranged into a grid
+#' @param pt.alpha Adjust opacity of spots
+#' @param shape.by If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot
 #' @param grid.ncol Number of columns for display when combining plots
 #' @param verbose Print messages
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
@@ -59,17 +56,20 @@ HSVFeaturePlot <- function (
   max.cutoff = NA,
   slot = "data",
   pt.size = 1,
+  pt.alpha = 1,
   shape.by = NULL,
   cols = NULL,
   dark.theme = TRUE,
   ncol = NULL,
-  delim = NULL,
-  return.plot.list = FALSE,
   grid.ncol = NULL,
   verbose = FALSE,
   theme = theme_void(),
   ...
 ) {
+
+  # Check to see if Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  st.object <- object@tools$Staffli
 
   # Collect data
   spots <- spots %||% colnames(x = object)
@@ -78,16 +78,11 @@ HSVFeaturePlot <- function (
 
   # Stop if feature classes are not numeric/integer
   if (!all(data.type %in% c("numeric", "integer"))) {
-    stop("Classes features of class 'integer' or 'numeric' are allowed ... ")
+    stop("Only features of class 'integer' or 'numeric' are allowed ... ")
   }
 
-  # Check that group.by variable is present in meta.data slot, otherwise assume that there's only one sample present in Seurat object
-  if ("sample" %in% colnames(object[[]])) {
-    group.by <- "sample"
-    data[,  group.by] <- object[[group.by, drop = TRUE]]
-  } else {
-    group.by <- NULL
-  }
+  # Add group column to data
+  data[,  "sample"] <- st.object[[, "sample", drop = TRUE]]
 
   # Add shape column if specified
   if (!is.null(x = shape.by)) {
@@ -99,7 +94,7 @@ HSVFeaturePlot <- function (
 
   # Obtain array coordinates
   image.type <- "empty"
-  c(data, xlim, ylim, image.type) %<-% obtain.array.coords(object, data, image.type, delim)
+  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type)
 
   # Raise error if features are not present in Seurat object
   if (ncol(x = data) < 3) {
@@ -110,8 +105,12 @@ HSVFeaturePlot <- function (
          call. = FALSE)
   }
 
-  if (unique(sapply(data[, features], class)) == "numeric") {
-    data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
+  data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
+
+  # Subset by index
+  if (!is.null(indices)) {
+    if (!all(as.character(indices) %in% data[, "sample"])) stop(paste0("Index out of range. "), call. = FALSE)
+    data <- data[data[, "sample"] %in% as.character(indices), ]
   }
 
   # Generate HSV encoded colors
@@ -146,10 +145,19 @@ HSVFeaturePlot <- function (
   if (verbose) cat("Plotting features:",
                    ifelse(length(features) == 1, features,  paste0(paste(features[1:(length(features) - 1)], collapse = ", "), " and ", features[length(features)])))
   # Normal visualization -------------------------------------------------------------------------------------
-  plot <- STPlot(data, data.type, group.by, shape.by, NULL, pt.size,
+
+  if (image.type != "empty") {
+    dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+  } else {
+    dims <- st.object@limits
+  }
+
+  if (!is.null(indices)) dims <- dims[indices]
+
+  plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
                  palette = NULL, cols = NULL, rev.cols = F, ncol, spot.colors = red.cols$cols,
                  center.zero = F, center.tissue = F, plot.title = "",
-                 xlim, ylim, FALSE, theme = theme, ...)
+                 dims, FALSE, theme = theme, ...)
 
   if (dark.theme) {
     plot <- plot + dark_theme()
@@ -159,4 +167,17 @@ HSVFeaturePlot <- function (
     scale_color_manual(values = setNames(ann.cols, features))
 
   suppressWarnings({print(plot)})
+}
+
+
+#' Tranforms hsv color codes into hex color code
+#'
+#' @param col vector of length 3 containing values for "h", "s" and "v"
+
+hsv2hex <- function (
+  col
+) {
+  apply(col, 2, function(x) {
+    hsv(h = x["h"], s = x["s"], v = x["v"])
+  })
 }

@@ -1,3 +1,6 @@
+#' @include generics.R Staffli.R image_processing_utilities.R
+NULL
+
 #' @rdname LoadImages
 #' @method LoadImages Staffli
 #'
@@ -371,7 +374,7 @@ WarpImages.Staffli <- function (
   # Check if the transform list is OK
   if (!all(names(transforms) %in% samplenames(object))) stop(paste0("transforms does not match the sample labels"))
 
-  if ("processed" %in% rasterlists(st.object)) {
+  if ("processed" %in% rasterlists(object)) {
     processed.images <- object["processed"]
     processed.masks <- object["processed.masks"]
   } else {
@@ -431,8 +434,8 @@ WarpImages.Staffli <- function (
     if (verbose) cat(paste0("Finished alignment for sample", i, " \n\n"))
   }
 
-  object["processed"] <- processed.images
-  object["processed.masks"] <- processed.masks
+  object@rasterlists$processed <- processed.images
+  object@rasterlists$processed.masks <- processed.masks
   object[[, c("warped_x", "warped_y")]] <- warped_coords
 
   return(object)
@@ -490,7 +493,7 @@ AlignImages.Staffli <- function (
   if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
 
   # Check if pixel coordinates are available
-  if (!any(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) stop(paste0("Pixel coordinates are missing in Seurat object"), call. = FALSE)
+  if (!any(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) stop(paste0("Pixel coordinates are missing in Staffli object"), call. = FALSE)
 
   reference.index <- reference.index %||% 1
   if (verbose) cat(paste0("Selecting image ", reference.index, " as reference for alignment. \n"))
@@ -583,8 +586,8 @@ AlignImages.Staffli <- function (
     processed.masks[[i]] <- as.raster(imat.msk)
   }
 
-  object["processed"] <- processed.images
-  object["processed.masks"] <- processed.masks
+  object@rasterlists$processed <- processed.images
+  object@rasterlists$processed.masks <- processed.masks
   object@transformations <- transformations
   object[[, c("warped_x", "warped_y")]] <- warped_coords
 
@@ -650,7 +653,7 @@ ManualAlignImages.Staffli <- function (
   if (verbose) cat(paste0("Using '", type, "' images as input for alignment ... \n"))
 
   # Obtain point sets from each image
-  scatters <- grid.from.seu(object, type = type, edges = edges, maxnum = maxnum)
+  scatters <- grid.from.staffli(object, type = type, edges = edges, maxnum = maxnum)
   fixed.scatter <- scatters[[reference.index]]$scatter
   counter <- NULL
   coords.ls <- NULL

@@ -83,6 +83,8 @@ MaskImages <- function (
 #' @param verbose Print messages
 #'
 #' @return Seurat object with processed imaged
+#'
+#' @export
 
 WarpImages <- function (
   object,

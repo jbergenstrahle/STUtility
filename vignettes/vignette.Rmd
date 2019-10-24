@@ -223,6 +223,8 @@ se <- InputFromTable(infotable = infoTable,
 
 With the Seurat object created, we are ready to load the H&E images from the file paths provided in the infoTable. The LoadImages() function allow you to load the images into the Seurat object and will automatically save a scaled down version of each image that you can use for plotting.
 
+You should be aware that the resolution is by default very low. The reason for this is that STUtility makes it possible to apply various image transformations to the images, but since these processing steps are slow and requires significant amounts of memory, it is much faster to learn the transformations on a small image and later apply the transformations to a higher resolution image. See the image processing section of this vignette for more details.
+
 
 ```{r, eval=TRUE, echo=TRUE}
 
