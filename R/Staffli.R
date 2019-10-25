@@ -104,6 +104,83 @@ CreateStaffliObject <- function (
   return(object)
 }
 
+#' Subset a Seurat objectcontaining Staffli image data
+#'
+#' Subsets a Seurat object containing Spatial Transcriptomics data while
+#' making sure that the images are subsetted correctly. If you use the default
+#' \code{\link{subset}} function you will not be able to use any of the
+#' STUtility visualization methods.
+#'
+#' @param spots A vector of spots to keep
+#' @param features A vector of features to keep
+#' @param expression Logical expression indicating features/variables to keep
+#' @param idents A vector of identity classes to keep
+#' @param ... Extra parameters passed to WhichCells, such as slot, invert, or downsample
+#'
+#' @rdname SubsetSTData
+#' @export
+#' @method SubsetData Seurat
+#'
+SubsetSTData <- function (
+  object,
+  expression,
+  spots = NULL,
+  features = NULL,
+  idents = NULL,
+  ...
+) {
+
+  # Check that a Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) {
+    stop("This Seurat object does not contain any Staffli image object", call. = FALSE)
+  }
+  # Obtain Staffli object
+  st.object <- GetStaffli(object)
+
+  if (!missing(x = expression)) {
+    expression <- deparse(expr = substitute(expr = expression))
+    object <- subset(object, subset = expression, features = features, cells = spots, idents = idents, ...)
+  } else {
+    object <- subset(object, features = features, cells = spots, idents = idents, ...)
+  }
+
+  # Check spots of new object
+  kept.spots <- colnames(object)
+
+
+  # Subset Staffli object
+  st.meta_data <- st.object[[kept.spots, ]]
+  st.object@meta.data <- st.meta_data
+  samples <- unique(st.meta_data[, "sample"]) %>% as.numeric()
+
+  # Subset each slot in Staffli object
+  if (length(st.object@imgs) > 0) {
+    st.object@imgs <- st.object@imgs[samples]
+  }
+  if (length(st.object@rasterlists) > 0) {
+    rl <- st.object@rasterlists
+    rl <- lapply(rl, function(ls) {
+      ls[samples]
+    })
+    st.object@rasterlists <- rl
+  }
+  if (length(st.object@scatter.data) > 0) {
+    st.object@scatter.data <- st.object@scatter.data[samples]
+  }
+  if (length(st.object@transformations) > 0) {
+    st.object@transformations <- st.object@transformations[samples]
+  }
+  if (length(st.object@limits) > 0) {
+    st.object@limits <- st.object@limits[samples]
+  }
+  if (length(st.object@dims) > 0) {
+    st.object@dims <- st.object@dims[samples]
+  }
+
+  object@tools$Staffli <- st.object
+  return(object)
+}
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Staffli methods
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%

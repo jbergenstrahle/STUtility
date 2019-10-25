@@ -230,9 +230,9 @@ InputFromTable <- function (
 
   # Skip meta data if it is empty
   if (ncol(meta_data_seurat) == 0) {
-    m <- CreateSeuratObject(counts = cnt, ...)
+    m <- CreateSeuratObject(counts = cnt)
   } else {
-    m <- CreateSeuratObject(counts = cnt, meta.data = meta_data_seurat, ...)
+    m <- CreateSeuratObject(counts = cnt, meta.data = meta_data_seurat)
   }
 
   # Filter top genes

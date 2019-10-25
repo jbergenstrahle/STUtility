@@ -202,6 +202,7 @@ iminfo <- function (object) {
 }
 
 
+
 #' Extracts scaled dimensions of images in Staffli object
 #'
 #' @param object A Staffli object
