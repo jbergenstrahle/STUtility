@@ -119,7 +119,6 @@ CreateStaffliObject <- function (
 #'
 #' @rdname SubsetSTData
 #' @export
-#' @method SubsetData Seurat
 #'
 SubsetSTData <- function (
   object,

@@ -461,10 +461,20 @@ STPlot <- function (
 
   if (is.null(spot.colors)) {
     if (class(data[, variable]) == "factor") {
-      label.colors <- gg_color_hue(length(levels(data[, variable])))
+      if (!is.null(cols)) {
+        stopifnot(length(cols) >= length(unique(data[, variable])))
+        label.colors <- cols[1:length(unique(data[, variable]))]
+      } else {
+        label.colors <- gg_color_hue(length(levels(data[, variable])))
+      }
       names(label.colors) <- levels(data[, variable])
     } else if (class(data[, variable]) == "character") {
-      label.colors <- gg_color_hue(length(unique(data[, variable])))
+      if (!is.null(cols)) {
+        stopifnot(length(cols) >= length(unique(data[, variable])))
+        label.colors <- cols[1:length(unique(data[, variable]))]
+      } else {
+        label.colors <- gg_color_hue(length(levels(data[, variable])))
+      }
       names(label.colors) <- unique(data[, variable])
     }
   }
@@ -785,6 +795,7 @@ DimOverlay <- function (
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
@@ -823,10 +834,12 @@ DimOverlay <- function (
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
 
-  # Load image and place sample index in top left corner
-  image <- as.raster(image_annotate(image_read(st.object[type][[sample.index]]),
-                                    text = paste(sample.index),
-                                    size = round(st.object@xdim/10)))
+  # Collect image
+  image <- st.object[type][[sample.index]]
+  if (dark.theme & type %in% c("masked", "processed")) {
+    image[image == "#FFFFFF"]  <- "#000000"
+  }
+  image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
   imdims <- iminfo(st.object)[[sample.index]][2:3] %>% as.numeric()
 
   # Select spots matching sample index
@@ -875,7 +888,7 @@ DimOverlay <- function (
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha,
                          palette, cols, rev.cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, ...)
+                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, dark.theme, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -886,7 +899,7 @@ DimOverlay <- function (
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, ...)
+                           rev.cols, ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, dark.theme, ...)
 
       return(plot)
     })
@@ -939,6 +952,7 @@ FeatureOverlay <- function(
   channels.use = NULL,
   verbose = FALSE,
   split.labels = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
@@ -965,7 +979,12 @@ FeatureOverlay <- function(
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
 
-  image <- as.raster(image_annotate(image_read(st.object[type][[sample.index]]), text = paste(sample.index), size = round(st.object@xdim/10)))
+  # Collect image
+  image <- st.object[type][[sample.index]]
+  if (dark.theme & type %in% c("masked", "processed")) {
+    image[image == "#FFFFFF"]  <- "#000000"
+  }
+  image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
   imdims <- iminfo(st.object)[[sample.index]][2:3] %>% as.numeric()
 
   # Select spots matching sample index
@@ -1023,7 +1042,7 @@ FeatureOverlay <- function(
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha,
                          palette, cols, rev.cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels, ...)
+                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels, dark.theme, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1034,7 +1053,7 @@ FeatureOverlay <- function(
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, NULL, split.labels, ...)
+                           rev.cols, ncol = NULL, spot.colors, center.zero, NULL, split.labels, dark.theme, ...)
 
       return(plot)
     })
@@ -1074,6 +1093,7 @@ ST.ImagePlot <- function (
   center.zero = T,
   plot.title = NULL,
   split.labels = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
@@ -1172,6 +1192,10 @@ ST.ImagePlot <- function (
         scale_color_gradientn(colours = cols)
     }
 
+    if (dark.theme) {
+      p <- p + dark_theme()
+    }
+
     return(p)
   })
 
@@ -1190,7 +1214,7 @@ ST.ImagePlot <- function (
 #' @export
 #'
 
-MultiDimOverlay <- function(
+MultiDimOverlay <- function (
   object,
   sampleids,
   method = "viewer",
@@ -1205,11 +1229,12 @@ MultiDimOverlay <- function(
   reduction = NULL,
   shape.by = NULL,
   palette = NULL,
+  cols = NULL,
   rev.cols = FALSE,
-  dark.theme = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
@@ -1224,8 +1249,8 @@ MultiDimOverlay <- function(
     DimOverlay(object, dims = dims, sample.index = i, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
                reduction = reduction, shape.by = shape.by, palette = palette,
-               rev.cols = rev.cols, grid.ncol = NULL,
-               center.zero = center.zero, channels.use = channels.use, verbose = verbose, ... = ...)
+               cols = cols, rev.cols = rev.cols, grid.ncol = NULL,
+               center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme, ... = ...)
   })
 
   tmp.file <- tempfile(pattern = "", fileext = ".png")
@@ -1234,7 +1259,11 @@ MultiDimOverlay <- function(
   colr <- round(length(x = dims)/colf)
 
   png(width = st.object@xdim*ncols*colf, height = st.object@xdim*nrows*colr, file = tmp.file)
-  par(mar = c(0, 0, 0, 0))
+  if (dark.theme) {
+    par(mar = c(0, 0, 0, 0), bg = "black")
+  } else {
+    par(mar = c(0, 0, 0, 0))
+  }
   plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
   dev.off()
 
@@ -1244,7 +1273,11 @@ MultiDimOverlay <- function(
     print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
-    par(mar = c(0, 0, 0, 0))
+    if (dark.theme) {
+      par(mar = c(0, 0, 0, 0), bg = "black")
+    } else {
+      par(mar = c(0, 0, 0, 0))
+    }
     plot(as.raster(p))
     unlink(tmp.file)
   } else {
@@ -1280,11 +1313,12 @@ MultiFeatureOverlay <- function (
   pt.alpha = 1,
   shape.by = NULL,
   palette = NULL,
+  cols = NULL,
   rev.cols = FALSE,
-  dark.theme = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
@@ -1299,9 +1333,9 @@ MultiFeatureOverlay <- function (
     FeatureOverlay(object, features = features, sample.index = s, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
-                   palette = palette, rev.cols = rev.cols,
+                   palette = palette, cols = cols, rev.cols = rev.cols,
                    grid.ncol = NULL, center.zero = center.zero,
-                   channels.use = channels.use, verbose = verbose, ... = ...)
+                   channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,... = ...)
   })
 
   tmp.file <- tempfile(pattern = "", fileext = ".png")
@@ -1310,7 +1344,11 @@ MultiFeatureOverlay <- function (
   colr <- round(length(x = features)/colf)
 
   png(width = st.object@xdim*ncols*colf, height = st.object@xdim*nrows*colr, file = tmp.file)
-  par(mar = c(0, 0, 0, 0))
+  if (dark.theme) {
+    par(mar = c(0, 0, 0, 0), bg = "black")
+  } else {
+    par(mar = c(0, 0, 0, 0))
+  }
   plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
   dev.off()
 
@@ -1320,7 +1358,11 @@ MultiFeatureOverlay <- function (
     print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
-    par(mar = c(0, 0, 0, 0))
+    if (dark.theme) {
+      par(mar = c(0, 0, 0, 0), bg = "black")
+    } else {
+      par(mar = c(0, 0, 0, 0))
+    }
     plot(p)
     unlink(tmp.file)
   } else {
@@ -1455,7 +1497,8 @@ feature.scaler <- function (
 #' @importFrom ggplot2 element_rect element_text theme
 
 dark_theme <- function() {
-  theme(plot.background = element_rect(fill = "black"),
+  theme(plot.background = element_rect(fill = "black", color = "black"),
+        panel.background = element_rect(fill = "black", color = "black"),
         plot.title = element_text(colour = "white"),
         strip.text = element_text(colour = 'white'),
         legend.title = element_text(colour = "white"),

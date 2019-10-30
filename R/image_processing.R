@@ -113,6 +113,7 @@ LoadImages.Seurat <- function (
 #' @param method Specify display method (raster or viewer).
 #' @param ncols Number of columns in output grid of images
 #' @param annotate Will put a unique id in the top left corner
+#' @param darken Switches the background to black
 #' @inheritParams LoadImages
 #'
 #' @importFrom magick image_append image_annotate image_scale
@@ -125,7 +126,8 @@ ImagePlot <- function (
   type = NULL,
   method = "viewer",
   ncols = NULL,
-  annotate = TRUE
+  annotate = TRUE,
+  darken = FALSE
 ) {
   # obtain Staffli object
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
@@ -156,13 +158,24 @@ ImagePlot <- function (
   if (any(!indices %in% 1:length(images))) stop("Image indices out of bounds: ", paste(setdiff(indices, 1:length(images)), collapse = ", "), call. = F)
   images <- images[indices]
 
+  # Switch color
+  if (darken & (type %in% c("masked", "processed"))) {
+    images <- lapply(images, function(im) {
+      im[im == "#FFFFFF"] <- "#000000"
+      return(im)
+    })
+  }
+
   # Read images
   images <- lapply(images, image_read)
+
+  # Add sample ID
   if (annotate) {
-    images <- setNames(lapply(seq_along(images ), function(i) {image_annotate(images[[i]], text = names(images)[i], size = round(st.object@xdim/10))}), nm = names(images))
+    images <- setNames(lapply(seq_along(images ), function(i) {image_annotate(images[[i]], text = names(images)[i], color = ifelse(darken, "#FFFFFF", "#000000"), size = round(st.object@xdim/10))}), nm = names(images))
   }
   ncols <- ncols %||% ceiling(sqrt(length(x = images)))
   nrows <- ceiling(length(x = images)/ncols)
+
 
   if (method == "viewer") {
     stack <- c()
@@ -179,7 +192,11 @@ ImagePlot <- function (
     graphics::layout(mat = layout.matrix)
 
     for (rst in lapply(images, as.raster)) {
-      par(mar = c(0, 0.2, 0, 0.2))
+      if (darken) {
+        par(mar = c(0, 0.2, 0, 0.2), bg = "black")
+      } else {
+        par(mar = c(0, 0.2, 0, 0.2))
+      }
       plot(rst)
     }
     par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
@@ -394,6 +411,8 @@ WarpImages.Staffli <- function (
     warped_coords <- object[[, c("pixel_x", "pixel_y")]]
   }
 
+  # Create a list of 3x3 identity matrices
+  transformations <- setNames(lapply(1:length(object@samplenames), function(i) {diag(c(1, 1, 1))}), nm = names(object))
 
   for (i in names(transforms)) {
 
@@ -411,6 +430,7 @@ WarpImages.Staffli <- function (
     center.new <- rev(dim(m)/2)
     center.new <- c(ifelse(center.x, center.new[1], center[1]), ifelse(center.y, center.new[2], center[2]))
     tr <- combine.tr(center, center.new, alpha = angle, mirror.x = mirror.x, mirror.y = mirror.y)
+    transformations[[i]] <- tr
 
     map.rot.backward <- generate.map.rot(tr)
     map.rot.forward <- generate.map.rot(tr, forward = TRUE)
@@ -418,7 +438,7 @@ WarpImages.Staffli <- function (
     # Obtain scale factors
     dims.raw <- as.numeric(object@dims[[i]][2:3])
     dims.scaled <- dim(object["raw"][[i]])
-    sf.xy <- dims.raw/rev(dims.scaled)
+    sf.xy <- dims.raw[2]/dims.scaled[1]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp pixels
@@ -434,6 +454,7 @@ WarpImages.Staffli <- function (
     if (verbose) cat(paste0("Finished alignment for sample", i, " \n\n"))
   }
 
+  object@transformations <- transformations
   object@rasterlists$processed <- processed.images
   object@rasterlists$processed.masks <- processed.masks
   object[[, c("warped_x", "warped_y")]] <- warped_coords
@@ -565,7 +586,7 @@ AlignImages.Staffli <- function (
     # Obtain scale factors
     dims.raw <- iminfo(object)[[i]][, c("width", "height")] %>% as.numeric()
     dims.scaled <- scaled.imdims(object)[[i]]
-    sf.xy <- dims.raw[1]/dims.scaled[1]
+    sf.xy <- dims.raw[2]/dims.scaled[1]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp coordinates
