@@ -12,7 +12,7 @@
 #'
 #' @keywords internal
 
-st.load.matrix = function(path, delim="\t", row.names=1, visium=F, ...) {
+st.load.matrix = function(path, delim="\t", row.names = 1, visium = F, ...) {
   stopifnot(file.exists(path))
   x = c()
   if(visium==F){ #Original ST loading

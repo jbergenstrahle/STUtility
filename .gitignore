@@ -19,3 +19,5 @@ vignettes/MultiCCA_vignette.Rmd
 R/NMF_global_functions.R
 R/NMF_tests.R
 se_object
+inst/rmarkdown
+vignettes/vignette_cache/

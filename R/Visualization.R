@@ -1,3 +1,6 @@
+#' @include generics.R Staffli.R
+NULL
+
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Dimensional reduction plots
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -18,12 +21,11 @@
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param pt.size Adjust point size for plotting
+#' @param pt.alpha Adjust point opacity for plotting
 #' @param reduction Which dimensionality reduction to use. If not specified, first searches for umap, then tsne, then pca
 #' @param shape.by If NULL, all points are circles (default). You can specify any
 #' cell attribute (that can be pulled with FetchData) allowing for both
 #' different colors and different shapes on cells
-#' @param delim delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data
-#' @param return.plot.list should the plots be returned as a list? By default, the plots are arranged into a grid
 #' @param grid.ncol Number of columns for display when combining plots
 #' @param verbose Print messages
 #'
@@ -50,6 +52,7 @@ ST.DimPlot <- function (
   min.cutoff = NA,
   max.cutoff = NA,
   pt.size = 1,
+  pt.alpha = 1,
   reduction = NULL,
   shape.by = NULL,
   palette = "MaYl",
@@ -57,8 +60,6 @@ ST.DimPlot <- function (
   rev.cols = FALSE,
   dark.theme = FALSE,
   ncol = NULL,
-  delim = NULL,
-  return.plot.list = F,
   grid.ncol = NULL,
   center.zero = T,
   channels.use = NULL,
@@ -66,6 +67,10 @@ ST.DimPlot <- function (
   verbose = FALSE,
   ...
 ) {
+
+  # Check to see if Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  st.object <- object@tools$Staffli
 
   reduction <- reduction %||% {
     default.reductions <- c('umap', 'tsne', 'pca', 'ica')
@@ -94,13 +99,8 @@ ST.DimPlot <- function (
                 "Number of dimensions provided: ", length(x = dims)), call. = F)
   }
 
-  # Check that group.by variable is present in meta.data slot, otherwise assume that there's only one sample present in Seurat object
-  if ("sample" %in% colnames(object[[]])) {
-    group.by <- "sample"
-    data[,  group.by] <- object[[group.by, drop = TRUE]]
-  } else {
-    group.by <- NULL
-  }
+  # Add group column to data
+  data[,  "sample"] <- st.object[[, "sample", drop = TRUE]]
 
   # Extract shape.by column from meta data if applicable
   if (!is.null(x = shape.by)) {
@@ -112,26 +112,30 @@ ST.DimPlot <- function (
 
   # Obtain array coordinates
   image.type <- "empty"
-  c(data, xlim, ylim, image.type) %<-% obtain.array.coords(object, data, image.type, delim)
-  print(xlim)
+  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type)
 
   # Scale data values
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
 
   # blend colors or plot each dimension separately
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors for dimensions ",
                             paste0(ifelse(length(dims) == 2, paste0(dims[1], " and ", dims[2]), paste0(dims[1], dims[2], " and ", dims[2]))),
                             ": \n", paste(paste(dims, channels.use, sep = ":"), collapse = "\n")))
+    if (image.type != "empty") {
+      dims.list <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+    } else {
+      dims.list <- st.object@limits
+    }
 
     spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- STPlot(data, data.type = "numeric", group.by, shape.by, NULL,
-                   pt.size, palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue, xlim, ylim,
-                   plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), ...)
+    data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 3, 2)):ncol(data)]
+    plot <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha,
+                   palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue,
+                   plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), dims.list, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -144,9 +148,14 @@ ST.DimPlot <- function (
     # Create plots
     if (plot.type == "spots") {
       # Normal visualization -------------------------------------------------------------------------------------
+      if (image.type != "empty") {
+        dims.list <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+      } else {
+        dims.list <- st.object@limits
+      }
       plots <- lapply(X = dims, FUN = function(d) {
-        plot <- STPlot(data, data.type = "numeric", group.by, shape.by, d, pt.size,
-                       palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, xlim, ylim, ...)
+        plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha,
+                       palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, dims.list, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -155,16 +164,13 @@ ST.DimPlot <- function (
       })
 
       # Draw plots
-      if (return.plot.list) {
-        return(plots)
-      } else {
-        plot_grid(plotlist = plots, ncol = grid.ncol)
-      }
+      plot_grid(plotlist = plots, ncol = grid.ncol)
 
     } else if (plot.type == "smooth") {
       # Smooth visualization -------------------------------------------------------------------------------------
+      stop("Smooth options not yet implemented")
       plots <- lapply(X = dims, FUN = function(d) {
-        plot <- SmoothPlot(data, image.type, data.type = "numeric", group.by, d,
+        plot <- SmoothPlot(data, image.type, data.type = "numeric", d,
                            palette, rev.cols, ncol, center.zero, xlim, ylim, ...)
         return(plot)
       })
@@ -206,17 +212,16 @@ ST.DimPlot <- function (
 #' }
 #' @param indices Numeric vector specifying sample indices to include in plot. Default is to show all samples.
 #' @param spots Vector of spots to plot (default is all spots)
-#' @param plot.type Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"
+#' @param plot.type Specify the type of plot to use (default: "spots"). Available options are; "spots"
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param slot Which slot to pull expression data from?
 #' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param pt.size Adjust point size for plotting
+#' @param pt.alpha Adjust opacity for plotting
 #' @param shape.by If NULL, all points are circles (default). You can specify any
 #' cell attribute (that can be pulled with FetchData) allowing for both
 #' different colors and different shapes on cells
-#' @param delim delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data
-#' @param return.plot.list should the plots be returned as a list? By default, the plots are arranged into a grid
 #' @param grid.ncol Number of columns for display when combining plots
 #' @param verbose Print messages
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
@@ -242,14 +247,13 @@ ST.FeaturePlot <- function (
   slot = "data",
   blend = FALSE,
   pt.size = 1,
+  pt.alpha = 1,
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
   rev.cols = FALSE,
   dark.theme = FALSE,
   ncol = NULL,
-  delim = NULL,
-  return.plot.list = FALSE,
   grid.ncol = NULL,
   center.zero = FALSE,
   channels.use = NULL,
@@ -258,6 +262,9 @@ ST.FeaturePlot <- function (
   verbose = FALSE,
   ...
 ) {
+  # Check to see if Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  st.object <- object@tools$Staffli
 
   # Collect data
   spots <- spots %||% colnames(x = object)
@@ -270,8 +277,10 @@ ST.FeaturePlot <- function (
   }
 
   # If blend option is set, stop if the number of features are not equal to 2 or 3
-  if (!blend && length(x = features) %in% c(2, 3) & !all(data.type %in% c("numeric", "integer"))) {
-    stop("Blending feature plots only works with two or three numeric features")
+  if (blend) {
+    if (!(length(x = features) %in% c(2, 3)) | !all(data.type %in% c("numeric", "integer"))) {
+      stop("Blending feature plots only works with two or three numeric features")
+    }
   }
 
   # Select colorscale
@@ -280,13 +289,8 @@ ST.FeaturePlot <- function (
     palette <- subset(palette.info, category == "seq")$palette[1]
   }
 
-  # Check that group.by variable is present in meta.data slot, otherwise assume that there's only one sample present in Seurat object
-  if ("sample" %in% colnames(object[[]])) {
-    group.by <- "sample"
-    data[,  group.by] <- object[[group.by, drop = TRUE]]
-  } else {
-    group.by <- NULL
-  }
+  # Add group column to data
+  data[,  "sample"] <- st.object[[, "sample", drop = TRUE]]
 
   # Add shape column if specified
   if (!is.null(x = shape.by)) {
@@ -298,10 +302,10 @@ ST.FeaturePlot <- function (
 
   # Obtain array coordinates
   image.type <- "empty"
-  c(data, xlim, ylim, image.type) %<-% obtain.array.coords(object, data, image.type, delim)
+  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type)
 
   # Raise error if features are not present in Seurat object
-  if (ncol(x = data) < 3) {
+  if (ncol(x = data) < 4) {
     stop("None of the requested features were found: ",
          paste(features, collapse = ", "),
          " in slot ",
@@ -309,28 +313,38 @@ ST.FeaturePlot <- function (
          call. = FALSE)
   }
 
-  if (class(unique(sapply(data, class))) == "numeric") {
-    data <- feature.scaler(data, min.cutoff, max.cutoff, spots)
+  if (data.type %in% c("numeric", "integer")) {
+    data <- feature.scaler(data, features = features, min.cutoff, max.cutoff, spots)
   }
 
   # Subset by index
-  if (!all(as.character(indices) %in% data[, group.by])) stop(paste0("Index out of range. "), call. = FALSE)
-  if (!is.null(indices)) data <- data[data[, group.by] %in% as.character(indices), ]
+  if (!is.null(indices)) {
+    if (!all(as.character(indices) %in% data[, "sample"])) stop(paste0("Index out of range. "), call. = FALSE)
+    data <- data[data[, "sample"] %in% as.character(indices), ]
+  }
+
 
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors for features ",
                             paste0(ifelse(length(features) == 2, paste0(features[1], " and ", features[2]), paste0(features[1], features[2], " and ", features[2]))),
                             ": \n", paste(paste(features, channels.use, sep = ":"), collapse = "\n")))
+    if (image.type != "empty") {
+      dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+    } else {
+      dims <- st.object@limits
+    }
+
+    if (!is.null(indices)) dims <- dims[indices]
 
     spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 3):ncol(data)]
-    plot <- STPlot(data, data.type, group.by, shape.by, NULL, pt.size,
+    data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 4, 3)):ncol(data)]
+    plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
                    palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
-                   xlim, ylim, FALSE, theme, ...)
+                   dims, FALSE, theme, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -342,10 +356,18 @@ ST.FeaturePlot <- function (
     # Create plots
     if (plot.type == "spots") {
       # Normal visualization -------------------------------------------------------------------------------------
-      plots <- lapply(X = features, FUN = function(d) {
-        plot <- STPlot(data, data.type, group.by, shape.by, d, pt.size,
+      if (image.type != "empty") {
+        dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+      } else {
+        dims <- st.object@limits
+      }
+
+      if (!is.null(indices)) dims <- dims[indices]
+
+      plots <- lapply(X = features, FUN = function(ftr) {
+        plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha,
                        palette, cols, rev.cols, ncol, spot.colors, center.zero,
-                       center.tissue, NULL, xlim, ylim, split.labels, theme, ...)
+                       center.tissue, NULL, dims, split.labels, theme, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -353,18 +375,14 @@ ST.FeaturePlot <- function (
         return(plot)
       })
 
-      # Draw plots
-      if (return.plot.list) {
-        return(plots)
-      } else {
-        plot_grid(plotlist = plots, ncol = grid.ncol)
-      }
+      plot_grid(plotlist = plots, ncol = grid.ncol)
 
     } else if (plot.type == "smooth") {
+      stop("Smooth options not yet implemented")
       if (data.type %in% c("factor", "character")) stop(paste0("Smoothing has not yet been implemented for categorical variables"), call. = FALSE)
       # Smooth visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(d) {
-        plot <- SmoothPlot(data, image.type, data.type, group.by, d,
+        plot <- SmoothPlot(data, image.type, data.type, d,
                        palette, cols, rev.cols, ncol, center.zero, xlim, ylim, ...)
         return(plot)
       })
@@ -390,10 +408,10 @@ ST.FeaturePlot <- function (
 #'
 #' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
 #' @param data.type Type of data, e.g. numeric or integer
-#' @param group.by Specifies column to facet the plots by, e.g. sample
 #' @param shape.by Specifies column to shape points by, e.g. morphological region
 #' @param variable Name of continuous variable
 #' @param pt.size Point size of each ST spot
+#' @param pt.alpha Opacity of each ST spot
 #' @param palette Color palette used for spatial heatmap (see \code{?palette.select} for available options).
 #' Disabled if a color vector is provided (see \code{cols} below).
 #' @param cols A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
@@ -405,7 +423,7 @@ ST.FeaturePlot <- function (
 #' @param center.zero Should the colorscale be centered around 0? Set to TRUE for scaled data
 #' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
 #' @param plot.title Add title to plot
-#' @param xlim,ylim Set x/y-axis limits
+#' @param dims List of dimensions for x and y scales
 #' @param split.labels Only active if the features are specified by character vectors.
 #' The plot will be split into one plot for each group label, highlighting the labelled spots.
 #' @param theme Object of class "theme" used to change the background theme
@@ -418,10 +436,10 @@ ST.FeaturePlot <- function (
 STPlot <- function (
   data,
   data.type = NULL,
-  group.by,
   shape.by,
   variable,
   pt.size = 1,
+  pt.alpha = 1,
   palette = "MaYl",
   cols = NULL,
   rev.cols = F,
@@ -430,15 +448,11 @@ STPlot <- function (
   center.zero = TRUE,
   center.tissue = F,
   plot.title = NULL,
-  xlim = NULL,
-  ylim = NULL,
+  dims = NULL,
   split.labels = FALSE,
   theme = theme_void(),
   ...
 ) {
-
-  #xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
-  xlim <- xlim %||% c(0, 150); ylim <- ylim %||% c(0, 150)
 
   gg_color_hue <- function(n) {
     hues = seq(15, 375, length = n + 1)
@@ -447,18 +461,28 @@ STPlot <- function (
 
   if (is.null(spot.colors)) {
     if (class(data[, variable]) == "factor") {
-      label.colors <- gg_color_hue(length(levels(data[, variable])))
+      if (!is.null(cols)) {
+        stopifnot(length(cols) >= length(unique(data[, variable])))
+        label.colors <- cols[1:length(unique(data[, variable]))]
+      } else {
+        label.colors <- gg_color_hue(length(levels(data[, variable])))
+      }
       names(label.colors) <- levels(data[, variable])
     } else if (class(data[, variable]) == "character") {
-      label.colors <- gg_color_hue(length(unique(data[, variable])))
+      if (!is.null(cols)) {
+        stopifnot(length(cols) >= length(unique(data[, variable])))
+        label.colors <- cols[1:length(unique(data[, variable]))]
+      } else {
+        label.colors <- gg_color_hue(length(levels(data[, variable])))
+      }
       names(label.colors) <- unique(data[, variable])
     }
   }
 
   # Stop if split.labels is activated and there are more than 1 samples
   if (any(data.type %in% c("character", "factor")) & split.labels) {
-    if (length(unique(as.character(data[, group.by]))) > 1) stop(paste0("Splitting of group labels only work for one sample. Please set a single sample index with indices. "), call. = FALSE)
-    plot.title <- paste0("Sample ", unique(as.character(data[, group.by])), ": ", variable)
+    if (length(unique(as.character(data[, "sample"]))) > 1) stop(paste0("Splitting of group labels only work for one sample. Please set a single sample index with indices. "), call. = FALSE)
+    plot.title <- paste0("Sample ", unique(as.character(data[, "sample"])), ": ", variable)
     new.data <- data.frame()
     # Order by decreasing size
     if (class(data[, variable]) != "factor") data[, variable] <- factor(data[, variable], levels = unique(data[, variable]))
@@ -467,7 +491,7 @@ STPlot <- function (
     for (lbl in levels.keep) {
       dt <- data
       dt[, variable] <- ifelse(dt[, variable] == lbl, lbl, "-")
-      dt[, group.by] <- lbl
+      dt[, "sample"] <- lbl
       new.data <- rbind(new.data, dt)
     }
 
@@ -479,14 +503,10 @@ STPlot <- function (
 
   # Center tissue along y-axis
   if (center.tissue) {
-    if (!is.null(group.by)) {
-      data <- do.call(rbind, lapply(split(data, data[, group.by]), function(d) {
-        d[, "y"] <- d[, "y"] - median(d[, "y"]) + ylim[2]/2
-        return(d)
-      }))
-    } else {
-      data[, "y"] <- data[, "y"] - median(data[, "y"]) + ylim[2]/2
-    }
+    data <- do.call(rbind, lapply(split(data, data[, "sample"]), function(d) {
+      d[, "y"] <- d[, "y"] - median(d[, "y"]) + ylim[2]/2
+      return(d)
+    }))
   }
 
   # Obtain colors from selected palette or from provided cols
@@ -498,44 +518,71 @@ STPlot <- function (
     cols <- rev(cols)
   }
 
+  # Define scales for each facet
+  if (!split.labels) {
+    limits_x <- lapply(seq_along(dims), function(i) {
+      d <- dims[[i]]
+      scale_override(i, scale_x_continuous(limits = c(0, d[1])))
+    })
+    limits_y <- lapply(seq_along(dims), function(i) {
+      d <- dims[[i]]
+      scale_override(i, scale_y_continuous(limits = c(0, d[2])))
+    })
+    limits_override <- c(limits_x, limits_y)
+
+    # Invert y-axis by sample
+    split.data <- split(data, data[, "sample"])
+    split.data <- lapply(seq_along(split.data), function(i) {
+      spld <- split.data[[i]]
+      ydim <- dims[[i]][2]
+      spld$y <- ydim - spld$y
+      return(spld)
+    })
+    data <- do.call(rbind, split.data)
+  } else {
+    lims <- unlist(dims)
+    data$y <- lims[2] - data$y
+  }
+
   # Create new plot
   p <- ggplot()
   # Make sure that levels are correct
-  data[, group.by] <- factor(data[, group.by], levels = unique(data[, group.by]))
+  data[, "sample"] <- factor(data[, "sample"], levels = unique(data[, "sample"]))
   if (length(spot.colors) > 0) {
 
     # Add shape aesthetic and blend colors if blend is active
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), shape = shape.by), color = spot.colors, size = pt.size)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", shape = shape.by), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y")), color = spot.colors, size = pt.size)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y"), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
     }
 
   } else {
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, alpha = pt.alpha, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = paste0(ylim[2], " - y"), color = paste0("`", variable, "`")), size = pt.size)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`")), size = pt.size, alpha = pt.alpha, ...)
     }
 
   }
 
   # Add ST array dimensions and plot title
   p <- p +
-    scale_x_continuous(limits = xlim) +
-    scale_y_continuous(limits = ylim) +
-    #theme_void() +
     labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
 
   # Set theme
-  p <- p + theme
+  p <- p + theme_void() + theme
 
   # Facet plots by group variable
-  if (!is.null(group.by)) {
+  if (!split.labels) {
     p <- p +
-      facet_wrap(as.formula(paste("~", group.by)), ncol = ncol)
+      facet_wrap_custom(~sample, scales = "free", ncol = ncol, scale_overrides = limits_override)
+  } else {
+    p <- p + facet_wrap(~sample, ncol = ncol) +
+      scale_x_continuous(limits = c(0, lims[1])) +
+      scale_y_continuous(limits = c(0, lims[2]))
   }
 
   # Center colorscale at 0
@@ -574,7 +621,6 @@ SmoothPlot <- function (
   data,
   image.type,
   data.type = NULL,
-  group.by,
   variable,
   palette = "MaYl",
   cols = NULL,
@@ -615,7 +661,7 @@ SmoothPlot <- function (
   lg <- g_legend(data, variable, center.zero, cols, val.limits)
 
   # Subset only based on one value's expression
-  p.list <- lapply(1:length(unique(data[, group.by])), function(i) {
+  p.list <- lapply(1:length(unique(data[, "sample"])), function(i) {
     data.subset <- subset(data, sample == i)
     if ("xdim" %in% names(object@tools)) {
       xdim <- 400; ydim <- round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/xdim))
@@ -739,23 +785,31 @@ DimOverlay <- function (
   max.cutoff = NA,
   blend = FALSE,
   pt.size = 1,
+  pt.alpha = 1,
   reduction = NULL,
   shape.by = NULL,
   palette = NULL,
+  cols = NULL,
   rev.cols = FALSE,
-  dark.theme = FALSE,
-  delim = NULL,
-  return.plot.list = FALSE,
   grid.ncol = NULL,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
+
+  # Check to see if Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  st.object <- object@tools$Staffli
 
   # Check length of sample index
   if (length(sample.index) > 1) stop(paste0("Only one sample index can be selected."), call. = FALSE)
 
+  # Check if reduction is available
+  if (!is.null(reduction)) {
+    if (!reduction %in% names(object@reductions)) stop(paste0("Reduction ", reduction, " not found in Seurat object."))
+  }
   reduction <- reduction %||% {
     default.reductions <- c('umap', 'tsne', 'pca', 'ica')
     object.reductions <- FilterObjects(object = object, classes.keep = 'DimReduc')
@@ -763,39 +817,36 @@ DimOverlay <- function (
     default.reductions[reduc.use]
   }
 
+  # Check type
   type <- type %||% {
+    if (is.null(rasterlists(st.object))) stop("There are no images present in the Seurat object. Run LoadImages() first.", call. = FALSE)
     choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
-    match.arg(choices, names(object@tools), several.ok = T)[1]
+    match.arg(choices, rasterlists(st.object), several.ok = T)[1]
   }
 
   # Check that selected image type is present in Seurat object
   msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
-  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using DimOverlay() on '", type, "' images"), call. = FALSE)
+  if (!type %in% names(msgs)) stop(paste0(type, " not a valid type"), call. = FALSE)
+  if (!type %in% rasterlists(st.object)) stop(paste0("You need to run ", msgs[type], " before using DimOverlay() on '", type, "' images"), call. = FALSE)
 
   # Check that sample.index is OK
-  if (!sample.index %in% names(object@tools[[type]])) {
+  if (!sample.index %in% names(st.object)) {
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
 
-  # Load image and place sample index in top left corner
-  image <- as.raster(image_annotate(image_read(object@tools[[type]][[sample.index]]),
-                                    text = paste(sample.index),
-                                    size = round(object@tools$xdim/10)))
-  imdims <- object@tools$dims[[sample.index]]
+  # Collect image
+  image <- st.object[type][[sample.index]]
+  if (dark.theme & type %in% c("masked", "processed")) {
+    image[image == "#FFFFFF"]  <- "#000000"
+  }
+  image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
+  imdims <- iminfo(st.object)[[sample.index]][2:3] %>% as.numeric()
 
   # Select spots matching sample index
-  group.var = "sample"
-  if (group.var %in% colnames(object[[]])) {
-    sample.index <- ifelse(class(sample.index) == "numeric", unique(object[[group.var, drop = T]])[sample.index], sample.index)
-    # Select spots matching sample.index
-    spots <- colnames(object)[object[[group.var, drop = T]] == sample.index]
-    if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
-  } else {
-    # Assuming that there's only one sample in the Seurat object
-    spots <- NULL
-    spots <- spots %||% colnames(x = object)
-    if (verbose) cat("Selecting all spots")
-  }
+  sample.index <- ifelse(class(sample.index) == "numeric", unique(st.object[[, "sample", drop = T]])[sample.index], sample.index)
+  # Select spots matching sample.index
+  spots <- colnames(object)[st.object[[, "sample", drop = T]] == sample.index]
+  if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
 
   # Collect dim-red data
   signs <- sign(dims); dims <- abs(dims)
@@ -818,14 +869,14 @@ DimOverlay <- function (
   # Obtain array coordinates
   px.ids <- ifelse(rep(type %in% c("raw", "masked", "masked.masks"), 2), c("pixel_x", "pixel_y"), c("warped_x", "warped_y"))
 
-  if (all(px.ids %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[px.ids]][spots, ], nm = c("x", "y")))
+  if (all(px.ids %in% colnames(st.object[[]]))) {
+    data <- cbind(data, setNames(st.object[[, px.ids]][spots, ], nm = c("x", "y")))
   } else {
     stop(paste0(paste(px.ids, collapse = " and "), " coordinates are not present in meta data."), call. = FALSE)
   }
 
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
-  data[, group.var] <- sample.index
+  data[, "sample"] <- sample.index
 
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
@@ -835,12 +886,9 @@ DimOverlay <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type = "numeric", group.var, shape.by, variable, image, imdims, pt.size, palette,
-                         rev.cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, ...)
-    if (dark.theme) {
-      plot <- plot + dark_theme()
-    }
+    plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha,
+                         palette, cols, rev.cols, ncol = NULL, spot.colors, center.zero,
+                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, dark.theme, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -850,20 +898,12 @@ DimOverlay <- function (
 
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type = "numeric", group.var, shape.by, d, image, imdims, pt.size, palette,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, ...)
+      plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
+                           rev.cols, ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, dark.theme, ...)
 
-      if (dark.theme) {
-        plot <- plot + dark_theme()
-      }
       return(plot)
     })
-
-    if (return.plot.list) {
-      return(plots)
-    } else {
-      plot_grid(plotlist = plots, ncol = grid.ncol)
-    }
+    plot_grid(plotlist = plots, ncol = grid.ncol)
   }
 }
 
@@ -902,60 +942,59 @@ FeatureOverlay <- function(
   slot = "data",
   blend = FALSE,
   pt.size = 2,
+  pt.alpha = 1,
   shape.by = NULL,
   palette = NULL,
+  cols = NULL,
   rev.cols = FALSE,
-  dark.theme = FALSE,
-  delim = NULL,
-  return.plot.list = FALSE,
   grid.ncol = NULL,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
   split.labels = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
+
+  # Check to see if Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  st.object <- object@tools$Staffli
 
   # Check length of sample index
   if (length(sample.index) > 1) stop(paste0("Only one sample index can be selected."), call. = FALSE)
 
   type <- type %||% {
+    if (is.null(rasterlists(st.object))) stop("There are no images present in the Seurat object. Run LoadImages() first.", call. = FALSE)
     choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
-    choices[min(as.integer(na.omit(match(names(object@tools), choices))))]
+    match.arg(choices, rasterlists(st.object), several.ok = T)[1]
   }
 
   # Check that selected image type is present in Seurat object
   msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
-  if (!type %in% names(object@tools)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"), call. = FALSE)
+  if (!type %in% names(msgs)) stop(paste0(type, " not a valid type"), call. = FALSE)
+  if (!type %in% rasterlists(st.object)) stop(paste0("You need to run ", msgs[type], " before using DimOverlay() on '", type, "' images"), call. = FALSE)
 
-  # Check that image pointer is alive)
-  if (!sample.index %in% names(object@tools[[type]])) {
+  # Check that sample.index is OK
+  if (!sample.index %in% names(st.object)) {
     stop(paste0("sample.index ", sample.index, " does not match any of the images present in the Seurat object or is out of range"), call. = T)
   }
-  image <- as.raster(image_annotate(image_read(object@tools[[type]][[sample.index]]), text = paste(sample.index), size = round(object@tools$xdim/10)))
-  imdims <- object@tools$dims[[sample.index]]
 
-  group.var = "sample"
-  if (group.var %in% colnames(object[[]])) {
-    sample.index <- ifelse(class(sample.index) == "numeric", unique(object[[group.var, drop = T]])[sample.index], sample.index)
-    # Select spots matching sample.index
-    spots <- colnames(object)[object[[group.var, drop = T]] == sample.index]
-    if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
-  } else {
-    # Assuming that there's only one sample in the Seurat object
-    spots <- NULL
-    spots <- spots %||% colnames(x = object)
-    if (verbose) cat("Selecting all spots")
+  # Collect image
+  image <- st.object[type][[sample.index]]
+  if (dark.theme & type %in% c("masked", "processed")) {
+    image[image == "#FFFFFF"]  <- "#000000"
   }
+  image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
+  imdims <- iminfo(st.object)[[sample.index]][2:3] %>% as.numeric()
+
+  # Select spots matching sample index
+  sample.index <- ifelse(class(sample.index) == "numeric", unique(st.object[[, "sample", drop = T]])[sample.index], sample.index)
+  # Select spots matching sample.index
+  spots <- colnames(object)[st.object[[, "sample", drop = T]] == sample.index]
+  if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
 
   data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
   data.type <- unique(sapply(data, class))
-
-  if ((blend & !length(x = features) %in% c(2, 3)) & !all(data.type %in% c("numeric", "integer"))) {
-    stop(paste0("Blending feature plots only works with two or three features of class numeric/integer. \n",
-                "Number of features provided: ", length(x = features), "\n",
-                "feature class: ", data.type), call. = F)
-  }
 
   # Select colorscale
   palette.info <- palette.select(info = T)
@@ -963,11 +1002,17 @@ FeatureOverlay <- function(
     palette <- subset(palette.info, category == "seq")$palette[1]
   }
 
+  # Check that the number of dimensions are 2 or three if blending is active
+  if (blend & !length(x = dims) %in% c(2, 3)) {
+    stop(paste0("Blending dim plots only works with two or three dimensions. \n",
+                "Number of dimensions provided: ", length(x = dims)), call. = F)
+  }
+
   # Obtain array coordinates
   px.ids <- ifelse(rep(type %in% c("raw", "masked", "masked.masks"), 2), c("pixel_x", "pixel_y"), c("warped_x", "warped_y"))
 
-  if (all(px.ids %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[px.ids]][spots, ], nm = c("x", "y")))
+  if (all(px.ids %in% colnames(st.object[[]]))) {
+    data <- cbind(data, setNames(st.object[[, px.ids]][spots, ], nm = c("x", "y")))
   } else {
     stop(paste0(paste(px.ids, collapse = " and "), " coordinates are not present in meta data."), call. = FALSE)
   }
@@ -980,12 +1025,12 @@ FeatureOverlay <- function(
          call. = FALSE)
   }
 
-  if (class(unique(sapply(data, class))) == "numeric") {
-    data <- feature.scaler(data, min.cutoff, max.cutoff, spots)
+  if (data.type %in% c("numeric", "integer")) {
+    data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
   }
 
   # Add index column
-  data[, group.var] <- sample.index
+  data[, "sample"] <- sample.index
 
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
@@ -995,12 +1040,9 @@ FeatureOverlay <- function(
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type, group.var, shape.by, variable, image, imdims, pt.size, palette,
-                         rev.cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels)#, ...)
-    if (dark.theme) {
-      plot <- plot + dark_theme()
-    }
+    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha,
+                         palette, cols, rev.cols, ncol = NULL, spot.colors, center.zero,
+                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels, dark.theme, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1010,20 +1052,12 @@ FeatureOverlay <- function(
 
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type, group.var, shape.by, d, image, imdims, pt.size, palette,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, NULL, split.labels)#, ...)
+      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
+                           rev.cols, ncol = NULL, spot.colors, center.zero, NULL, split.labels, dark.theme, ...)
 
-      if (dark.theme) {
-        plot <- plot + dark_theme()
-      }
       return(plot)
     })
-
-    if (return.plot.list) {
-      return(plots)
-    } else {
-      plot_grid(plotlist = plots, ncol = grid.ncol)
-    }
+    plot_grid(plotlist = plots, ncol = grid.ncol)
   }
 }
 
@@ -1036,7 +1070,7 @@ FeatureOverlay <- function(
 #' @importFrom grDevices as.raster
 #'
 #' @param image image of class "raster" to use as background for plotting
-#' @param dims Dimensions of original image
+#' @param dims List of dimensions for original images
 #'
 #' @inheritParams STPlot
 #'
@@ -1045,19 +1079,21 @@ FeatureOverlay <- function(
 ST.ImagePlot <- function (
   data,
   data.type,
-  group.by,
   shape.by,
   variable,
   image,
   dims,
   pt.size = 2,
+  pt.alpha = 1,
   palette = "MaYl",
+  cols = NULL,
   rev.cols = F,
   ncol = NULL,
   spot.colors = NULL,
   center.zero = T,
   plot.title = NULL,
   split.labels = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
@@ -1078,7 +1114,7 @@ ST.ImagePlot <- function (
 
   # Stop if split.labels is activated and there are more than 1 samples
   if (any(data.type %in% c("character", "factor")) & split.labels) {
-    plot.title <- paste0("Sample ", unique(as.character(data[, group.by])), ": ", variable)
+    plot.title <- paste0("Sample ", unique(as.character(data[, "sample"])), ": ", variable)
     new.data <- data.frame()
     # Order by decreasing size
     if (class(data[, variable]) != "factor") data[, variable] <- factor(data[, variable], levels = unique(data[, variable]))
@@ -1087,7 +1123,7 @@ ST.ImagePlot <- function (
     for (lbl in levels.keep) {
       dt <- data
       dt[, variable] <- ifelse(dt[, variable] == lbl, lbl, "-")
-      dt[, group.by] <- lbl
+      dt[, "sample"] <- lbl
       new.data <- rbind(new.data, dt)
     }
 
@@ -1097,22 +1133,23 @@ ST.ImagePlot <- function (
     label.colors <- c("-" = "lightgray", label.colors)
   }
 
-  # Obtain colors from selected palette
-  cols <- palette.select(palette)(3)
-  if (palette == "heat") cols <- palette.select(palette)(4)
+  # Obtain colors from selected palette or from provided cols
+  cols <- cols %||% {
+    ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(3))
+  }
+
   if (rev.cols) {
     cols <- rev(cols)
   }
 
-  # Obtain image dimensions
-  x_dim <- as.numeric(dims[2])
-  y_dim <- as.numeric(dims[3])
+  # Define limits
+  c(x_dim, y_dim) %<-% dims
 
   # Draw image
   g <- rasterGrob(image, width = unit(1, "npc"), height = unit(1, "npc"), interpolate = TRUE)
 
   # Create new plot
-  plots <- lapply(unique(data[, group.by]), function(v) {
+  plots <- lapply(unique(data[, "sample"]), function(v) {
     p <- ggplot() +
       annotation_custom(g, -Inf, Inf, -Inf, Inf)
 
@@ -1120,18 +1157,18 @@ ST.ImagePlot <- function (
 
       # Add shape aesthetic and blend colors if blend is active
       if (!is.null(shape.by)) {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
       } else {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
       }
 
     } else {
 
       # Add shape aesthetic only
       if (!is.null(shape.by)) {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, alpha = pt.alpha, ...)
       } else {
-        p <- p + geom_point(data = data[data[, group.by] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size, alpha = pt.alpha, ...)
       }
     }
 
@@ -1155,6 +1192,10 @@ ST.ImagePlot <- function (
         scale_color_gradientn(colours = cols)
     }
 
+    if (dark.theme) {
+      p <- p + dark_theme()
+    }
+
     return(p)
   })
 
@@ -1173,7 +1214,7 @@ ST.ImagePlot <- function (
 #' @export
 #'
 
-MultiDimOverlay <- function(
+MultiDimOverlay <- function (
   object,
   sampleids,
   method = "viewer",
@@ -1184,22 +1225,32 @@ MultiDimOverlay <- function(
   max.cutoff = NA,
   blend = FALSE,
   pt.size = 1,
+  pt.alpha = 1,
   reduction = NULL,
   shape.by = NULL,
   palette = NULL,
+  cols = NULL,
   rev.cols = FALSE,
-  dark.theme = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
-  ncols <- ncols %||% round(sqrt(length(x = sampleids)))
-  nrows <- round(length(x = sampleids)/ncols)
+  # Check to see if Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  st.object <- object@tools$Staffli
+
+  ncols <- ncols %||% ceiling(sqrt(length(x = sampleids)))
+  nrows <- ceiling(length(x = sampleids)/ncols)
 
   p.list <- lapply(sampleids, function(i) {
-    DimOverlay(object, dims = dims, sample.index = i, type = type, min.cutoff = min.cutoff, max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, reduction = reduction, shape.by = shape.by, palette = palette, rev.cols = rev.cols, dark.theme = dark.theme, delim = NULL, return.plot.list = FALSE, grid.ncol = NULL, center.zero = center.zero, channels.use = channels.use, verbose = verbose, ... = ...)
+    DimOverlay(object, dims = dims, sample.index = i, type = type, min.cutoff = min.cutoff,
+               max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
+               reduction = reduction, shape.by = shape.by, palette = palette,
+               cols = cols, rev.cols = rev.cols, grid.ncol = NULL,
+               center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme, ... = ...)
   })
 
   tmp.file <- tempfile(pattern = "", fileext = ".png")
@@ -1207,8 +1258,12 @@ MultiDimOverlay <- function(
   colf <- ceiling(sqrt(length(x = dims)))
   colr <- round(length(x = dims)/colf)
 
-  png(width = object@tools$xdim*ncols*colf, height = object@tools$xdim*nrows*colr, file = tmp.file)
-  par(mar = c(0, 0, 0, 0))
+  png(width = st.object@xdim*ncols*colf, height = st.object@xdim*nrows*colr, file = tmp.file)
+  if (dark.theme) {
+    par(mar = c(0, 0, 0, 0), bg = "black")
+  } else {
+    par(mar = c(0, 0, 0, 0))
+  }
   plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
   dev.off()
 
@@ -1218,7 +1273,11 @@ MultiDimOverlay <- function(
     print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
-    par(mar = c(0, 0, 0, 0))
+    if (dark.theme) {
+      par(mar = c(0, 0, 0, 0), bg = "black")
+    } else {
+      par(mar = c(0, 0, 0, 0))
+    }
     plot(as.raster(p))
     unlink(tmp.file)
   } else {
@@ -1239,7 +1298,7 @@ MultiDimOverlay <- function(
 #' @export
 #'
 
-MultiFeatureOverlay <- function(
+MultiFeatureOverlay <- function (
   object,
   sampleids,
   method = "viewer",
@@ -1251,27 +1310,32 @@ MultiFeatureOverlay <- function(
   slot = "data",
   blend = FALSE,
   pt.size = 2,
+  pt.alpha = 1,
   shape.by = NULL,
   palette = NULL,
+  cols = NULL,
   rev.cols = FALSE,
-  dark.theme = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
+  dark.theme = FALSE,
   ...
 ) {
 
-  ncols <- ncols %||% round(sqrt(length(x = sampleids)))
-  nrows <- round(length(x = sampleids)/ncols)
+  # Check to see if Staffli object is present
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  st.object <- object@tools$Staffli
+
+  ncols <- ncols %||% ceiling(sqrt(length(x = sampleids)))
+  nrows <- ceiling(length(x = sampleids)/ncols)
 
   p.list <- lapply(sampleids, function(s) {
     FeatureOverlay(object, features = features, sample.index = s, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
-                   blend = blend, pt.size = pt.size, shape.by = shape.by,
-                   palette = palette, rev.cols = rev.cols, dark.theme = dark.theme,
-                   delim = NULL, return.plot.list = FALSE, grid.ncol = NULL,
-                   center.zero = center.zero, channels.use = channels.use,
-                   verbose = verbose, ... = ...)
+                   blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
+                   palette = palette, cols = cols, rev.cols = rev.cols,
+                   grid.ncol = NULL, center.zero = center.zero,
+                   channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,... = ...)
   })
 
   tmp.file <- tempfile(pattern = "", fileext = ".png")
@@ -1279,8 +1343,12 @@ MultiFeatureOverlay <- function(
   colf <- ceiling(sqrt(length(x = features)))
   colr <- round(length(x = features)/colf)
 
-  png(width = object@tools$xdim*ncols*colf, height = object@tools$xdim*nrows*colr, file = tmp.file)
-  par(mar = c(0, 0, 0, 0))
+  png(width = st.object@xdim*ncols*colf, height = st.object@xdim*nrows*colr, file = tmp.file)
+  if (dark.theme) {
+    par(mar = c(0, 0, 0, 0), bg = "black")
+  } else {
+    par(mar = c(0, 0, 0, 0))
+  }
   plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
   dev.off()
 
@@ -1290,7 +1358,11 @@ MultiFeatureOverlay <- function(
     print(p)
     unlink(tmp.file)
   } else if (method == "raster") {
-    par(mar = c(0, 0, 0, 0))
+    if (dark.theme) {
+      par(mar = c(0, 0, 0, 0), bg = "black")
+    } else {
+      par(mar = c(0, 0, 0, 0))
+    }
     plot(p)
     unlink(tmp.file)
   } else {
@@ -1306,7 +1378,7 @@ MultiFeatureOverlay <- function(
 #' @param channels.use Select channels to use for blending. Default is red, green and blue but the order can be shuffled.
 #' For 2 features, the default is red and green. (options: "red", "green" and "blue")
 
-ColorBlender <- function(
+ColorBlender <- function (
   data,
   channels.use = NULL
 ) {
@@ -1348,7 +1420,7 @@ ColorBlender <- function(
 #'
 #' @importFrom stats quantile
 
-SetQuantile <- function(
+SetQuantile <- function (
   cutoff,
   data
 ) {
@@ -1425,7 +1497,8 @@ feature.scaler <- function (
 #' @importFrom ggplot2 element_rect element_text theme
 
 dark_theme <- function() {
-  theme(plot.background = element_rect(fill = "black"),
+  theme(plot.background = element_rect(fill = "black", color = "black"),
+        panel.background = element_rect(fill = "black", color = "black"),
         plot.title = element_text(colour = "white"),
         strip.text = element_text(colour = 'white'),
         legend.title = element_text(colour = "white"),
@@ -1551,29 +1624,21 @@ g_legend <- function (
 #' @param object Seurat object
 #'
 obtain.array.coords <- function (
-  object,
+  st.object,
   data,
-  image.type,
-  delim
+  image.type
 ) {
 
-  if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("warped_x", "warped_y")]], nm = c("x", "y")))
-    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
+  if (all(c("warped_x", "warped_y") %in% colnames(st.object[[]]))) {
+    data <- cbind(data, setNames(st.object[[, c("warped_x", "warped_y")]], nm = c("x", "y")))
     image.type <- "processed"
-  } else if ("raw" %in% names(object@tools)) {
-    data <- cbind(data, setNames(object[[c("pixel_x", "pixel_y")]], nm = c("x", "y")))
-    xlim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[2]))))); ylim <- c(0, max(unlist(lapply(object@tools$dims, function(x) as.numeric(x[3])))))
-  } else if (all(c("ads_x", "ads_y") %in% colnames(object[[]]))) {
-    data <- cbind(data, setNames(object[[c("ads_x", "ads_y")]], nm = c("x", "y")))
-    xlim <- ylim <- NULL
-  } else {
-    if(is.null(delim)) {
-      stop("adjusted coordinates are not present in meta data and delimiter is missing ...")
-    }
-    coords <- GetCoords(colnames(object), delim)
-    data <- cbind(data, coords[, c("x", "y")])
-    xlim <- ylim <- NULL
+  } else if ("raw" %in% names(st.object@rasterlists)) {
+    data <- cbind(data, setNames(st.object[[, c("pixel_x", "pixel_y")]], nm = c("x", "y")))
+    image.type <- "processed"
+  } else if (all(c("adj_x", "adj_y") %in% colnames(st.object[[]]))) {
+    data <- cbind(data, setNames(st.object[[, c("ads_x", "ads_y")]], nm = c("x", "y")))
+  } else if (all(c("x", "y") %in% colnames(st.object[[]]))) {
+    data <- cbind(data, st.object[[, c("x", "y")]])
   }
-  return(list(data, xlim, ylim, image.type))
+  return(list(data, image.type))
 }

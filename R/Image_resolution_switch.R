@@ -41,31 +41,52 @@ SwitchResolution <- function (
   xdim,
   verbose = FALSE
 ) {
-  # Run checks
-  if (!all(c("masked", "processed") %in% names(object@tools))) stop("No image transformations have been executed. Aborting ...", call. = FALSE)
+
+  # Check if masked images are available
+  if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
+
+  st.object <- GetStaffli(object)
+
+  if (all(!c("masked", "processed") %in% rasterlists(st.object))) stop("No image transformations have been executed. Aborting ...", call. = FALSE)
 
   # Load images
   if (xdim > 2000) stop("Maximum size allowed is 2000px width. Set a lower number for xdim.", call. = FALSE)
   if (class(xdim) != "numeric") stop("xdim must be a numeric value.", call. = FALSE)
-  old.xdim <- object@tools$xdim
-  object@tools$xdim <- xdim
-  high.res.images <- setNames(lapply(seq_along(object@tools$imgs), function(i) {
-    x <- object@tools$imgs[i]
+  old.xdim <- st.object@xdim
+  st.object@xdim <- xdim
+  high.res.images <- setNames(lapply(seq_along(names(st.object)), function(i) {
+    x <- st.object@imgs[i]
     im <- image_read(path = x) %>% image_scale(paste0(xdim))
     if (verbose) cat(paste0("Loaded image ", i, " at ", paste0(image_info(im)$width), "x", image_info(im)$height), "resolution ... \n")
     as.raster(im)
-  }), nm = names(object@tools$raw))
+  }), nm = names(st.object))
 
   # Blow up masks
-  masked.masks <- object@tools$masked.masks
-  masked.masks <- lapply(masked.masks, function(msk) {
+  masked.masks <- st.object["masked.masks"]
+  masked.masks <- setNames(lapply(seq_along(masked.masks), function(i) {
+    msk <- masked.masks[[i]]
     msk <- image_read(msk) %>% image_scale(paste0(xdim))
-    if (verbose) cat(paste0("Scaled mask ", i, " to ", paste0(image_info(msk)$width), "x", image_info(msk)$height), "resolution ... \n")
     msk <- msk %>% as.raster()
-    return(msk)
-  })
 
-  # Apply masks to higher resoltuion images
+    # Check if dimensions match
+    im <- high.res.images[[i]]
+    diff <- nrow(msk) - nrow(im)
+
+    if (diff > 0) {
+      for (i in 1:diff) {
+        msk <- msk[-nrow(msk), ]
+      }
+    } else if (diff < 0) {
+      for (i in 1:abs(diff)) {
+        msk <- rbind(as.matrix(msk), rep("#000000ff", ncol(msk))) %>% as.raster()
+      }
+    }
+
+    if (verbose) cat(paste0("Scaled mask ", i, " to ", paste0(ncol(msk)), "x", nrow(msk)), "resolution ... \n")
+    return(msk)
+  }), nm = names(st.object))
+
+  # Apply masks to higher resolution images
   masked <- setNames(lapply(seq_along(high.res.images), function(i) {
     im <- high.res.images[[i]] %>% as.cimg()
     msk <- masked.masks[[i]] %>% as.cimg()
@@ -74,20 +95,20 @@ SwitchResolution <- function (
     msked.im[msked.im == "#000000"] <- "#FFFFFF"
     if (verbose) cat(paste0("Finished masking image ", i, "... \n"))
     return(msked.im)
-  }), nm = names(masked.masks))
+  }), nm = names(st.object))
 
   # Transform images if processed images are available
-  if ("processed" %in% names(object@tools)) {
-    transforms <- object@tools$transformations
-    warped_coords <- object[[c("pixel_x", "pixel_y")]]
+  if ("processed" %in% rasterlists(st.object)) {
+    transforms <- st.object@transformations
+    warped_coords <- st.object[[, c("pixel_x", "pixel_y")]]
     processed.images <- masked
-    processed.masks <- object@tools$processed.masks
+    processed.masks <- st.object["processed.masks"]
     for (i in seq_along(transforms)) {
       # Obtain scale factors
-      dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
+      dims.raw <- as.numeric(st.object@dims[[i]][2:3])
       dims.scaled <- dim(high.res.images[[i]])
-      sf.xy <- dims.raw/rev(dims.scaled)
-      pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
+      sf.xy <- dims.raw[1]/dims.scaled[2]
+      pixel_xy <- subset(st.object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
       # Define warp functions
       m <- masked[[i]] %>% as.cimg()
@@ -121,15 +142,17 @@ SwitchResolution <- function (
       processed.images[[i]] <- imrst
       processed.masks[[i]] <- imat.msk
     }
-    object@tools$processed <- processed.images
-    object@tools$processed.masks <- processed.masks
+    st.object@rasterlists$processed <- processed.images
+    st.object@rasterlists$processed.masks <- processed.masks
+    st.object[[, c("warped_x", "warped_y")]] <- warped_coords
   }
 
   # Save values
-  object@tools$raw <- high.res.images
-  object@tools$masked <- masked
-  object@tools$masked.masks <- masked.masks
-  object[[c("warped_x", "warped_y")]] <- warped_coords
+  st.object@rasterlists$raw <- high.res.images
+  st.object@rasterlists$masked <- masked
+  st.object@rasterlists$masked.masks <- masked.masks
+
+  object@tools$Staffli <- st.object
 
   return(object)
 }

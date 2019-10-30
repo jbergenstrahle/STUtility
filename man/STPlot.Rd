@@ -4,10 +4,10 @@
 \alias{STPlot}
 \title{Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
-STPlot(data, data.type = NULL, group.by, shape.by, variable,
-  pt.size = 1, palette = "MaYl", cols = NULL, rev.cols = F,
+STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
+  pt.alpha = 1, palette = "MaYl", cols = NULL, rev.cols = F,
   ncol = NULL, spot.colors = NULL, center.zero = TRUE,
-  center.tissue = F, plot.title = NULL, xlim = NULL, ylim = NULL,
+  center.tissue = F, plot.title = NULL, dims = NULL,
   split.labels = FALSE, theme = theme_void(), ...)
 }
 \arguments{
@@ -15,13 +15,13 @@ STPlot(data, data.type = NULL, group.by, shape.by, variable,
 
 \item{data.type}{Type of data, e.g. numeric or integer}
 
-\item{group.by}{Specifies column to facet the plots by, e.g. sample}
-
 \item{shape.by}{Specifies column to shape points by, e.g. morphological region}
 
 \item{variable}{Name of continuous variable}
 
 \item{pt.size}{Point size of each ST spot}
+
+\item{pt.alpha}{Opacity of each ST spot}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{?palette.select} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
@@ -42,7 +42,7 @@ option.}
 
 \item{plot.title}{Add title to plot}
 
-\item{xlim, ylim}{Set x/y-axis limits}
+\item{dims}{List of dimensions for x and y scales}
 
 \item{split.labels}{Only active if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}

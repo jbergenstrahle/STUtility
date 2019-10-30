@@ -6,18 +6,51 @@ author:
 date: ''
 output:
   html_document:
-    number_sections: yes
+    theme: darkly
+    css: style.css
+    number_sections: false
     toc: yes
     toc_depth: 3
     toc_float:
-      collapsed: true
+      collapsed: false
       smooth_scroll: true
-    theme: united
   pdf_document:
-    number_sections: yes
+    number_sections: false
     toc: yes
     toc_depth: 3
 ---
+
+<style type="text/css">
+div.main-container {
+  background-color: #000000 !important;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+<style>
+#TOC {
+  top: 5%;
+  opacity: 0.8;
+  width: 400px;
+  color: black;
+}
+#TOC:hover {
+  opacity: 1;
+}
+</style>
+<style> code, pre{
+  background-color: #000000 !important;
+  color: white !important;
+}
+</style>
+<style> 
+body {
+  color: white
+}
+</style>
+
+
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
@@ -26,25 +59,25 @@ knitr::opts_chunk$set(echo = TRUE, message = FALSE, warning = FALSE)
 # Installation
 
 Using devtools, execute the following from the R console:
-
+<br>
 ```{r, eval=FALSE}
 
 devtools::install_github(
     "jbergenstrahle/STUtility"
-   ,build_opts=c("--no-resave-data", "--no-manual")
+   , build_opts = c("--no-resave-data", "--no-manual")
 )
 
 ```
 
-```{r, echo=FALSE}
+```{r load_library, echo=FALSE}
 
 library(STutility)
 
 ```
 
-# Info
+# Background
 
-## Short background of the Spatial Transcriptomics method 
+## The Spatial Transcriptomics method 
 
 ---
 
@@ -98,11 +131,11 @@ To use the full range of functions within STUtility, all three files are needed 
 
 To follow along this tutorial, download the test data set at TODO:[insert test data set link]. The downloadable content consists of count files, output from our spot detector tool, H&E stained images as well as an "infoTable" to read in the files into R.
 
-### The infoTable 
+### Prepare data
 
 The recommended method to read the files into R is via the creation of a "infoTable", which is a table with three columns "samples", "spotfiles" and "imgs". 
-
-```{r, echo=FALSE}
+<br>
+```{r example_infotable, echo=FALSE, eval=FALSE}
 
 samples <- c("Path to samples 1 ", "Path to samples 2")
 spotfiles <- c("Path to spotfile 1", "Path to spotfile 2")
@@ -115,23 +148,18 @@ These columns are *mandatory* to include in the infoTable. However, spotfiles an
 any number of _extra_ columns can be added with metadata. This information can then be used to e.g. coloring of plots and subsetting. These columns can be named as you like. 
 
 Lets load the provided infoTable
-
-```{r, eval=FALSE}
+<br>
+```{r package_infotable, cache = TRUE}
 
 infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)[c(1, 5, 6, 7), ]
 
 ```
 
+### Loading data
 
-```{r, eval=FALSE, echo=FALSE}
-infoTable
-```
-
-### Loading the samples
-
-The provided count matrix consists of EnsambleIDs as gene names. Gene symbols are often a preference for easier reading, and we provide a transformation table accordingly. 
-
-```{r, eval=FALSE}
+The provided count matrix consists of EnsambleIDs (with version id) as gene names. Gene symbols are often a preference for easier reading, and we provide a transformation table accordingly. 
+<br>
+```{r annotation, cache = TRUE}
 #Transformation table for geneIDs
 ensids <- read.table(file = list.files(system.file("extdata", package = "STutility"), full.names = T, pattern = "mouse_genes"), header = T, sep = "\t", stringsAsFactors = F)
 
@@ -139,9 +167,13 @@ ensids <- read.table(file = list.files(system.file("extdata", package = "STutili
 
 We are now ready to load our samples and create a "seurat" object. 
 
-Here, we demonstrate the creation of the seurat object, while also including some filtering by only keeping the genes that are found in at least 5 capture spots and a total count value >= 100. We also only keep the spots that contains >= 500 total transcripts. (Note: by default `prep.from.table()` will remove spots that are located outside of the tissue according to the infoTable. If your infoTable do not include paths to spotfiles, or, if you want to simply omit this step: set `spot.file=FALSE`). 
+Here, we demonstrate the creation of the seurat object, while also including some filtering by only keeping the genes that are found in at least 5 capture spots and a total count value >= 100. We also only keep the spots that contains >= 500 total transcripts. As already mentioned, we recommend users to include a column named "imgs" with paths to the HE stained histological images. The images are not loaded into the Seurat object to begin with but are neccessary if you want to overlay any gene expression values. The "spotfiles" column should include paths to "selection tables" which are files containing tabular information about spots located under the tissue as well as "pixel coordinates" coordinates specifying where the spots are centered on the corresponding HE images. Without this information, you will not be able to overlay gene expression on top of the image properly so we highly recommend you to include this information into the infoTable. Finally, the "samples" column should provide paths to the gene count matrices (either .tsv or .h5 format).
 
-```{r, eval=FALSE}
+If you wish to include other meta data you can just add any number of columns into your infoTable which will be stored in the meta.data slot of the Seurat object.
+
+Note that you have to specify which platform the data comes from. The default platform is 10X Visium but if you wish to run data from another platform there is support for "1k" and "2k" arrays. You can also mix datasets from different platforms by specifying one of; "Visium", "1k" or "2k" in a separate column of the infoTable named "platform". You just have to make sure that the datasets have gene symbols which follows the same nomenclature.
+<br>
+```{r read_input_1, eval=TRUE, cache=TRUE}
 #DOUBLE CHECK SO THAT THIS IS CORRECT NOW
 
 #TODO: add warnings if ids missmatch. Check that ids are in the data.frame ...
@@ -150,19 +182,14 @@ se <- InputFromTable(infotable = infoTable,
                       min.gene.count = 100, 
                       min.gene.spots = 5,
                       min.spot.count = 500, 
-                      annotation = ensids)
+                      annotation = ensids, 
+                      platform = "2k", 
+                      pattern.remove = "^mt-")
 
 ```
 
 
-```{r, eval=TRUE, echo=FALSE}
-
-#Load preloaded data
-load("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/saved/multiple_sample_analysis_prealigned.RData")
-
-```
-
-## The 10X Visium platform
+## 10X Visium platform
 
 ### Input files
 
@@ -181,39 +208,27 @@ To follow along this tutorial, download the test data set at TODO:[insert test d
 ### 10x infoTable
 
 The same format is used as the original ST platform, see \@ref(The-infoTable)
-
-```{r, echo=FALSE, eval=FALSE}
-#visium <- Read10X_h5("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/10xVisium/142079_filtered.h5")
-
-infoTable <- read.table("/run/media/joey/KING-JOSEPH/JoeDocs/PhD/STUtility/STutility/inst/extdata/infoTable_10x.csv", sep=",", header=T, stringsAsFactors = F)
-
-
-
-```
-
-```{r infotable}
+<br>
+```{r infotable2, cache=TRUE}
 
 samples <- list.files(path = "~/Hippocampus_Visium/", recursive = T, pattern = "filtered_feature_bc_matrix.h5", full.names = T)
 imgs <- list.files(path = "~/Hippocampus_Visium/", recursive = T, pattern = "hires_image.png", full.names = T)
 spotfiles <- list.files(path = "~/Hippocampus_Visium/", recursive = T, pattern = "list.txt", full.names = T)
 
-infoTable <- data.frame(imgs, samples, spotfiles, stringsAsFactors = F)
+infoTable <- data.frame(imgs, samples, spotfiles, sample_id = c("Hippo_A", "Hippo_B"), stringsAsFactors = F)
 
 ```
 
-### Loading the samples
+### Loading 10X data
 
 To read in the 10x Visium .h5 files, the package `hdf5r` needs to be installed (`BiocManager::install("hdf5r")`). By default 10X Visium output format implies setting `transpose=F`. [There is a specified scaling factor for the H&E image. The picture with suffix "high_res" uses the default scaling factor of 0.1039393. However, is other pictures are used, specify the scaling factor when calling the _InputFromTable()_ function. All scaling factors are found in the scalefactors_json.json which you have in your 10X output folder] (OBS CHECK HOW THE WORKFLOW 10X IS SUPPOSED TO BE)
-
-```{r, echo=FALSE, eval=FALSE}
+<br>
+```{r read_input_2, cache=TRUE}
 
 se <- InputFromTable(infotable = infoTable, 
-                      transpose = F,  #Transpose är F för 10x Visium
                       min.gene.count = 100, 
                       min.gene.spots = 5,
                       min.spot.count = 500)
-
-
 
 ```
 
@@ -222,13 +237,18 @@ se <- InputFromTable(infotable = infoTable,
 
 With the Seurat object created, we are ready to load the H&E images from the file paths provided in the infoTable. The LoadImages() function allow you to load the images into the Seurat object and will automatically save a scaled down version of each image that you can use for plotting.
 
+You should be aware that the resolution is by default very low (400 pixels wide). The reason for this is that STUtility makes it possible to apply various image transformations to the images, but since these processing steps are slow and requires significant amounts of memory, it is much faster to learn the transformations on a small image and later apply the transformations to a higher resolution image. See the image processing section of this vignette for more details.
 
-```{r, eval=TRUE, echo=TRUE}
+<br>
+```{r load_images, echo=TRUE, eval=FALSE}
 
 se <- LoadImages(se)
 
 ```
+<br>
+OBS: We have noted that some systems experience memory problems due to large size image information not being cleared when removing old objects. If this is the case, the user can set `time.resolve=TRUE`, which will add a small garbage collection step to avoid this issue.
 
+NOTE: time.resolve is set to TRUE as default in the current version. This will imply that the process takes approx. 5sec longer per sample. Turn this off if annoyed. 
 
 ---
 
@@ -237,124 +257,165 @@ The core of an ST experiment is the interplay between quantitative RNAseq data a
 For example, we can visualize the number of RNA features and RNA counts on the ST array coordinates and quickly verify where we capture more material from the tissue.
 
 NOTE: see the end of the vignette how to handle plotting if you are missing image/spot-files. 
+<br>
+```{r load_se, include=FALSE}
 
-```{r, fig.height=12, fig.width=8}
+# Read in the processed Seurat object so that all computationally demanding downstream steps can be skipped
+se <- readRDS(file = "../se_object")
+
+```
+
+```{r plot_features1, fig.height=12, fig.width=12, out.width = '100%'}
 # TODO: make sure that levels are set in facets
 
 ST.FeaturePlot(object = se, 
                features = c("nFeature_RNA", "nCount_RNA"), 
-               palette = "heat",
-               ncol = 1, 
-               grid.ncol = 2,
+               cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"),
+               ncol = 2, 
+               grid.ncol = 1, 
                pt.size = 0.5, 
                dark.theme = T)
 
 ```
+<br>
+To overlay a spatial feature heatmaps on top of the HE image we use the FeatureOverlay() function. Handling large images gets clumsy so we recommend to work with down-scaled versions of the images that takes up less memory.
+<br>
 
-If we want to overlay these spatial heatmaps on the HE image it is much easier to focus on one sample at the time. Handling large images gets clumsy so we recommend to work with down-scaled versions of the images that takes up less memory.
+```{r overlay_features1, fig.width = 6, fig.height = 6, out.width = '100%'}
 
-OBS: We have noted that some systems experience memory problems due to large size image information not being cleared when removing old objects. If this is the case, the user can set `time.resolve=TRUE`, which will add a small garbage collection step to avoid this issue.
-
-NOTE: time.resolve is set to TRUE as default in the current version. This will imply that the process takes approx. 5sec longer per sample. Turn this off if annoyed. 
-
-```{r, eval=FALSE}
-
-system.time({se <- LoadImages(object = se, verbose = T)})
-```
-
-Using the loaded images, we can create masks around the tissue area, to hide the array background and allow for better visualization. 
-
-OBS; The masking currently does _not_ work satisfactory for 10X Visium slides
-
-```{r, eval=TRUE}
-# TODO: Take care of warnings 
-
-se <- MaskImages(object = se, verbose = F)
+FeatureOverlay(se, 
+               features = "Cck", 
+               pt.size = 0.5, 
+               pt.alpha = 0.5, 
+               cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"), 
+               dark.theme = T, 
+               type = "raw")
 
 ```
+<br>
+You can see that by default, the first sample was selected for the feature overlay. If you wish to visualize another sample you can specify the `sample.index` parameter. If you wish to plot several features side by side, you can just specify as many as you want.
+<br>
+```{r overlay_features_2, fig.width = 12, fig.height = 12, out.width = '100%'}
+
+FeatureOverlay(se, 
+               features = c("Cck", "Calb2", "Dcn", "Nrgn"), 
+               pt.size = 0.5,
+               pt.alpha = 0.5, 
+               cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"), 
+               dark.theme = T, 
+               type = "raw")
+
+```
+
+<br>
+Another neat feature that can be useful for visualization purposes is to mask the background of the HE images. The function `MaskImages()` can be used to remove the background currently works well for tissues with a clearly defined border. Since masking is a non trivial problem, it is possible that the masking will fail for certain tissue types. If this happens you can try to modify the parameters in `MaskImages()` to see if you can obtain better results. 
+
+NOTE that the image procesing methods have been optimized for small images and if you have loaded images in higher resolution there is a greater risk that some steps will fail. If you still wish to use images with higher resolution there are instructions on how to do this in the Resolution section below.
+<br>
+```{r mask_images, eval=FALSE}
+
+se <- MaskImages(object = se)
+
+```
+<br>
+There are 5 types of images which can be stored into the Seurat object; "raw", "masked", "masked.masks", "processed" and "processed.masks". "raw" represents the original HE images without any modifications. In the "masked" images, the background have been removed using a mask which is stored in "masked.masks". Similarly, the "processed"  images are also masked using "processed.masks" but have been further modified by applying rigid transformations such as rotations and shifts.
 
 You can look at the HE images using the ImagePlot() function.The ImagePlot function will automatically label the samples from 1 to N where N is the total number of samples. If you are running the function within RStudio you can take advantage of the Viewer panel to explore the images. Setting method="raster" and the plot function will use the default plotting device in R. You can also change the layout of the images by forcing a different number of columns by setting ncols.
-
-
-```{r, fig.width=12, fig.height=12, eval=TRUE, echo=TRUE}
+<br>
+```{r image_types, fig.width=11, fig.height=6, out.width = '100%'}
 
 # Plot HE images
-TODO: fix warning when images are not loaded
-ImagePlot(se, ncols = 3, method = "raster")
-
-```
-
-To overlay a spatial feature heatmaps on top of the HE image we use the FeatureOverlay() function. This function is similar to ST.FeaturePlot() but allows only one sample (specified by the sample.index argument) to be handled at the time. Note that the features are overlaid on top of the masked HE images where the background has been removed. If you want to use the raw images you can just specify type = "raw" to plot on the original images instead. Sometimes the masking algorithm will fail and you will end up with small pieces of the tissues erased. If this happens you can try to rerun the MaskImages() function with different parameter settings until you are satisfied.
-
-```{r, fig.height=6, fig.width=13}
-# TODO: fix warning
-FeatureOverlay(object = se, 
-              features = c("nFeature_RNA", "nCount_RNA"), 
-              sample.index = 1,
-              palette = "GrRd",
-              alpha = 0.7)
-
-
+ImagePlot(se, ncols = 2, method = "raster", type = "raw", darken = T) # Raw image
+ImagePlot(se, ncols = 2, method = "raster", type = "masked", darken = T) # Masked image
+ImagePlot(se, ncols = 2, method = "raster", type = "masked.masks") # Mask
 
 ```
 
 ### Individual transformations to images
 
-If you follow along the test set in this vignette, you will notice that the samples are not quite aligned with respect to each other on the array. We have implemented a process to automatically align the images.
+If you follow along the test set in this vignette, you will notice that the samples are not quite aligned with respect to each other on the array. We have implemented three different method to align images; `AlignImages()`, `WarpImages()` and `ManualAlignImages()`.
 
-To demonstrate the effect:
+#### Automatic alignment
 
-```{r, fig.width=12, fig.height=12, eval=TRUE, echo=FALSE}
-ImagePlot(se, method = "raster", type="masked") #For convience vignette hmtl look
-```
-
-Call the automatic alignment.
-
-The automatic alignment method first tries to detect the tissue edges from each image. By default, the first image (`reference.index = 1`) is used as a reference but you can specify any sample with the `reference.index`option. Then, for each image, a transformation matrix is learned that can be used to map coordinates to the reference image. This alignment method will sometimes fail and in that case you can align the images manually instead using the `ManualAlignImages()` function. This is typically required when; (1) the tissue is bigger than the image and therefore outside the frame, (2) the tissue has a symmetrical shape (for example if the tissue has a round shape, it will be difficult to find an optimal alignment using the tissue edges), (3) the masking has failed.
+The automatic alignment method (`AlignImages()`) first tries to detect the tissue edges from each image. By default, the first image (`reference.index = 1`) is used as a reference but you can specify any sample with the `reference.index`option. Then, for each image, a transformation matrix is learned that can be used to map coordinates to the reference image. This alignment method will sometimes fail and in that case you can align the images manually instead using the `ManualAlignImages()` function. This is typically required when; (1) the tissue is bigger than the image and therefore outside the frame, (2) the tissue has a symmetrical shape (for example if the tissue has a round shape, it will be difficult to find an optimal alignment using the tissue edges), (3) the masking has failed.
 
 The actual transformation is done using the `imwarp()` function from the imager R package using a "backward" transformation strategy. This method makes sure that every pixel is painted using linear interpolation so the aligned images will experience some quality loss.
+<br>
+```{r align_images, fig.width=12, fig.height=12, eval = FALSE}
 
-```{r, eval=TRUE, fig.width=12, fig.height=12}
-se <- AlignImages(se, verbose = F)
+se <- AlignImages(se)
 
-## Mirror image number 5 along y axis
-#transforms <- list("5" = list("mirror.y" = T, "mirror.x" = T))
-
-#se <- WarpImages(object = se, transforms)
 ```
-
+<br>
 And the result:
+<br>
+```{r imageplot_1, fig.width=11, fig.height=6, out.width = '100%'}
 
-```{r, fig.width=12, fig.height=12}
-
-ImagePlot(se, method = "raster")
+ImagePlot(se, method = "raster", darken = T)
 
 ```
 
-The new alignments are stored in the Seurat object, and subsequent plotting functions will use this alignment as default. 
 
-```{r, fig.width=6, fig.height = 6}
+#### Manual rigid transformations
+
+An alternative method is to apply rigid transformations to the images using the `WarpImages()` function. This function takes a list of transformations for the samples of your choice and converts the transformations into mapping functions which can be used to warp the images. 
+
+The available transformations are; "center.x", "center.y", "mirror.x", "mirror.y" and "angle"
+<br>
+```{r warpimages, fig.width=12, fig.height=6, out.width = '100%'}
+
+transforms <- list("2" = list("angle" = 90))
+se.rotate90 <- WarpImages(se, transforms)
+ImagePlot(se.rotate90, method = "raster", darken = T)
+
+transforms <- list("2" = list("mirror.x" = T))
+se.mirrorx <- WarpImages(se, transforms)
+ImagePlot(se.mirrorx, method = "raster", darken = T)
+
+transforms <- list("2" = list("mirror.y" = T))
+se.mirrory <- WarpImages(se, transforms)
+ImagePlot(se.mirrory, method = "raster", darken = T)
+
+```
+<br>
+Any transformations applied to the images will also be applied to the coordinates used to map gene expression values onto the images. 
+<br>
+```{r show_warp, fig.height=6, fig.width=12, out.width = '100%'}
+
+heatmap.colors <- c("black", "dark blue", "cyan", "yellow", "red", "dark red")
+ST.FeaturePlot(se, features = "Cck", pt.size = 0.5, cols = heatmap.colors, dark.theme = T)
+ST.FeaturePlot(se.rotate90, features = "Cck", pt.size = 0.5, cols = heatmap.colors, dark.theme = T)
+ST.FeaturePlot(se.mirrorx, features = "Cck", pt.size = 0.5, cols = heatmap.colors, dark.theme = T)
+ST.FeaturePlot(se.mirrory, features = "Cck", pt.size = 0.5, cols = heatmap.colors, dark.theme = T)
+
+```
+
+### Visualize multiple samples
+
+If you still want to plot overlaid spatial heatmaps for multiple samples at the same time you can do this with the `MultiFeatureOverlay()` function. 
+<br>
+```{r overlay_multi, fig.width=12, fig.height = 6, out.width = '100%'}
 
 MultiFeatureOverlay(se, features = "Nrgn", 
-                    sampleids = paste0(1:4),
-                    palette = "GrRd",
-                    method="raster")
-
-#TODO:  "masked", "raw" eller "processed" add to documentation. 
+                    sampleids = 1:2,
+                    pt.size = 0.5, pt.alpha = 0.5,
+                    cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"),
+                    method = "raster",
+                    dark.theme = T)
 
 ```
-
-The `type` parameter can be set to "masked", "raw" or "processed", to override the default use of processed masked images. 
-
-```{r, eval=FALSE, fig.height = 6, fig.width = 12}
-
-FeatureOverlay(object = se, features = c("Nrgn", "Cck"), 
-               palette = "GrRd", sample.index = 2,
-               type="raw")
+<br>
+The `type` parameter can also be set in the `FeatureOverlay()` function to override the default use of processed images. 
+<br>
+```{r overlay_multi_raw, fig.height = 6, fig.width = 12, out.width = '100%'}
 
 FeatureOverlay(object = se, features = c("Nrgn", "Cck"), 
-               palette = "GrRd", sample.index = 2,
-               type="processed")
+               cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"), 
+               pt.size = 0.5, 
+               pt.alpha = 0.5,
+               sample.index = 2,
+               type = "raw", 
+               dark.theme = T)
 
 ```
 
@@ -364,8 +425,8 @@ FeatureOverlay(object = se, features = c("Nrgn", "Cck"),
 ---
 
 Each spot in a Spatial Transcriptomics dataset typically contains RNA from a mixture of cells so why would we apply a workflow that was developed for single-cell RNAseq data? We can calculate some properties to visually inspect the data to see that ST data have similar properties to that of scRNAseq data.
-
-```{r, fig.width = 12, fig.height = 4}
+<br>
+```{r poisson_comparison, fig.width = 4, fig.height = 8, cache=TRUE}
 
 library(Matrix)
 library(magrittr)
@@ -387,20 +448,20 @@ gene_attr <- data.frame(mean = rowMeans(umi_data),
 spot_attr <- se[[c("nFeature_RNA", "nCount_RNA")]]
 
 p1 <- ggplot(gene_attr, aes(log_mean, log_var)) + 
-  geom_point(alpha = 0.3, shape = 16) + 
+  geom_point(alpha = 0.3, shape = 16, color = "white") + 
   geom_density_2d(size = 0.3) +
   geom_abline(intercept = 0, slope = 1, color = 'red') +
-  ggtitle("Mean-variance relationship")
+  ggtitle("Mean-variance relationship") + DarkTheme()
 
 # add the expected detection rate under Poisson model
 x = seq(from = -2, to = 2, length.out = 1000)
 poisson_model <- data.frame(log_mean = x, detection_rate = 1 - dpois(0, lambda = 10^x))
 p2 <- ggplot(gene_attr, aes(log_mean, detection_rate)) + 
-  geom_point(alpha=0.3, shape=16) + 
-  geom_line(data=poisson_model, color='red') +
-  ggtitle("Mean-detection-rate relationship")
+  geom_point(alpha = 0.3, shape = 16, color = "white") + 
+  geom_line(data = poisson_model, color='red') +
+  ggtitle("Mean-detection-rate relationship") + DarkTheme()
 
-cowplot::plot_grid(p1, p2)
+cowplot::plot_grid(p1, p2, nrow = 2)
 
 ```
 
@@ -409,40 +470,46 @@ We can see from the mean-variance and Mean-detection-rate scatter plots that gen
 In order to normalize the data we recommend using [variance stabilized transformation](https://www.biorxiv.org/content/10.1101/576827v1) available in the SCTransform function in Seurat as of v3.0. 
 
 Following the rationale expressed above, we transform the data according to the Seurat workflow. Note: for comprehensive tutorials in the different options and workflow possibilities available within Seurat, we recommend looking at their website https://satijalab.org/seurat/  
+<br>
+```{r SCTransform, warning=FALSE, message=FALSE, results="hide", eval = FALSE} 
 
-```{r, eval=FALSE, warning=FALSE, message=FALSE} 
-
-se <- SCTransform(se, vars.to.regress = c("sample", "nFeature_RNA"))
+se <- SCTransform(se, vars.to.regress = c("sample_id", "nFeature_RNA"))
 
 ```
 
 ## Finding spatial expression patterns and areas of interest
 
 The strength of untargeted whole transcriptome capture is the ability to perform unsupervised analysis and the ability to find spatial gene expression patterns. We've found good use of the dimensionality reduction method "ICA" (Independent Component Analysis) to find spatial expression patterns. An example is demonstrated below:
-
-```{r, fig.width=16, fig.height=10, eval=FALSE}
+<br>
+```{r ICA, fig.width=16, fig.height=10, eval = FALSE}
 
 se <- RunICA(se)
 
 ``` 
-
-
+<br>
 Different dimensionality reductions methods are supported via Seurat (`RunPCA()`, `RunTSNE`, `RunICA()`, `runUMAP()` ) and the output are stored in the Seurat object. 
 
 We can then plot a variable number of dimensions across the samples.
+<br>
+```{r dimplot, fig.height=28, fig.width=16, out.width = "100%"}
 
+ST.DimPlot(se, 
+           dims = c(-1, 2, -3, -4, 5, -6, 7, -8, 9, 10, 11, 12, -13, 14, 15, -16), # If we flip the sign, the ICA vector will be inverted
+           ncol = 8, # Sets the number of columns at dimensions level
+           grid.ncol = 2, # Sets the number of columns at sample level
+           reduction = "ica", 
+           dark.theme = T, 
+           pt.size = 0.5, 
+           center.zero = T, 
+           palette = "MaYl")
 
-```{r, fig.height=24, fig.width=24}
-
-ST.DimPlot(se, dims = 1:8, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = F, pt.size = 1, center.zero = T,palette = "RdBu")
-#ST.DimPlot(se, dims = 1:5, reduction = "ica", dark.theme = T, cols = c("black", "cyan", "white"), center.zero = F, ncol = 4, grid.ncol = 1)
 ```
-
+<br>
 To extract the genes that drives the separation according to the dimensionality reduction, we can use the `ProjectDim()` function. Where we specify the dimensions of interest (here IC_1 and IC_3, which are regions that seems to confer a clear spatial expression histology. 
+<br>
+```{r project_dim}
 
-```{r}
-
-ProjectDim(se, reduction = "ica", dims=c(1,3))
+ProjectDim(se, reduction = "ica", dims = c(1, 2, 4, 5))
 
 ```
 
@@ -450,57 +517,87 @@ ProjectDim(se, reduction = "ica", dims=c(1,3))
 ## Clustering
 
 Clustering is a standard procedure in genomic analysis, and the methods for doing so are numerous. Here we demonstrate an example where we use the result of ICA to perform clustering. In the previous section, we demonstrated how to plot a subset of dimensions from the ICA output. Going through this list, we can notice the dimensions that are "spatially active", i.e. that seems to confer a spatial pattern along their axis. We can extract these dimensions:
-
-```{r, fig.width=16, fig.height=10}
+<br>
+```{r keep_dims, fig.width=16, fig.height=10}
 keep.dims <- c(1:12, 16:18, 21:28, 30:34, 40:41, 47, 49:50)
 ```
-
+<br>
 And then use them to construct a Shared Nearest Neighbor (SSN) Graph. 
-
-```{r, eval=FALSE}
+<br>
+```{r findneighbours, eval=FALSE}
 se <- FindNeighbors(object = se, dims = keep.dims, verbose = FALSE, reduction = "ica")
 ```
-
+<br>
 Followed by clustering using a modularity optimizer
-
-```{r, eval=FALSE}
+<br>
+```{r findclusters, eval=FALSE}
 se <- FindClusters(object = se, verbose = FALSE)
 ```
-
+<br>
 And plotting of the clusters spatially
+<br>
+```{r plot_clusters, fig.height = 5, fig.width = 10, out.width='100%'}
 
-```{r, fig.height = 10, fig.width = 10}
+tol18rainbow <-  c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#777711", "#AAAA44", "#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122", "#AA4455", "#DD7788")
 
-ST.FeaturePlot(object = se, features = "seurat_clusters", dark.theme = T)
+ST.FeaturePlot(object = se, features = "seurat_clusters", dark.theme = T, cols = tol18rainbow, pt.size = 0.5)
 
 ```
+<br>
+If you think that the distribution of clusters gets too cluttered, you can also split the view so that only one cluster at the time gets colored.
+<br>
+```{r plot_clusters_split, fig.height = 12, fig.width = 14, out.width='100%'}
 
+ST.FeaturePlot(object = se, features = "seurat_clusters", dark.theme = T, cols = tol18rainbow, pt.size = 0.1, split.labels = T, indices = 1)
 
+```
+<br>
 We can take a look a specific look at the most variable features.
-
-
-```{r, fig.width = 13, fig.height = 6}
+<br>
+```{r variable_features, fig.width = 13, fig.height = 6}
 
 head(se@assays$SCT@var.features, 20)
 top <- se@assays$SCT@var.features
 
-MultiFeatureOverlay(se, features = top[1], 
-                    sampleids = paste0(1:8),
-                    palette = "GrRd")
+fts <- c("Slc18a2", "Prkcd", "Opalin", "Lamp5")
+for (ftr in fts) {
+  print(MultiFeatureOverlay(se, 
+                    features = ftr, 
+                    sampleids = 1:2,
+                    cols = heatmap.colors,
+                    method = "raster", 
+                    pt.size = 0.5, 
+                    pt.alpha = 0.5, 
+                    dark.theme = T))
+}
 
-MultiFeatureOverlay(se, features = "Hbb-bs", 
-                    sampleids = paste0(1:8),
-                    palette = "GrRd")
 ```
+<br>
+Another useful feature is that you can now compare the spatial distribution of a gene with the typical "graph embeddings" s.a. UMAP and t-SNE. 
+<br>
+```{r run_UMAP, eval=FALSE}
 
-Plot features in t-SNE space or on ST array coordinates
+# Run UMAP
+se <- RunUMAP(se, reduction = "ica", dims = keep.dims, n.neighbors = 10)
 
-```{r, fig.width = 12, fig.height = 4}
-se <- RunPCA(se)
-se <- RunTSNE(se, reduction="pca")
-fts <- c("Slc18a2", "Slc6a5")
-FeaturePlot(se, features = fts, reduction = "tsne", cols = c("lightgray", "mistyrose", "red"), order = TRUE)
-ST.FeaturePlot(se, features = fts, ncol = 8, grid.ncol = 1, palette = "GrRd", pt.size = 1)
+````
+
+```{r embedding_vs_ST, fig.width = 16, fig.height = 20}
+
+# Define colors for heatmap
+heatmap.colors <- c(rgb(20, 20, 20, maxColorValue = 255), "dark blue", "cyan", "white")
+fts <- c("Slc18a2", "Prkcd", "Opalin", "Lamp5")
+
+# plot transformed features expression on UMAP embedding
+p.fts <- lapply(fts, function(ftr) {
+  FeaturePlot(se, features = ftr, reduction = "umap", order = TRUE, cols = heatmap.colors) + DarkTheme()
+})
+
+# plot transformed features expression on Visium coordinates
+p3 <- ST.FeaturePlot(se, features = fts, ncol = 2, grid.ncol = 1, cols = heatmap.colors, pt.size = 0.5, dark.theme = T)
+
+# Construct final plot
+cowplot::plot_grid(cowplot::plot_grid(plotlist = p.fts, ncol = 1), p3, ncol = 2, rel_widths = c(1, 2))
 
 ```
 
@@ -508,47 +605,30 @@ ST.FeaturePlot(se, features = fts, ncol = 8, grid.ncol = 1, palette = "GrRd", pt
 
 One approach to visualize the result of dimensionality reduction is to use the first three dimensions and transform the values into RGB color space. This 3 dimensional space can then be utilized for spatial visualization.
 We demonstrate the technique with UMAP, using our ICA dimensions as input:
-
-```{r, eval=FALSE}
+<br>
+```{r UMAP, val=FALSE}
 
 se <- RunUMAP(object = se, dims = keep.dims, verbose = FALSE, n.components = 3, reduction = "ica", reduction.name = "umap.3d")
 
 ```
-
+<br>
 We use the first three dimensions for plotting:
+<br>
+```{r UMAP_blend, fig.height = 6, fig.width = 12}
 
-```{r, fig.height = 10, fig.width = 10}
-
-ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T)
-
-```
-
-The `DimOverlay()` can be used to overlay the RGB projection onto the H&E image. By default, a single dim.component is used and plotted as a heatmap:
-
-```{r, fig.height = 10, fig.width = 10}
-
-DimOverlay(se, reduction = "umap.3d", sample.index = 1, dims=c(1,2,3))
+ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T, pt.size = 0.5)
 
 ```
 
-Setting the setting `blend=T` will combine the dimensional vectors
-
-```{r, fig.height = 10, fig.width = 10}
-
-DimOverlay(se, reduction = "umap.3d", sample.index = 1, dims=c(1,2,3), blend=T, pt.size=4)
-
-```
-
-The user can also choose to invert the colors, which can be performed on individual dimensional components, by adding a minus "-" in front of the vector. See more alternatives in the subsection [Playing around with colors]
-
-Again, the `ProjectDim()` function can be used to display the genes that are most strongly correlated with the coordinate system. Note in the function call above that we defined `reduction.name`, which are subsequently stored in the Seurat object in the reduction slot: 
-
-```{r}
+<br>
+Once again the `ProjectDim()` function can be used to display the genes that are most strongly correlated with the coordinate system. Note in the function call above that we defined `reduction.name`, which are subsequently stored in the Seurat object in the reduction slot: 
+<br>
+```{r projectdim_UMAP}
 
 ProjectDim(se, reduction = "umap.3d")
 
 ```
-
+<br>
 As seen in the plot above, there are clear spatial patterns that are confirmed by the histology of the tissue. 
 Lets take an example, looking at the first UMAP coordinate (red color) - we note a clear pattern [bra beskrivning av vad vi ser]
 
@@ -556,15 +636,19 @@ We can utilize an external data source, the Allen brain atlas, to see how well o
 Lets take the gene with highest correlation to the red color, i.e. "Cck". 
 
 https://mouse.brain-map.org/gene/show/12209
-
 ![Expression data - Allen brain atlas](Allen_expression_data.PNG)
 
 ![ISH data - Allen brain atlas](Allen_ISH_data.PNG)
+<br>
+```{r allen_example, fig.width = 13, fig.height = 6}
 
-```{r}
 MultiFeatureOverlay(se, features = "Cck", 
-                    sampleids = paste0(1:8),
-                    palette = "GrRd")
+                    sampleids = 1:2,
+                    cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"),
+                    pt.size = 0.5, 
+                    pt.alpha = 0.5,
+                    method = "raster", 
+                    dark.theme = T)
 
 ```
 
@@ -582,26 +666,28 @@ We recommend to do create some general plots and statistical views of the data b
 ### Scatter plots
 
 We start off by doing a simple scatter correlation plot of the average expression across the samples. In this case, we are looking at 8 consecutive tissue sections. Accordingly, they should display a quite high correlation across all samples. 
+<br>
+```{r corplot, fig.width=24, fig.height=24}
 
-```{r, fig.width=24, fig.height=24}
-Idents(se) <- "sample"
-avg.exp <- AverageExpression(se, return.seurat = F, verbose=T, add.ident = "sample")
+Idents(se) <- "sample_id"
+avg.exp <- AverageExpression(se, return.seurat = F, verbose = T, add.ident = "sample_id")
 pairs(log(avg.exp$SCT))
+
 
 ```
 
 ### Nr transcripts/unique genes
 
-```{r}
+```{r QC, cache=TRUE}
 
-ggplot(data.frame(counts=se$nCount_RNA, sample=se$sample, stringsAsFactors = T), aes(counts))+
+ggplot(data.frame(counts=se$nCount_RNA, sample = se$sample_id, stringsAsFactors = T), aes(counts))+
   geom_histogram(bins=50, fill = "white", colour="black")+
   facet_wrap(~sample, scales = 'free_y')+
   geom_vline(xintercept = mean(se$nCount_RNA), color = "red", linetype = "dashed")+
   theme_bw()+ggtitle("Total Raw Transcripts")
 
 
-ggplot(data.frame(counts=se$nFeature_RNA, sample=se$sample, stringsAsFactors = T), aes(counts))+
+ggplot(data.frame(counts=se$nFeature_RNA, sample = se$sample_id, stringsAsFactors = T), aes(counts))+
   geom_histogram(bins=50, fill = "white", colour="black")+
   facet_wrap(~sample, scales = 'free_y')+
   geom_vline(xintercept = mean(se$nFeature_RNA), color = "red", linetype = "dashed")+
@@ -614,8 +700,8 @@ ggplot(data.frame(counts=se$nFeature_RNA, sample=se$sample, stringsAsFactors = T
 If the experiment at hand involves tissue sections with well-defined anatomical structure, one of the most obvious sanity checks is to simply plot the expression values of structural marker genes which should be differentially expressed between the anatomical structures. An example of this is shown below on a MOB sample. From empirical evidence we know _a priori_ that [insert gene names] are expressed [insert region]. By examining the expression patterns of these known genes, we can also assess if there is any evidence for horizontal diffusion or contamination which would indicate an experimental failure. 
 
 This check is of course only possible if the tissue section(s) has/have such defined structure. Nevertheless, one could with a bit of imagination often perform this kind of checks even for more homogeneous samples, e.g. "I know that this genes should definitely be present/not present in my sample" etc. 
-
-```{r, fig.height=12, fig.width=12}
+<br>
+```{r plot_markers, fig.height=6, fig.width=12}
 library(ggplot2)
 
 ST.FeaturePlot(object=se,
@@ -630,8 +716,8 @@ ST.FeaturePlot(object=se,
 ### Checking for batch effects
 
 The dimensionality reduction (e.g. via UMAP) projection onto RGB space works excellent as a batch effect check. Here we show four samples of mouse hippocampus that clearly display a batch effect subject to samples prepared on different arrays:
-
-```{r, eval=FALSE, echo=FALSE}
+<br>
+```{r batch_effects, eval=FALSE, echo=FALSE}
 
 #THIS PART IS NOW REMOVED
 #Load hippo samples
@@ -646,7 +732,7 @@ se.batch.effect <- prep.from.table(infotable = infoTabel2,
 
 #Perform Seurat transform
 se.batch.effect <- SCTransform(se.batch.effect, 
-                               vars.to.regress = c("sample", "nFeature_RNA"),
+                               vars.to.regress = c("sample_id", "nFeature_RNA"),
                                verbose = F)
 
 
@@ -687,7 +773,7 @@ By default, all label slots are populated by "Default". New labels are easily ad
 
 To load the Shiny application:
 
-```{r, eval=FALSE}
+```{r manual_annotation, eval=FALSE}
 
 ManualAnnotation(se)
 
@@ -709,7 +795,7 @@ NB: The images used for the manual annotation are loaded as _raw images_ from th
 
 The manual annotations could e.g. be used for supervised analysis of gene expression markers. Within Seurat it's easy to conduct such analysis by first setting the capture-spots identity classes to the annotation level. 
 
-```{r, eval=TRUE}
+```{r set_idents_to_labels, eval=FALSE}
 
 Idents(se) <- se@meta.data$labels
 
@@ -717,7 +803,7 @@ Idents(se) <- se@meta.data$labels
 
 Remember, the labels include _all_ capture-spots, which by default have label "Default". To conduct DEA for the identity classes, we utilize the `FindMarkers()` function, and specify the two different levels which we want to compare against.
 
-```{r, eval=TRUE}
+```{r de_markers, eval=FALSE}
 
 de.markers <- FindMarkers(se, ident.1 = "Epithelial", ident.2 = "Stroma")
 
@@ -727,7 +813,7 @@ head(de.markers)
 
 Excluding `ident.2` results in differential expression between one group vs all other capture-spots.
 
-```{r, eval=FALSE}
+```{r epithelial_markers, eval=FALSE}
 
 FindMarkers(se, ident.1 = "Epithelial")
 
@@ -793,7 +879,7 @@ ggplotly(gg + dark_theme() , tooltip="rgbs") #This will open the interactive vie
 
 For saving images, we usually use the built in function `pdf()` within R. All plotting functions in STutility returns a ggplot object. Accordingly just, initiate the pdf function, make the plot and then turn off the graphic device:
 
-```{r, eval=FALSE}
+```{r RGB_on_batch_correcetd, eval=FALSE}
 
 pdf("nameOfyourImage.pdf", width = 12, height = 12)
 
@@ -810,3 +896,16 @@ STUtility relies heavily on the Seurat package, currently version 3.0 As such, w
 
 
 
+&nbsp;
+<hr />
+<p style="text-align: center;">A work by <a href="j.bergenstrahle@scilifelab.se">Joseph Bergenstråhle</a> and <a href="ludvig.larsson@scilifelab.se">Ludvig Larsson</a></p>
+
+<!-- Add icon library -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.min.css">
+
+<!-- Add font awesome icons -->
+<p style="text-align: center;">
+    <a href="https://www.spatialresearch.org" class="fa fa-beer"></a>
+</p>
+
+&nbsp;
