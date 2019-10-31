@@ -1003,9 +1003,9 @@ FeatureOverlay <- function(
   }
 
   # Check that the number of dimensions are 2 or three if blending is active
-  if (blend & !length(x = dims) %in% c(2, 3)) {
-    stop(paste0("Blending dim plots only works with two or three dimensions. \n",
-                "Number of dimensions provided: ", length(x = dims)), call. = F)
+  if (blend & !length(x = features) %in% c(2, 3)) {
+    stop(paste0("Blending dim plots only works with two or three features. \n",
+                "Number of dimensions provided: ", length(x = features)), call. = F)
   }
 
   # Obtain array coordinates

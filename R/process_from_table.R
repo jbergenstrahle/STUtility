@@ -90,8 +90,10 @@ InputFromTable <- function (
       # Load data
       if (length(grep(path, pattern = ".h5")) == 1) {
         counts[[path]] <- st.load.matrix(path, visium = T)
+      } else if (length(grep(path, pattern = ".tsv")) == 1) {
+        counts[[path]] <- t(st.load.matrix(path))
       } else {
-        stop("Currently only h5 format is supported for Visium samples")
+        stop("Currently only .h5 and .tsv formats are supported for Visium samples")
       }
 
 
@@ -101,19 +103,25 @@ InputFromTable <- function (
       if (!"spotfiles" %in% colnames(infotable)) stop("Spotfiles are required for 10X Visium samples", call. = FALSE)
 
       spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = ","), stringsAsFactors = F)
-      rownames(spotsData) <- as.character(spotsData[, 1])
-      colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x") #OBS, what is column nr2,3,4?
-      spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")] <- apply(spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")], 2, as.numeric)
-      spotsData[, c("x", "y")] <- spotsData[, c("adj_x", "adj_y")]
-      spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "barcode", "visium")]
-      spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
-      counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
-      spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
-      spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
-      spotFileData[[i]] <- spotsData #Save pixel coords etc
-      #OBS 10x ajd_x etc DOES NOT WORK ATM
-      #Loading images and pixel coords work!
-
+      if (ncol(spotsData) == 1) {
+        spotsData <- setNames(data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = "\t"), stringsAsFactors = F),
+                              nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y"))
+        rownames(spotsData) <- paste(spotsData[, "x"], spotsData[, "y"], sep = "x")
+        spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
+        counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+        spotFileData[[i]] <- spotsData
+      } else {
+        rownames(spotsData) <- as.character(spotsData[, 1])
+        colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x") #OBS, what is column nr2,3,4?
+        spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")] <- apply(spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")], 2, as.numeric)
+        spotsData[, c("x", "y")] <- spotsData[, c("adj_x", "adj_y")]
+        spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "barcode", "visium")]
+        spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
+        counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+        spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
+        spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
+        spotFileData[[i]] <- spotsData
+      }
     } else {
       counts[[path]] <- st.load.matrix(path)
 
@@ -123,11 +131,13 @@ InputFromTable <- function (
         spotsData <- as.data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"]))
         if ("selected" %in% colnames(spotsData)) {
           spotsData <- subset(spotsData, selected == 1)
+          spotsData$selected <- NULL
         }
+        spotsData <- setNames(spotsData, nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y"))
         rownames(spotsData) <- paste(spotsData$x, spotsData$y, sep = "x")
         intersecting.spots <- intersect(rownames(spotsData), rownames(counts[[path]]))
         spotsData <- spotsData[intersecting.spots, ]
-        counts[[path]] <- counts[[path]][intersecting.spots, ]
+        counts[[path]] <- t(counts[[path]][intersecting.spots, ])
         spotFileData[[i]] <- spotsData #Save pixel coords etc
       } else {
         # Obtain x/y coordinates from headers
