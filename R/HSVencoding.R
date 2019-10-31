@@ -128,10 +128,11 @@ HSVFeaturePlot <- function (
     s <- data.frame(data,
                     h = hue_breaks[i],
                     s = 1,
-                    v = scales::rescale(data[, ftr]))
+                    v = scales::rescale(data[, ftr, drop = T] %>% as.numeric()))
     s$cols <- hsv2hex(t(s[, c("h", "s", "v")]))
     d <- c(d, list(s))
   }
+
   red.cols <- data.frame()
   if (verbose) cat("Selecting HSV colors for each spot ... \n")
   for (i in 1:nrow(data)) {

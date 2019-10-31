@@ -540,15 +540,24 @@ And plotting of the clusters spatially
 
 tol18rainbow <-  c("#771155", "#AA4488", "#CC99BB", "#114477", "#4477AA", "#77AADD", "#117777", "#44AAAA", "#77CCCC", "#777711", "#AAAA44", "#DDDD77", "#774411", "#AA7744", "#DDAA77", "#771122", "#AA4455", "#DD7788")
 
-ST.FeaturePlot(object = se, features = "seurat_clusters", dark.theme = T, cols = tol18rainbow, pt.size = 0.5)
+se[["clusters_ICA"]] <- se[["seurat_clusters"]]
+ST.FeaturePlot(object = se, features = "clusters_ICA", dark.theme = T, cols = tol18rainbow, pt.size = 0.5)
 
 ```
+<br>
+```{r clusters_UMAP, fig.height=6, fig.width=8}
+
+se <- SetIdent(se, value = "clusters_ICA")
+DimPlot(se, reduction = "umap", cols = tol18rainbow) + DarkTheme()
+
+```
+
 <br>
 If you think that the distribution of clusters gets too cluttered, you can also split the view so that only one cluster at the time gets colored.
 <br>
 ```{r plot_clusters_split, fig.height = 12, fig.width = 14, out.width='100%'}
 
-ST.FeaturePlot(object = se, features = "seurat_clusters", dark.theme = T, cols = tol18rainbow, pt.size = 0.1, split.labels = T, indices = 1)
+ST.FeaturePlot(object = se, features = "clusters_ICA", dark.theme = T, cols = tol18rainbow, pt.size = 0.1, split.labels = T, indices = 1)
 
 ```
 <br>
@@ -585,7 +594,7 @@ se <- RunUMAP(se, reduction = "ica", dims = keep.dims, n.neighbors = 10)
 ```{r embedding_vs_ST, fig.width = 16, fig.height = 20}
 
 # Define colors for heatmap
-heatmap.colors <- c(rgb(20, 20, 20, maxColorValue = 255), "dark blue", "cyan", "white")
+heatmap.colors <- c(rgb(40, 40, 40, maxColorValue = 255), "dark blue", "cyan", "white")
 fts <- c("Slc18a2", "Prkcd", "Opalin", "Lamp5")
 
 # plot transformed features expression on UMAP embedding
@@ -653,7 +662,101 @@ MultiFeatureOverlay(se, features = "Cck",
 ```
 
 
-## Spatial Factor analysis
+## Factor Analysis
+
+If you want to explore underlying expression patterns of a tissue sample it can sometimes be useful to decompose the expression matrix into factors. Here we describe how to run a Non-negative Matrix Factorization on Spatial Transciptomics using the `RunNMF()` function. One key advantage of the NMF method, compared to e.g. PCA, is that the factors are additive, i.e. every point in the transformed space can be contructed by adding together strictly positive features. This feature of the NMF factors helps a lot to increase the interpretability. 
+
+The method provided in this package is largely inspired by the `RunNMF()`function provided in the [swne R package](https://github.com/yanwu2014/swne) by [Wu et al (2018)](https://www.cell.com/cell-systems/fulltext/S2405-4712(18)30440-X).
+<br>
+
+```{r source_NMF, include = FALSE}
+source(file = "~/STUtility/R/NMF_global_functions.R")
+```
+
+```{r NMF, eval=F}
+
+se <- RunNMF(se, n.cores = 7, nfactors = 20)
+
+```
+
+### Visualize factors
+
+Now we can visualize the factors on the Visium array coordinates to explore their spatial distribution.
+
+<br>
+```{r dimplot_NMF, fig.height=110, fig.width=12, out.width = "100%"}
+
+ST.DimPlot(se, 
+           dims = 1:20, 
+           ncol = 8, 
+           grid.ncol = 1, 
+           reduction = "NMF", 
+           dark.theme = T, 
+           pt.size = 0.5, 
+           center.zero = F, # important to set, otherwise the data is expected to be centered at 0
+           cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"))
+
+```
+<br>
+
+Again, we can use the NMF factors as a dimensionality reduction input for clustering and embedding in UMAP.
+
+```{r UMAP_on_NMF}
+
+se <- FindNeighbors(object = se, dims = 1:20, verbose = FALSE, reduction = "NMF") %>%
+  FindClusters(verbose = FALSE) %>% 
+  RunUMAP(reduction = "NMF", dims = 1:20, n.neighbours = 20, reduction.name = "umap.NMF")
+
+```
+
+When plotting the clusters on the Visium array coordinates we can see similar clusters as before. 
+<br>
+```{r plot_clusters_NMF, fig.height = 5, fig.width = 10, out.width='100%'}
+
+se[["clusters_NMF"]] <- se[["seurat_clusters"]]
+ST.FeaturePlot(object = se, features = "clusters_ICA", dark.theme = T, cols = tol18rainbow, pt.size = 0.5)
+
+```
+<br>
+If we split the clusters it seems as if we can find more patterns than before.
+<br>
+```{r plot_clusters_split_NMF, fig.height = 12, fig.width = 14, out.width='100%'}
+
+ST.FeaturePlot(object = se, features = "clusters_NMF", dark.theme = T, cols = tol18rainbow, pt.size = 0.1, split.labels = T, indices = 1)
+
+```
+<br>
+Below is a visualization of the clusters on a UMAP embedding.
+<br>
+```{r clusters_UMAP_NMF, fig.height=6, fig.width=8}
+
+se <- SetIdent(se, value = "clusters_NMF")
+DimPlot(se, reduction = "umap.NMF", cols = tol18rainbow) + DarkTheme()
+
+```
+
+### HSV color mode
+
+If we wish to visualize the values of multiple features simultaneously we can use the "color blend" trick to color code each spot in the RGB channels. This trick allows us to visualize up to three features at once and has the advantage that spots with a mixture of different feature values will be represented by the mixing in color as well. For example, if you want to explore the spatial distribution of two features A and B, you can squeeze these values into the "red" and "green" color channels to create color codes for each spot. If A is present but not B, the color will be "red" and "green" if B is present but not A. If A and B are mixed, the color will anything between "red" and "green" where a 50/50 mixture gives a "yellow" color. The downside of this trick is that you cannot encode more than three features this way because for obvious reasons. 
+
+However, if we know that the features we are looking do _NOT_ mix across spots (or at least very little), we could assign a color to each feature separately and select the color with the highest feature value for each spot. To do this, we can for example use the HSV color scale. 
+<br>
+```{r HSV, fig.width=6, fig.height=12, out.width='100%'}
+
+factors.use <- c(1:5, 7:11, 13, 18, 20)
+HSVFeaturePlot(object = se, features = paste0("factor_", factors.use), ncol = 1)
+
+```
+<br>
+We can also look at the top contributing genes for each factor to get a sense of what the factors represent.
+<br>
+```{r factor_heatmap, fig.width=10, fig.height=7}
+library(zeallot)
+c(top.factor.genes.df, gene.loadings) %<-% SummarizeAssocFeatures(object = se, features.return = 3)
+swne::ggHeat(m = gene.loadings[, paste0("factor_", 20:1)], heatscale = c("black", rgb(0, 0, 60, maxColorValue = 255), "yellow"), rescaling = "column") + coord_flip() + DarkTheme()
+
+```
+
 
 [To be added soon]
  
