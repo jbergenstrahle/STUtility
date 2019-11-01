@@ -6,8 +6,8 @@
 \alias{MaskImages.Seurat}
 \title{Image masking}
 \usage{
-MaskImages(object, iso.blur = 2, channels.use = 1, compactness = 1,
-  add.contrast = TRUE, verbose = FALSE)
+MaskImages(object, iso.blur = 2, channels.use = NULL,
+  compactness = 1, add.contrast = NULL, verbose = FALSE)
 
 \method{MaskImages}{Staffli}(object, iso.blur = 2, channels.use = NULL,
   compactness = 1, add.contrast = NULL, verbose = FALSE,
@@ -19,11 +19,13 @@ MaskImages(object, iso.blur = 2, channels.use = 1, compactness = 1,
 \arguments{
 \item{object}{Seurat or Staffli object}
 
-\item{iso.blur}{Sigma value (pixels) for isoblurring of HE images prior to image segmentation}
+\item{iso.blur}{Sets the level of smoothing in the pre-procesing step [default: 2]}
 
-\item{channels.use}{Select channel to use for masking (default: 1)}
+\item{channels.use}{Select channel to use for masking [default: 1 for '1k' and '2k' platforms and 1:3 for 'Visium' platform]}
 
-\item{compactness}{Scales the number of super-pixels}
+\item{compactness}{Scales the number of super-pixels [default: 1]}
+
+\item{add.contrast}{Add contrast to pre-procesing step [default: TRUE platforms and 1:3 for FALSE for 'Visium' platform]}
 
 \item{verbose}{Print messages}
 
@@ -49,12 +51,11 @@ masking significantly.
 First of all, it can be beneficial to remove 1 or two color channels from the image
 using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running
 SLIC.
-The next step is to apply some blurring efect
+The next step is to apply some blurring efect on the image to "smooth" out speckles in the image. This
+"smoothing" effect can be adjusted with \code{iso.blur}, where a higher \code{iso.blur} leads to more smoothing.
+The compactness will adjust the number of superpixels to compute. If you double this number you will get twice
+as many superpixels. This can sometimes be helpful to get a finer sensitivity of the masking.
 }
-\section{Masking options}{
-
-}
-
 \section{Custom mask function}{
 
 Masking can sometimes very difficult to accomplish without cutting off parts of the tissue or
