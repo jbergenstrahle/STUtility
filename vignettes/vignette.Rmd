@@ -504,6 +504,7 @@ ST.DimPlot(se,
            palette = "MaYl")
 
 ```
+
 <br>
 To extract the genes that drives the separation according to the dimensionality reduction, we can use the `ProjectDim()` function. Where we specify the dimensions of interest (here IC_1 and IC_3, which are regions that seems to confer a clear spatial expression histology. 
 <br>
