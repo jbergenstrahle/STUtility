@@ -6,16 +6,17 @@
 # Load Images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' Function used to read HE images in jpeg format
+#' Function used to read HE images in jpeg or png format
 #'
 #' @param object Seurat or Staffli object
 #' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
-#' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 1000 pixels)
+#' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 2000 pixels)
 #' @param verbose Print messages
 #'
 #' @importFrom magick image_read
 #'
 #' @export
+#'
 
 LoadImages <- function (
   object,
@@ -33,14 +34,6 @@ LoadImages <- function (
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
 #' Masks the background of HE images stored in a Seurat object
-#'
-#' Algorithm:
-#' 1. Blur image with median filter
-#' 2. Equalize image colors using an empirical cumulative distribution function
-#' 3. Convert image into SLIC superpixels using the \code{\link{slic}} function
-#' 4. Convert image to CIELAB colorspace and perform kmeans clustering (k = 2; inside/outside tissue) to segment image
-#' 5. Split segmented image into objects and filter out objects with a small area
-#' 6. Keep objects which overlaps with adjusted pixel coordinates
 #'
 #' @param object Seurat or Staffli object
 #' @param iso.blur Sigma value (pixels) for isoblurring of HE images prior to image segmentation

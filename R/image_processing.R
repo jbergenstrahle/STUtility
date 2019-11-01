@@ -231,7 +231,8 @@ MaskImages.Staffli <- function (
   channels.use = NULL,
   compactness = 1,
   add.contrast = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  custom.msk.fkn = NULL
 ) {
 
   # obtain Staffli object
@@ -250,10 +251,10 @@ MaskImages.Staffli <- function (
     # Select channels to use for masking if not specified and depending on platform
     if (object@platforms[i] == "Visium") {
       channels.use <- channels.use %||% 1:3
-      add.contrast = FALSE
+      add.contrast = add.contrast %||% FALSE
     } else if (object@platforms[i] %in% c("1k", "2k")) {
       channels.use <- channels.use %||% 1
-      add.contrast = TRUE
+      add.contrast = add.contrast %||% TRUE
     }
 
     rm.channels <- (1:3)[-channels.use]
