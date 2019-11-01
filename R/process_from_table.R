@@ -31,8 +31,6 @@ parse.spot.file = function(path, delim = "\t", ...) {
 #' This function is a wrapper to create a complete S4 object with all the samples and metadata
 #'
 #' @param infotable table with paths to count files and metadata
-#' @param transpose set TRUE if count files are in the form of genes as columns and spatial
-#' coordiantes as rows.
 #' @param min.gene.count filter away genes that has a total read count below this threshold
 #' @param min.gene.spots filter away genes that is not expressed below this number of capture spots
 #' @param min.spot.count filter away capture spots that contains a total read count below this threshold
@@ -48,7 +46,6 @@ parse.spot.file = function(path, delim = "\t", ...) {
 
 InputFromTable <- function (
   infotable,
-  transpose = FALSE,
   topN = 0,
   min.gene.count = 0,
   min.gene.spots = 0,
@@ -100,30 +97,38 @@ InputFromTable <- function (
       # Load spotdata
       # ------------------------------------------------
       # Check that spotfiles are provided
-      if (!"spotfiles" %in% colnames(infotable)) stop("Spotfiles are required for 10X Visium samples", call. = FALSE)
-
-      spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = ","), stringsAsFactors = F)
-      if (ncol(spotsData) == 1) {
-        spotsData <- setNames(data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = "\t"), stringsAsFactors = F),
-                              nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y"))
-        rownames(spotsData) <- paste(spotsData[, "x"], spotsData[, "y"], sep = "x")
-        spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
-        counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
-        spotFileData[[i]] <- spotsData
+      #if (!"spotfiles" %in% colnames(infotable)) stop("Spotfiles are required for 10X Visium samples", call. = FALSE)
+      if ("spotfiles" %in% colnames(infotable)) {
+        spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = ","), stringsAsFactors = F)
+        if (ncol(spotsData) == 1) {
+          spotsData <- setNames(data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = "\t"), stringsAsFactors = F),
+                                nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y"))
+          rownames(spotsData) <- paste(spotsData[, "x"], spotsData[, "y"], sep = "x")
+          spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
+          counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+          spotFileData[[i]] <- spotsData
+        } else {
+          rownames(spotsData) <- as.character(spotsData[, 1])
+          colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x") #OBS, what is column nr2,3,4?
+          spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")] <- apply(spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")], 2, as.numeric)
+          spotsData[, c("x", "y")] <- spotsData[, c("adj_x", "adj_y")]
+          spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "barcode", "visium")]
+          spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
+          counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+          spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
+          spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
+          spotFileData[[i]] <- spotsData
+        }
       } else {
-        rownames(spotsData) <- as.character(spotsData[, 1])
-        colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x") #OBS, what is column nr2,3,4?
-        spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")] <- apply(spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")], 2, as.numeric)
-        spotsData[, c("x", "y")] <- spotsData[, c("adj_x", "adj_y")]
-        spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "barcode", "visium")]
-        spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
-        counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
-        spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
-        spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
+        warning(paste0("Extracting spot coordinates from gene count matrix headers. It is highly recommended to use spotfiles."), call. = FALSE)
+
+        # Check if headers can be extracted
+        spotsData <- GetCoords(colnames(counts[[path]]))
+        if (ncol(spotsData) != 2) stop("Headers are not valid. You have to provide spotfiles or make sure that headers contains (x, y) coordinates", call. = FALSE)
         spotFileData[[i]] <- spotsData
       }
     } else {
-      counts[[path]] <- st.load.matrix(path)
+      counts[[path]] <- t(st.load.matrix(path))
 
       # Load spotdata
       # ------------------------------------------------
@@ -135,20 +140,16 @@ InputFromTable <- function (
         }
         spotsData <- setNames(spotsData, nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y"))
         rownames(spotsData) <- paste(spotsData$x, spotsData$y, sep = "x")
-        intersecting.spots <- intersect(rownames(spotsData), rownames(counts[[path]]))
+        intersecting.spots <- intersect(rownames(spotsData), colnames(counts[[path]]))
         spotsData <- spotsData[intersecting.spots, ]
-        counts[[path]] <- t(counts[[path]][intersecting.spots, ])
+        counts[[path]] <- counts[[path]][, intersecting.spots]
         spotFileData[[i]] <- spotsData #Save pixel coords etc
       } else {
         # Obtain x/y coordinates from headers
-        spotsData <- GetCoords(rownames(counts[[path]]))
+        spotsData <- GetCoords(colnames(counts[[path]]))
         if (ncol(spotsData) != 2) stop("No spotfiles provided and the headers are invalid. Please make sure that the count matrices are correct.")
         spotFileData[[i]] <- spotsData
       }
-    }
-
-    if (transpose) {
-      counts[[path]] <- t(counts[[path]])
     }
   }
 
@@ -162,7 +163,7 @@ InputFromTable <- function (
 
   # Generate empty merged count matrix
   samples <- c()
-  cnt <- matrix(0, nrow = length(genes), ncol=0)
+  cnt <- matrix(0, nrow = length(genes), ncol = 0)
   rownames(cnt) <- genes
 
   # Merge counts and add unique id
@@ -179,8 +180,10 @@ InputFromTable <- function (
   }
 
   # Collect meta data if available
+  intersecting_columns <- Reduce(intersect, lapply(spotFileData, colnames))
+  if (length(x = intersecting_columns) < 2) stop("No spot coordinates found. Aborting ... \n", call. = FALSE)
   meta_data_staffli <- do.call(rbind, lapply(seq_along(spotFileData), function(i) {
-    x <- spotFileData[[i]]
+    x <- spotFileData[[i]][, intersecting_columns]
     rownames(x) <- paste(rownames(x), "_", i, sep = "")
     return(x)
   }))

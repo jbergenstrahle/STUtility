@@ -7,26 +7,31 @@ NULL
 
 #' Dimensional reduction plot on ST coordinates
 #'
-#' Graphs the output of a dimensional reduction technique on a 2D scatter plot where each point is a
-#' spot and it's positioned based on the ST array coordinates in a grid pattern. Spots are colored
-#' by the dimensional reduction vectors specified by the user.
+#' Graphs the selected vectors of a dimensional reduction technique on a 2D grid of spots.
 #'
-#' Function built upon the DimPlot() function from Seurat (https://github.com/satijalab/seurat/blob/master/R/utilities.R)
+#' @section Blending values:
+#' The blend option can be useful if you wish to visualize multiple dimensions simultaneuosly and works for two or three dimensionality
+#' reduction vectors. Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+#' where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
 #'
 #' @param object Seurat object
-#' @param dims Dimensions to plot, a numeric vector specifying number of dimensions to plot
-#' @param spots Vector of spots to plot (default is all spots)
-#' @param plot.type Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"
-#' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
-#' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
-#'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
-#' @param pt.size Adjust point size for plotting
-#' @param pt.alpha Adjust point opacity for plotting
-#' @param reduction Which dimensionality reduction to use. If not specified, first searches for umap, then tsne, then pca
-#' @param shape.by If NULL, all points are circles (default). You can specify any
-#' cell attribute (that can be pulled with FetchData) allowing for both
-#' different colors and different shapes on cells
-#' @param grid.ncol Number of columns for display when combining plots
+#' @param dims Dimensions to plot [default: 1, 2]
+#' @param spots Character vector with spot IDs to plot [default: all spots]
+#' @param plot.type Specify the type of plot to use [default: "spots"]. Available options are; "spots" (a "smooth" options will be added soon)
+#' @param blend Scale and blend expression values to visualize coexpression of two features (this options will override other coloring parameters).
+#' See 'Blending values' below for a more thourough description.
+#' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature, may specify quantile in the form of 'q##' where '##'
+#' is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values that skew the colorscale in the plot. For example, if you specify
+#' 'q1', you will trim of values below the 1st percentile. [default: no cuttoffs]
+#' @param pt.size Adjust point size for plotting [default: 1]
+#' @param pt.alpha Adjust point opacity for plotting [default: 1]
+#' @param reduction Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"
+#' @param shape.by You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
+#' and different shapes on spots
+#' @param grid.ncol Number of columns for display when combining plots. This option will only have an effect on the sample level structure.
 #' @param verbose Print messages
 #'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
@@ -41,7 +46,29 @@ NULL
 #' @importFrom Seurat FetchData Embeddings
 #' @importFrom zeallot %<-%
 #'
+#' @examples
+#'
+#' se <- RunPCA(se)
+#'
+#' # Plot the first 5 dimensions
+#' ST.DimPlot(se, dims = 1:5, reduction = "pca")
+#'
+#' # Plot the first 5 dimensions and put each sample in a separate row
+#' ST.DimPlot(se, dims = 1:5, reduction = "pca", grid.ncol = 1)
+#'
+#' # Blend values for dimensions 1 and 2
+#' ST.DimPlot(se, dims = 1:2, reduction = "pca", blend = T)
+#'
+#' # Plot the first 5 dimensions and trim off 1st percentile values
+#' ST.DimPlot(se, dims = 1:5, reduction = "pca", min.cutoff = 'q1')
+#'
 #' @export
+#'
+#' @seealso \code{\link{ST.FeaturePlot}} for how to plot features,
+#' \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
+#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
+#' to overlay plots on the HE images in multiple samples.
+#'
 
 ST.DimPlot <- function (
   object,
@@ -61,7 +88,7 @@ ST.DimPlot <- function (
   dark.theme = FALSE,
   ncol = NULL,
   grid.ncol = NULL,
-  center.zero = T,
+  center.zero = TRUE,
   channels.use = NULL,
   center.tissue = FALSE,
   verbose = FALSE,
@@ -197,12 +224,25 @@ ST.DimPlot <- function (
 # Feature plots
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#'  Visualize 'features' on an ST array grid
+#' Feature plot on ST coordinates
 #'
-#' Colors spots on an an ST array grid according to a 'feature'
-#' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
+#' Graphs selected features on a 2D grid of spots, for example raw gene counts, normalized gene counts or cluster labels.
 #'
-#' Function built upon the FeaturePlot() function from Seurat (https://github.com/satijalab/seurat/blob/master/R/visualization.R)
+#' @details Note that you can only graph one specific class of features at the same time. This function does not support mixing of
+#' numeric and character vectors for example.
+#'
+#' @section Splitting categorical features:
+#' If you are plotting a categorical feature, e.g.cluster labels, you have the option to split each label into facets using \code{split.labels=TRUE}.
+#' This is very useful if you have many different labels which can make it difficult to distinguish the different colors. However, splitting only
+#' works for one sample at the time which has to be specified by the \code{indices} argument.
+#'
+#' @section Blending values:
+#' The blend option can be useful if you wish to visualize multiple features simultaneuosly and works for two or three vectors. Each of the
+#' selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping features
+#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+#' where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
 #'
 #' @param object Seurat object
 #' @param features
@@ -210,20 +250,22 @@ ST.DimPlot <- function (
 #'     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
 #'     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 #' }
-#' @param indices Numeric vector specifying sample indices to include in plot. Default is to show all samples.
-#' @param spots Vector of spots to plot (default is all spots)
-#' @param plot.type Specify the type of plot to use (default: "spots"). Available options are; "spots"
-#' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
-#'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
-#' @param slot Which slot to pull expression data from?
-#' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
-#' @param pt.size Adjust point size for plotting
-#' @param pt.alpha Adjust opacity for plotting
-#' @param shape.by If NULL, all points are circles (default). You can specify any
-#' cell attribute (that can be pulled with FetchData) allowing for both
-#' different colors and different shapes on cells
-#' @param grid.ncol Number of columns for display when combining plots
+#' @param indices Integer vector specifying sample indices to include in the plot [default: show all samples]
+#' @param spots Character vector with spot IDs to plot [default: all spots]
+#' @param plot.type Specify the type of plot to use [default: "spots"]. Available options are; "spots" (a "smooth" options will be added soon)
+#' @param blend Scale and blend expression values to visualize coexpression of two features (this options will override other coloring parameters).
+#' See 'Blending values' below for a more thourough description.
+#' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature, may specify quantile in the form of 'q##' where '##'
+#' is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values that skew the colorscale in the plot. For example, if you specify
+#' 'q1', you will trim of values below the 1st percentile. [default: no cuttoffs]
+#' @param slot Which slot to pull the data from? [default: 'data']
+#' @param pt.size Adjust point size for plotting [default: 1]
+#' @param pt.alpha Adjust point opacity for plotting [default: 1]
+#' @param shape.by You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
+#' and different shapes on spots
+#' @param grid.ncol Number of columns for display when combining plots. This option will only have an effect on the sample level structure.
 #' @param verbose Print messages
+#'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
 #' @inheritParams STPlot
@@ -233,7 +275,37 @@ ST.DimPlot <- function (
 #' @importFrom zeallot %<-%
 #'
 #' @return A ggplot object
+#'
+#' @examples
+#'
+#' # Plot the number of unique genes and the number of UMIs per spot
+#' ST.featurePlot(se, features = c("nFeature_RNA", "nCount_RNA"))
+#'
+#' # Plot selected genes
+#' ST.featurePlot(se, features = c("Cck", "Dcn"))
+#'
+#' # Plot normalized values
+#' se <- SCTransform(se)
+#' ST.featurePlot(se, features = c("Cck", "Dcn"))
+#'
+#' # Change to scaled data
+#' ST.featurePlot(se, features = c("Cck", "Dcn"), slot = "scale.data", center.zero = TRUE)
+#'
+#' # Cluster spots and plot cluster labels
+#' se <- se %>% RunPCA()
+#'    FindNeighbors(dims = 1:10, reduction = "pca") %>%
+#'    FindClusters()
+#' ST.featurePlot(se, features = "seurat_clusters")
+#' # Split cluster labels into facets
+#' ST.featurePlot(se, features = "seurat_clusters", split.labels = TRUE)
+#'
 #' @export
+#'
+#' @seealso \code{\link{ST.DimPlot}} for how to plot dimensionality reduction output,
+#' \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
+#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
+#' to overlay plots on the HE images in multiple samples.
+#'
 
 ST.FeaturePlot <- function (
   object,
@@ -404,29 +476,38 @@ ST.FeaturePlot <- function (
 }
 
 
-#' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
+#' Graphs ST spots colored by continuous or categorical features
 #'
-#' @param data data.frame containing (x, y) coordinates, a group vector and a continuous variable vector
-#' @param data.type Type of data, e.g. numeric or integer
-#' @param shape.by Specifies column to shape points by, e.g. morphological region
-#' @param variable Name of continuous variable
-#' @param pt.size Point size of each ST spot
-#' @param pt.alpha Opacity of each ST spot
-#' @param palette Color palette used for spatial heatmap (see \code{?palette.select} for available options).
+#' @param data Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
+#' and one column with the feature values. Can also include an additional column for shapes.
+#' @param data.type String specifying the class of the features in data to be plotted
+#' @param shape.by String specifying the column where the shaping label is stored
+#' @param variable Name of feature column
+#' @param pt.size Point size of each ST spot [default: 1]
+#' @param pt.alpha Opacity of each ST spot [default: 1]
+#' @param palette Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 #' Disabled if a color vector is provided (see \code{cols} below).
 #' @param cols A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 #' create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 #' option.
-#' @param rev.cols Logical specifying whether colorscale should be reversed
-#' @param ncol Number of columns in \code{facet_wrap}
-#' @param spot.colors Character vector woth color names that overrides default coloring with ggplot2
-#' @param center.zero Should the colorscale be centered around 0? Set to TRUE for scaled data
-#' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis
-#' @param plot.title Add title to plot
-#' @param dims List of dimensions for x and y scales
-#' @param split.labels Only active if the features are specified by character vectors.
+#' @param rev.cols Logical specifying whether colorscale should be reversed [default: FALSE]
+#' @param ncol Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
+#' in just in one row or one column.
+#' @param spot.colors Character vector with color names that overrides default coloring with ggplot2
+#' @param center.zero Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
+#' the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.
+#' If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradient2} will be used to control the coloring instead of
+#' \code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
+#' the interpretaion of the output plot.
+#' @param center.tissue Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis. This can be useful if your
+#' samples have been placed in very different parts of the capture area and you want to center the plots in the middle. This is however unnecessary if
+#' you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\link{WarpImages}} and \code{\link{ManualAlignImages}})
+#' @param plot.title String specifying the title of the plot
+#' @param dims List of dimensions for x and y scales. If you have mixed datasets from different arrays (platforms) with different resolution,
+#' this list of dimensions will be used to specify the limits along the x- and y-axis of the array for each sample.
+#' @param split.labels Only works if the features are specified by character vectors.
 #' The plot will be split into one plot for each group label, highlighting the labelled spots.
-#' @param theme Object of class "theme" used to change the background theme
+#' @param theme Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})
 #' @param ... Parameters passed to geom_point()
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn scale_color_manual
@@ -758,14 +839,29 @@ SmoothPlot <- function (
 # Dimensional reduction plots on HE images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#'  Visualize dimensionality reduction vectors on an ST array grid overlayed on top of HE image
+#' Dimensional reduction plot on ST coordinates on top of HE image
 #'
-#' Colors spots on an an ST array grid according to a dimension
-#' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
+#' Graphs the selected vectors of a dimensional reduction technique on a 2D grid of spots overlaid on top of an HE images.
+#'
+#' @details Note that this function only allows you to plot one sample at the time. It is typically difficult to explore details in the HE image
+#' when diplaying multiple samples side by side, so we decided to limit the choice to plot one sample at the time. If you have higher resolution images,
+#' it could also take significant time to draw the plots. If you still wish to show multiple samples together you can use the \code{\link{MultiFeatureOverlay}}
+#' function.
+#'
+#' @section Blending values:
+#' The blend option can be useful if you wish to visualize multiple dimensions simultaneuosly and works for two or three dimensionality
+#' reduction vectors. Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+#' where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
+#'
 #'
 #' @param sample.index Index specifying the sample that you want to use for plotting
-#' @param type Image type to plot on
-#' @param slot Which slot to pull expression data from?
+#' @param type Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
+#' run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
+#' order if they are available; "processed", "masked" and "raw".
+#' @param slot Which slot to pull expression data from? [default: 'data']
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
 #' @inheritParams ST.ImagePlot
@@ -774,11 +870,37 @@ SmoothPlot <- function (
 #' @importFrom scales rescale
 #'
 #' @return A ggplot object
+#'
+#' @examples
+#'
+#' # Load images and run PCA
+#' se <- LoadImages(se) %>%
+#'    RunPCA()
+#'
+#' # Plot the first 2 dimensions
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1)
+#'
+#' # Blend values for dimensions 1 and 2
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, blend = T)
+#'
+#' # Plot the first 2 dimensions and trim off 1st percentile values
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, min.cutoff = 'q1')
+#'
+#' # Mask images and plot plot the first 2 dimensions on the masked image
+#' se <- MaskImages(se)
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, type = "masked")
+#'
 #' @export
+#'
+#' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
+#' without the HE image, \code{\link{FeatureOverlay}} for how to overlay feature plots on the
+#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
+#' to overlay plots on the HE images in multiple samples.
+#'
 
 DimOverlay <- function (
   object,
-  dims = c(1:2),
+  dims = 1:2,
   sample.index = 1,
   type = NULL,
   min.cutoff = NA,
@@ -792,7 +914,7 @@ DimOverlay <- function (
   cols = NULL,
   rev.cols = FALSE,
   grid.ncol = NULL,
-  center.zero = FALSE,
+  center.zero = TRUE,
   channels.use = NULL,
   verbose = FALSE,
   dark.theme = FALSE,
@@ -920,8 +1042,10 @@ DimOverlay <- function (
 #' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
 #'
 #' @param sample.index Index specifying the sample that you want to use for plotting
-#' @param type Image type to plot on
-#' @param slot Which slot to pull expression data from?
+#' @param type Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
+#' run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
+#' order if they are available; "processed", "masked" and "raw".
+#' @param slot Which slot to pull expression data from? [dafault: 'data']
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
 #' @inheritParams ST.ImagePlot
@@ -930,9 +1054,38 @@ DimOverlay <- function (
 #' @importFrom scales rescale
 #'
 #' @return A ggplot object
+#'
+#' @examples
+#'
+#' # Load images
+#' se <- LoadImages(se)
+#'
+#' # Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image
+#' FeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sample.index = 1)
+#'
+#' # Plot selected genes
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1)
+#'
+#' # Plot normalized values
+#' se <- SCTransform(se)
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1)
+#'
+#' # Change to scaled data
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1, slot = "scale.data", center.zero = TRUE)
+#'
+#' # Mask images and plot plot the slected genes on the masked image
+#' se <- MaskImages(se)
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1, type = "masked")
+#'
 #' @export
+#'
+#' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
+#' without the HE image, \code{\link{DimOverlay}} for how to overlay dimensionality reduction output on the
+#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
+#' to overlay plots on the HE images in multiple samples.
+#'
 
-FeatureOverlay <- function(
+FeatureOverlay <- function (
   object,
   features,
   sample.index = 1,
@@ -1069,8 +1222,9 @@ FeatureOverlay <- function(
 #' @importFrom grid rasterGrob unit
 #' @importFrom grDevices as.raster
 #'
-#' @param image image of class "raster" to use as background for plotting
-#' @param dims List of dimensions for original images
+#' @param image Image of class "raster" to use as background for plotting
+#' @param dims List of dimensions for original images. This list has to contain one element for each sample and each element
+#' should be a vector of length 2 specifying the dimensions of the original HE image.
 #'
 #' @inheritParams STPlot
 #'
@@ -1205,13 +1359,41 @@ ST.ImagePlot <- function (
 #' Apply DimOverlay to multiple samples
 #'
 #' @param object Seurat object
-#' @param sampleids Names of samples to plot
-#' @param method Display method
-#' @param ncols Number of columns in output image
+#' @param sampleids Integer vector specifying sample indices to include in the plot
+#' @param method Display method; "viewer" or "raster" [default: "viewer"]. The option "viewer" only works within an
+#' RStudio session and makes use of the Viewer pane. If you want to include images in an rmarkdown document or export
+#' it to a file you have to set \code{method = "raster"}.
+#' @param ncols Number of columns in output image. This will override the default which is to arrange the plots in
+#' \code{ncols = ceiling(sqrt(#samples)); nrows = ceiling(#samples/ncols)}
 #' @param ... Parameters passed to DimOverlay
+#'
 #' @inheritParams DimOverlay
 #'
+#' @examples
+#'
+#' # Load images and run PCA
+#' se <- LoadImages(se) %>%
+#'    RunPCA()
+#'
+#' # Plot the first 2 dimensions on the first two samples
+#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2)
+#'
+#' # Blend values for dimensions 1 and 2 on the first two samples
+#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, blend = T)
+#'
+#' # Plot the first 2 dimensions and trim off 1st percentile values on the first two samples
+#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, min.cutoff = 'q1')
+#'
+#' # Mask images and plot the first 2 dimensions on the masked images for samples 1 and 2
+#' se <- MaskImages(se)
+#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, type = "masked")
+#'
 #' @export
+#'
+#' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
+#' without the HE image, \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to
+#' overlay feature plots on the HE images and \code{\link{MultiFeatureOverlay}} and for how
+#' to overlay feature plots on the HE images in multiple samples.
 #'
 
 MultiDimOverlay <- function (
@@ -1295,7 +1477,34 @@ MultiDimOverlay <- function (
 #' @param ... Parameters passed to DimOverlay
 #' @inheritParams FeatureOverlay
 #'
+#' @examples
+#'
+#' # Load images
+#' se <- LoadImages(se)
+#'
+#' # Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image on the first two samples
+#' MultiFeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sampleids = 1:2)
+#'
+#' # Plot selected genes on the first two samples
+#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
+#'
+#' # Plot normalized values on the first two samples
+#' se <- SCTransform(se)
+#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
+#'
+#' # Change to scaled data
+#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, slot = "scale.data", center.zero = TRUE)
+#'
+#' # Mask images and plot plot the slected genes on the masked images for samples 1 and 2
+#' se <- MaskImages(se)
+#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, type = "masked")
+#'
 #' @export
+#'
+#' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
+#' without the HE image, \code{\link{DimOverlay}} for how to overlay dimensionality reduction output on the
+#' HE images and \code{\link{MultiDimOverlay}} for how to overlay dimensionality reduction plots on the HE
+#' images in multiple samples.
 #'
 
 MultiFeatureOverlay <- function (

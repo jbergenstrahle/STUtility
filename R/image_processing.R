@@ -63,9 +63,11 @@ LoadImages.Staffli <- function (
 
     # Convert pixel coords if specified
     if (convert.pixel.coords) {
+      print("converting coords")
       limits <- object@limits[[i]]
-      im.limits <- object@dims[[i]][2:3] %>% as.numeric()
+      im.limits <- dims[[i]][2:3] %>% as.numeric()
       object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- t(t(object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]])*(im.limits/limits))
+      #object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_y"))]] <- im.limits[2] - object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_y"))]]
     }
   }
 
@@ -95,7 +97,12 @@ LoadImages.Seurat <- function (
   time.resolve = TRUE
 ) {
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
-  object@tools$Staffli<- LoadImages(object = object@tools$Staffli, image.paths, xdim, verbose, time.resolve)
+  st.object <- object@tools$Staffli
+  # Reset ixel coordinates
+  if (all(c("pixel_x", "pixel_y") %in% colnames(st.object[[]]))) {
+    st.object[[, c("pixel_x", "pixel_y")]] <- NULL
+  }
+  object@tools$Staffli <- LoadImages(object = st.object, image.paths, xdim, verbose, time.resolve)
   return(object)
 }
 
