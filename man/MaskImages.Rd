@@ -4,13 +4,14 @@
 \alias{MaskImages}
 \alias{MaskImages.Staffli}
 \alias{MaskImages.Seurat}
-\title{Masks the background of HE images stored in a Seurat object}
+\title{Image masking}
 \usage{
 MaskImages(object, iso.blur = 2, channels.use = 1, compactness = 1,
   add.contrast = TRUE, verbose = FALSE)
 
 \method{MaskImages}{Staffli}(object, iso.blur = 2, channels.use = NULL,
-  compactness = 1, add.contrast = NULL, verbose = FALSE)
+  compactness = 1, add.contrast = NULL, verbose = FALSE,
+  custom.msk.fkn = NULL)
 
 \method{MaskImages}{Seurat}(object, iso.blur = 2, channels.use = NULL,
   compactness = 1, add.contrast = NULL, verbose = FALSE)
@@ -22,9 +23,12 @@ MaskImages(object, iso.blur = 2, channels.use = 1, compactness = 1,
 
 \item{channels.use}{Select channel to use for masking (default: 1)}
 
-\item{compactness}{Controls scaling ratio for pixel values}
+\item{compactness}{Scales the number of super-pixels}
 
 \item{verbose}{Print messages}
+
+\item{custom.msk.fkn}{Custom masking function that takes an image of class "cimg" as input and returns a mask
+of class "pixset" outlining the tissue area.}
 }
 \value{
 A Seurat object with masked HE images
@@ -34,14 +38,30 @@ A Staffli object
 A Seurat object
 }
 \description{
-Algorithm:
-1. Blur image with median filter
-2. Equalize image colors using an empirical cumulative distribution function
-3. Convert image into SLIC superpixels using the \code{\link{slic}} function
-4. Convert image to CIELAB colorspace and perform kmeans clustering (k = 2; inside/outside tissue) to segment image
-5. Split segmented image into objects and filter out objects with a small area
-6. Keep objects which overlaps with adjusted pixel coordinates
+Masks the background of a tissue section in HE images
 }
+\details{
+The masking method provided uses the SLIC method; Simple Linear Iterative Clustering (for more info, see
+\url{https://www.r-bloggers.com/superpixels-in-imager/}). This algorithm generates superpixels by
+clustering pixels based on their color similarity and proximity in the image plane.
+Before running the SLIC method on the HE images we have noticed that some pre-processing can improve the
+masking significantly.
+First of all, it can be beneficial to remove 1 or two color channels from the image
+using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running
+SLIC.
+The next step is to apply some blurring efect
+}
+\section{Masking options}{
+
+}
+
+\section{Custom mask function}{
+
+Masking can sometimes very difficult to accomplish without cutting off parts of the tissue or
+including unwanted parts of the tissue. If the masking fails you also have the option to
+write your own function that takes a "cimg" class image as input and returns a masked "pxset".
+}
+
 \examples{
 # Create a new Staffli object, mask and plot images
 st.obj <- CreateStaffliObject(imgs, meta.data)

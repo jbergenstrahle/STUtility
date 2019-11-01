@@ -33,11 +33,36 @@ LoadImages <- function (
 # Mask Images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' Masks the background of HE images stored in a Seurat object
+#' Image masking
+#'
+#' Masks the background of a tissue section in HE images
+#'
+#' @details
+#' The masking method provided uses the SLIC method; Simple Linear Iterative Clustering (for more info, see
+#' \url{https://www.r-bloggers.com/superpixels-in-imager/}). This algorithm generates superpixels by
+#' clustering pixels based on their color similarity and proximity in the image plane.
+#' Before running the SLIC method on the HE images we have noticed that some pre-processing can improve the
+#' masking significantly.
+#' First of all, it can be beneficial to remove 1 or two color channels from the image
+#' using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running
+#' SLIC.
+#' The next step is to apply some blurring efect
+#'
+#'
+#' @section Masking options:
+#'
+#'
+#' @section Custom mask function:
+#' Masking can sometimes very difficult to accomplish without cutting off parts of the tissue or
+#' including unwanted parts of the tissue. If the masking fails you also have the option to
+#' write your own function that takes a "cimg" class image as input and returns a masked "pxset".
 #'
 #' @param object Seurat or Staffli object
 #' @param iso.blur Sigma value (pixels) for isoblurring of HE images prior to image segmentation
 #' @param channels.use Select channel to use for masking (default: 1)
+#' @param compactness Scales the number of super-pixels
+#' @param custom.msk.fkn Custom masking function that takes an image of class "cimg" as input and returns a mask
+#' of class "pixset" outlining the tissue area.
 #' @param verbose Print messages
 #'
 #' @inheritParams slic

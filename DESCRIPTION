@@ -47,6 +47,7 @@ Collate:
     'Rigid_transformation.R'
     'generics.R'
     'Staffli.R'
+    'Visualization_utilities.R'
     'Visualization.R'
     'facet_grid_SC.R'
     'image_processing_utilities.R'
