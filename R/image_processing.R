@@ -1,95 +1,108 @@
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# Load Images
-#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+#' @include generics.R Staffli.R image_processing_utilities.R
+NULL
 
-#' Function used to read HE images in jpeg format
-#'
-#' @param object Seurat object
-#' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
-#' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 1000 pixels)
-#' @param verbose Print messages
-#'
-#' @importFrom magick image_read
+#' @rdname LoadImages
+#' @method LoadImages Staffli
 #'
 #' @export
+#' @return  A Staffli object
+#' @examples
+#' # Create a new Staffli object and plot images
+#' st.obj <- CreateStaffliObject(imgs, meta.data)
+#' st.obj <- LoadImages(st.obj, verbose = TRUE)
+#' plot(st.obj)
+#'
 
-LoadImages <- function (
+LoadImages.Staffli <- function (
   object,
   image.paths = NULL,
   xdim = 400,
   verbose = FALSE,
   time.resolve = TRUE
 ) {
+
   # Check that image paths are present
-  if (!"imgs" %in% names(object@tools)) {
-    stop(paste0("Image paths are not present in Seurat object. Provide image.paths manually."))
-  }
+  image.paths <- image.paths %||% object@imgs
+  if (length(x = image.paths) == 0) stop("No images provided. Provide images using image.paths \n", call. = FALSE)
+  if (length(x = image.paths) != length(unique(object@meta.data[, "sample"]))) stop(paste0("Number of images (", length(x = image.paths), ") must match the number of samples (", length(unique(object@meta.data[, "sample"])), ")\n"), call. = FALSE)
 
   # Check that the image with is no more than 2000 pixels
   if (xdim > 2000) stop("xdim cannot be larger than 2000")
 
-  # Check that a sample column exists in meta data
-  if (!"sample" %in% colnames(object[[]])) {
-    if (length(object@tools$imgs) > 1 & is.null(image.paths)) {
-      stop(paste0("Column 'sample' is missing from meta.data and is required when more than one image path (#", length(object@tools$imgs), ") has been provided."), call. = F)
-    } else {
-      if (!is.null(image.paths)) {
-        if (length(image.paths) == 1) {
-          object@tools <- list(imgs = image.paths)
-        } else {
-          stop("Provided image.paths but there are more images than the number of samples (1). \nIf you have more than 1 sample, make sure to provide a 'sample' column in the meta.data slot.")
-        }
-      }
-    }
-    samplenames <- "1"
+  if (verbose) cat(paste0("Loading images for ", length(x = object@samplenames), " samples: \n"))
+
+  # Add dummy pixel_x, pixel_y columns if not provided
+  if (!all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
+    object[[, c(c("pixel_x", "pixel_y"))]] <- object[[, c(c("x", "y"))]]
+    convert.pixel.coords <- TRUE
   } else {
-    if (!is.null(image.paths)) {
-      if (!length(x = unique(object[["sample"]]) == length(x = image.paths))) {
-        stop(paste0("Number of images (",
-                    length(image.paths),
-                    ") does not match the number of samples (",
-                    length(x = unique(object[["sample"]]), ")")), call. = F)
-      } else {
-        object@tools <- list(imgs = image.paths)
-      }
-    }
-
-    check_group.var <- length(unique(object[["sample", drop = T]])) == length(object@tools$imgs)
-
-    if (!check_group.var) stop(paste0("Number of elements in 'sample' column does not match the number of images provided \n\n",
-                                      "elements: \n", paste(unique(object[["sample", drop = T]]), collapse = ", "), "\n\n",
-                                      "images: \n", paste(object@tools$imgs, collapse = ", \n")), call. = F)
-    samplenames <- unique(object[["sample", drop = T]])
+    convert.pixel.coords <- FALSE
   }
 
+  # Read images using the 'magick' library
   imgs <- c()
   dims <- list()
-  for (i in seq_along(object@tools$imgs)) {
-    path <- object@tools$imgs[i]
-    if (verbose) cat("Reading ", path , " for sample ", unique(object[["sample", drop = T]])[i], " ... \n", sep = "")
+  for (i in seq_along(object@imgs)) {
+    path <- object@imgs[i]
+    if (verbose) cat("  Reading ", path , " for sample ", object@meta.data[, "sample"][i], " ... \n", sep = "")
     im <- image_read(path)
     dims <- c(dims, list(image_info(im)))
     if (verbose) {
       info <- dims[[i]]
       width <- as.numeric(info[2]); height <- as.numeric(info[3])
       ydim <- round(height/(width/xdim))
-      cat("Scaling down sample ", unique(object[["sample", drop = T]])[i], " image from ", paste(width, height, sep = "x"), " pixels to ", paste(xdim, ydim, sep = "x"), " pixels \n", sep = "")
+      cat("  Scaling down sample ", unique(object@meta.data[, "sample"])[i], " image from ", paste(width, height, sep = "x"), " pixels to ", paste(xdim, ydim, sep = "x"), " pixels \n", sep = "")
     }
     im <- image_scale(im, paste0(xdim))
-    #tmpf <- tempfile()
-    #image_write(im, path = tmpf)
-    #im <- image_read(tmpf)
+
     imgs <- c(imgs, list(as.raster(im)))
-    if(time.resolve == TRUE){
+    if (time.resolve) {
       gc()
       sleepy(5)
     }
+
+    # Convert pixel coords if specified
+    if (convert.pixel.coords) {
+      print("converting coords")
+      limits <- object@limits[[i]]
+      im.limits <- dims[[i]][2:3] %>% as.numeric()
+      object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- t(t(object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]])*(im.limits/limits))
+      #object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_y"))]] <- im.limits[2] - object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_y"))]]
+    }
   }
 
-  object@tools$dims <- setNames(dims, nm = samplenames)
-  object@tools$raw <- setNames(imgs, nm = samplenames)
-  object@tools$xdim <- xdim
+  object@dims <- setNames(dims, nm = object@samplenames)
+  object@rasterlists$raw <- setNames(imgs, nm = object@samplenames)
+  object@xdim <- xdim
 
+  return(object)
+}
+
+#' @rdname LoadImages
+#' @method LoadImages Seurat
+#'
+#' @export
+#' @return A Seurat object
+#' @examples
+#'
+#' # Load images into a Seurat object and plot images
+#' se <- LoadImages(se, verbose = TRUE)
+#' ImagePlot(se)
+
+LoadImages.Seurat <- function (
+  object,
+  image.paths = NULL,
+  xdim = 400,
+  verbose = FALSE,
+  time.resolve = TRUE
+) {
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+  st.object <- object@tools$Staffli
+  # Reset ixel coordinates
+  if (all(c("pixel_x", "pixel_y") %in% colnames(st.object[[]]))) {
+    st.object[[, c("pixel_x", "pixel_y")]] <- NULL
+  }
+  object@tools$Staffli <- LoadImages(object = st.object, image.paths, xdim, verbose, time.resolve)
   return(object)
 }
 
@@ -107,6 +120,7 @@ LoadImages <- function (
 #' @param method Specify display method (raster or viewer).
 #' @param ncols Number of columns in output grid of images
 #' @param annotate Will put a unique id in the top left corner
+#' @param darken Switches the background to black
 #' @inheritParams LoadImages
 #'
 #' @importFrom magick image_append image_annotate image_scale
@@ -119,32 +133,56 @@ ImagePlot <- function (
   type = NULL,
   method = "viewer",
   ncols = NULL,
-  annotate = TRUE
+  annotate = TRUE,
+  darken = FALSE
 ) {
+  # obtain Staffli object
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+  st.object <- object@tools$Staffli
 
+  # Check if images are available
+  if (length(rasterlists(st.object)) == 0) stop(paste0("No images are available in this Seurat object. Please Run LoadImages() first."), call. = FALSE)
+
+  # Check that type is OK
+  choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
   if (!is.null(type)) {
-    if (!type %in% names(object@tools)) stop(paste0("Invalid type ", type), call. = FALSE)
+    if (!type %in% names(st.object@rasterlists) | !type %in% choices) stop(paste0("type '", type, "' not present in Seurat object"), call. = FALSE)
   }
 
   type <- type %||% {
     choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
-    choices[min(as.integer(na.omit(match(names(object@tools), choices))))]
+    match.arg(arg = choices, choices = names(st.object@rasterlists), several.ok = TRUE)[1]
   }
 
-  images <- object@tools[[type]]
+  images <- st.object@rasterlists[[type]]
+
+  # Use all images if indices are not specified
   indices <- indices %||% {
     seq_along(images)
   }
 
+  # Check if indices are OK
   if (any(!indices %in% 1:length(images))) stop("Image indices out of bounds: ", paste(setdiff(indices, 1:length(images)), collapse = ", "), call. = F)
   images <- images[indices]
 
-  images <- lapply(images, image_read)
-  if (annotate) {
-    images <- setNames(lapply(seq_along(images ), function(i) {image_annotate(images[[i]], text = names(images)[i], size = round(object@tools$xdim/10))}), nm = names(images))
+  # Switch color
+  if (darken & (type %in% c("masked", "processed"))) {
+    images <- lapply(images, function(im) {
+      im[im == "#FFFFFF"] <- "#000000"
+      return(im)
+    })
   }
-  ncols <- ncols %||% round(sqrt(length(x = images)))
+
+  # Read images
+  images <- lapply(images, image_read)
+
+  # Add sample ID
+  if (annotate) {
+    images <- setNames(lapply(seq_along(images ), function(i) {image_annotate(images[[i]], text = names(images)[i], color = ifelse(darken, "#FFFFFF", "#000000"), size = round(st.object@xdim/10))}), nm = names(images))
+  }
+  ncols <- ncols %||% ceiling(sqrt(length(x = images)))
   nrows <- ceiling(length(x = images)/ncols)
+
 
   if (method == "viewer") {
     stack <- c()
@@ -161,7 +199,11 @@ ImagePlot <- function (
     graphics::layout(mat = layout.matrix)
 
     for (rst in lapply(images, as.raster)) {
-      par(mar = c(0, 0.2, 0, 0.2))
+      if (darken) {
+        par(mar = c(0, 0.2, 0, 0.2), bg = "black")
+      } else {
+        par(mar = c(0, 0.2, 0, 0.2))
+      }
       plot(rst)
     }
     par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
@@ -175,66 +217,62 @@ ImagePlot <- function (
 # Mask Images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' Masks the background of HE images stored in a Seurat object
-#'
-#' Algorithm:
-#' 1. Blur image with median filter
-#' 2. Equalize image colors using an empirical cumulative distribution function
-#' 3. Convert image into SLIC superpixels using the \code{\link{slic}} function
-#' 4. Convert image to CIELAB colorspace and perform kmeans clustering (k = 2; inside/outside tissue) to segment image
-#' 5. Split segmented image into objects and filter out objects with a small area
-#' 6. Keep objects which overlaps with adjusted pixel coordinates
-#'
-#' @param object Seurat object
-#' @param iso.blur Sigma value (pixels) for isoblurring of HE images prior to image segmentation
-#' @param channels.use Select channel to use for masking (default: 1)
-#' @param verbose Print messages
-#'
-#' @inheritParams slic
-#'
-#' @importFrom imager magick2cimg medianblur sRGBtoLab as.cimg split_connected add imsplit imappend RGBtoHSV blur_anisotropic HSVtoRGB add threshold isoblur imlist
-#' @importFrom magick image_read
-#' @importFrom dplyr select summarize
-#' @importFrom magrittr %>%
-#' @importFrom stats kmeans
-#' @importFrom purrr modify_at
-#'
-#' @return A Seurat object with masked HE images
+#' @rdname MaskImages
+#' @method MaskImages Staffli
 #'
 #' @export
+#' @return  A Staffli object
+#' @examples
+#' # Create a new Staffli object, mask and plot images
+#' st.obj <- CreateStaffliObject(imgs, meta.data)
+#' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages()
+#' plot(st.obj)
+#'
 
-MaskImages <- function (
+MaskImages.Staffli <- function (
   object,
   iso.blur = 2,
-  channels.use = 1,
+  channels.use = NULL,
   compactness = 1,
+  add.contrast = NULL,
   verbose = FALSE
 ) {
 
+  # obtain Staffli object
+  if (!"raw" %in% names(object@rasterlists)) stop("Raw images not present in Staffli object, pelase run LoadImages() first ... \n", call. = FALSE)
+
   rasters <- list()
   masks <- list()
-  #centers <- list()
 
-  for (i in seq_along(object@tools$raw)) {
-    imr <- image_read(object@tools$raw[[i]])
+  for (i in seq_along(object@rasterlists$raw)) {
+    imr <- image_read(object@rasterlists$raw[[i]])
 
     # segmentation tests
     im <- magick2cimg(imr)
     im <- threshold(im)
 
+    # Select channels to use for masking if not specified and depending on platform
+    if (object@platforms[i] == "Visium") {
+      channels.use <- channels.use %||% 1:3
+      add.contrast = FALSE
+    } else if (object@platforms[i] %in% c("1k", "2k")) {
+      channels.use <- channels.use %||% 1
+      add.contrast = TRUE
+    }
+
     rm.channels <- (1:3)[-channels.use]
     for (ind in rm.channels) {
       im[, , , ind] <- TRUE
     }
-    #im[, , , 2] <- TRUE; im[, , , 3] <- TRUE
+
     im <- isoblur(im, iso.blur)
 
     if (verbose) {
         cat(paste0("Loaded image ", i, "\n"))
         cat(paste0("Running SLIC algorithm \n"))
     }
-    out <- slic(im, nS = object@tools$xdim*1.5, compactness)
-    out <- out^4
+    out <- slic(im, nS = object@xdim*1.5, compactness)
+    if (add.contrast) out <- out^4
     d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
       select(-x, -y)
 
@@ -247,10 +285,10 @@ MaskImages <- function (
     if (length(sp) == 0) stop(paste0("Masking failed for image ", i), call. = FALSE)
 
     # Colect pixel coordinates for spots in meta.data slot
-    dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
-    dims.scaled <- dim(object@tools$raw[[i]])
+    dims.raw <- as.numeric(object@dims[[i]][2:3])
+    dims.scaled <- dim(object@rasterlists$raw[[i]])
     sf.xy <- dims.raw/rev(dims.scaled)
-    pixel_xy <- sapply(subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy, round)
+    pixel_xy <- sapply(subset(object@meta.data, sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy, round)
     pixel_coords <- paste(pixel_xy[, 1], pixel_xy[, 2], sep = "x")
 
     # Check object sizes
@@ -295,21 +333,39 @@ MaskImages <- function (
       cat(paste0("Masking background in image ", i , "\n"))
     }
 
-    rst <- object@tools$raw[[i]]
+    rst <- object@rasterlists$raw[[i]]
     rst[(1:length(rst))[-inds_inside_tissue$idx]] <- "#FFFFFF"
 
-    #rst <- t(rst)
     rasters[[i]] <- rst
-
-    # Find tissue center
-    #center <- which(seg[, , 1, 1] > 0, arr.ind = T) %>% as.data.frame() %>% summarize(center.x = mean(row), center.y = mean(col))
-    #centers[[i]] <- center
   }
 
-  object@tools$masked <- setNames(rasters, nm = names(object@tools$raw))
-  object@tools$masked.masks <- setNames(masks, nm = names(object@tools$raw))
-  #object@tools$centers <- setNames(centers, nm = names(object@tools$raw))
+  object@rasterlists$masked <- setNames(rasters, nm = object@samplenames)
+  object@rasterlists$masked.masks <- setNames(masks, nm = object@samplenames)
 
+  return(object)
+}
+
+#' @rdname MaskImages
+#' @method MaskImages Seurat
+#'
+#' @export
+#' @return A Seurat object
+#' @examples
+#'
+#' # Load images into a Seurat objectm, mask and plot images
+#' se <- LoadImages(se, verbose = TRUE) %>% MaskImages()
+#' ImagePlot(se)
+
+MaskImages.Seurat <- function (
+  object,
+  iso.blur = 2,
+  channels.use = NULL,
+  compactness = 1,
+  add.contrast = NULL,
+  verbose = FALSE
+) {
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+  object@tools$Staffli <- MaskImages(object@tools$Staffli, iso.blur, channels.use, compactness, add.contrast, verbose)
   return(object)
 }
 
@@ -317,44 +373,58 @@ MaskImages <- function (
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Warp Images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
-# TODO: Fix center
 
-#' Warps images using various transformations
+#' @rdname WarpImages
+#' @method WarpImages Staffli
 #'
-#' @param object Seurat object
-#' @param transforms List of arguments passed to warp function
-#' @param verbose Print messages
-#'
-#' @return Seurat object with processed imaged
+#' @export
+#' @return  A Staffli object
+#' @examples
+#' # Create a new Staffli object, mask, warp and plot images
+#' st.obj <- CreateStaffliObject(imgs, meta.data)
+#' transforms <- list("2" = list("mirror.y" = TRUE))
+#' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% WarpImages(transforms)
+#' plot(st.obj)
 
-WarpImages <- function (
+WarpImages.Staffli <- function (
   object,
   transforms,
-  verbose
+  verbose = FALSE
 ) {
-  if (!"masked" %in% names(object@tools)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-  if (!any(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) stop(paste0("Pixel coordinates are missing in Seurat object"), call. = FALSE)
 
-  if (!all(names(transforms) %in% names(object@tools$masked))) stop(paste0("transforms does not match the image labels"))
+  # Check if masked images are available
+  if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
 
-  processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
-  masks <- object@tools$masked.masks
-  processed.masks <- object@tools$masked.masks
+  # Check if the transform list is OK
+  if (!all(names(transforms) %in% samplenames(object))) stop(paste0("transforms does not match the sample labels"))
+
+  if ("processed" %in% rasterlists(object)) {
+    processed.images <- object["processed"]
+    processed.masks <- object["processed.masks"]
+  } else {
+    processed.images <- object["masked"]
+    processed.masks <- object["masked.masks"]
+  }
+
+  masked.images <- object["masked"]; masked.masks <- object["masked.masks"]
+
   if (all(c("warped_x", "warped_y") %in% colnames(object[[]]))) {
-    warped_coords <- object[[c("warped_x", "warped_y", "sample")]]
+    warped_coords <- object[[, c("warped_x", "warped_y", "sample")]]
     spots <- rownames(subset(warped_coords, sample %in% names(transforms)))
-    pxset <- object[[c("pixel_x", "pixel_y")]]
+    pxset <- object[[, c("pixel_x", "pixel_y")]]
     warped_coords[spots, 1:2] <- pxset[spots, ]
     warped_coords <- warped_coords[, 1:2]
   } else {
-    warped_coords <- object[[c("pixel_x", "pixel_y")]]
+    warped_coords <- object[[, c("pixel_x", "pixel_y")]]
   }
 
+  # Create a list of 3x3 identity matrices
+  transformations <- setNames(lapply(1:length(object@samplenames), function(i) {diag(c(1, 1, 1))}), nm = names(object))
 
   for (i in names(transforms)) {
 
     if (verbose) cat(paste0("Loading masked image for sample ", i, " ... \n"))
-    m <- object@tools$masked[[i]]
+    m <- masked.images[[i]]
 
     args <- transforms[[i]]
     center.x <- args[["center.x"]] %||% FALSE
@@ -363,15 +433,19 @@ WarpImages <- function (
     mirror.x <- args[["mirror.x"]] %||% FALSE
     mirror.y <- args[["mirror.y"]] %||% FALSE
 
-    tr <- combine.tr(as.numeric(object@tools$centers[[i]]), rev(dim(m)/2), alpha = angle, mirror.x = mirror.x, mirror.y = mirror.y)
+    center <- apply(which(m == "#FFFFFF", arr.ind = T), 2, mean)
+    center.new <- rev(dim(m)/2)
+    center.new <- c(ifelse(center.x, center.new[1], center[1]), ifelse(center.y, center.new[2], center[2]))
+    tr <- combine.tr(center, center.new, alpha = angle, mirror.x = mirror.x, mirror.y = mirror.y)
+    transformations[[i]] <- tr
 
     map.rot.backward <- generate.map.rot(tr)
     map.rot.forward <- generate.map.rot(tr, forward = TRUE)
 
     # Obtain scale factors
-    dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
-    dims.scaled <- dim(object@tools$raw[[i]])
-    sf.xy <- dims.raw/rev(dims.scaled)
+    dims.raw <- as.numeric(object@dims[[i]][2:3])
+    dims.scaled <- dim(object["raw"][[i]])
+    sf.xy <- dims.raw[2]/dims.scaled[1]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp pixels
@@ -381,15 +455,42 @@ WarpImages <- function (
 
     if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
     processed.images[[i]] <- Warp(m, map.rot.backward)
-    msk <- masks[[i]]
+    msk <- masked.masks[[i]]
     if (verbose) cat(paste0("Warping image mask for ", i, " ... \n"))
     processed.masks[[i]] <- Warp(msk, map.rot.backward, mask = T)
     if (verbose) cat(paste0("Finished alignment for sample", i, " \n\n"))
   }
 
-  object@tools$processed <- processed.images
-  object@tools$processed.masks <- processed.masks
-  object[[c("warped_x", "warped_y")]] <- warped_coords
+  object@transformations <- transformations
+  object@rasterlists$processed <- processed.images
+  object@rasterlists$processed.masks <- processed.masks
+  object[[, c("warped_x", "warped_y")]] <- warped_coords
+
+  return(object)
+}
+
+#' @rdname WarpImages
+#' @method WarpImages Seurat
+#'
+#' @export
+#' @return A Seurat object
+#' @examples
+#' # Load, mask, warp and plot images in a Seurat object
+#' # Mirror y axis in sample '2' and rotate sample '3' 10 degrees
+#' transforms <- list("2" = list("mirror.y" = TRUE), "3" = list("angle" = 10))
+#' se <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% WarpImages(transforms)
+#' ImagePlot(se)
+
+WarpImages.Seurat <- function (
+  object,
+  transforms,
+  verbose = FALSE
+) {
+
+  # obtain Staffli object
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+  st.object <- WarpImages(GetStaffli(object), transforms, verbose)
+  object@tools$Staffli <- st.object
   return(object)
 }
 
@@ -398,43 +499,36 @@ WarpImages <- function (
 # Align Images (automatic)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' Automatic alignment of HE stained tissue images
-#'
-#' Image alignment or image registration consists in finding a rigid tranformation
-#' function that remaps pixels between two images so that two images are aligned.
-#' AlignImages allows you to align all images to a reference (any image present in the Seurat object)
-#' which simplifies the interpretation of spatial heatmaps and can be useful for creating 3D
-#' models. The transformation function is learned using the ICP (Iterative Closest Point) on two point
-#' sets which defines the edges of the tissues in the HE images. Note that this alignment works best
-#' for tissue sections that are intact, i.e. not cropped or folded. Also, because the method only used
-#' the edges of the tissue for alignment, you might end up with strange results if the tissue
-#' shape is symmetrical.
-#'
-#' @param object A Seurat object
-#' @param indices Integer: sample indices of images to align with reference
-#' @param reference.index Integer: sample index of referece image
-#' @param verbose Print messages
-#'
-#' @importFrom imager as.cimg imwarp
-#' @importFrom grDevices as.raster
+#' @rdname AlignImages
+#' @method AlignImages Staffli
 #'
 #' @export
+#' @return  A Staffli object
+#' @examples
+#' # Create a new Staffli object, mask, align and plot images
+#' st.obj <- CreateStaffliObject(imgs, meta.data)
+#' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% AlignImages()
+#' plot(st.obj)
 
-AlignImages <- function (
+AlignImages.Staffli <- function (
   object,
   indices = NULL,
   reference.index = NULL,
   verbose = FALSE
 ) {
 
-  if (!"masked" %in% names(object@tools)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-  if (!any(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) stop(paste0("Pixel coordinates are missing in Seurat object"), call. = FALSE)
+  # Check if masked images are available
+  if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
+
+  # Check if pixel coordinates are available
+  if (!any(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) stop(paste0("Pixel coordinates are missing in Staffli object"), call. = FALSE)
 
   reference.index <- reference.index %||% 1
   if (verbose) cat(paste0("Selecting image ", reference.index, " as reference for alignment. \n"))
 
+  # Obtain edges of tissue sections
   reference.edge <- get.edges(object, index = reference.index)
-  indices <- indices %||% (1:length(object@tools$imgs))[-reference.index]
+  indices <- indices %||% (1:length(object@samplenames))[-reference.index]
   edge.list <- lapply(indices, function(i) {
     get.edges(object, index = i, verbose = verbose)
   })
@@ -448,29 +542,34 @@ AlignImages <- function (
   }), nm = indices)
 
   # Obtain reference image
-  im.ref <- as.cimg(object@tools$raw[[reference.index]])
+  im.ref <- as.cimg(object["raw"][[reference.index]])
 
-  # Create empty lists
-  transformations <- setNames(lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))}), nm = names(object@tools$masked))
-  processed.images <- setNames(ifelse(rep("processed" %in% names(object@tools), length(object@tools$imgs)), object@tools$processed, object@tools$masked), nm = names(object@tools$masked))
-  processed.masks <- object@tools$masked.masks
-  warped_coords <- object[[c("pixel_x", "pixel_y")]]
+  # Create a list of 3x3 identity matrices
+  transformations <- setNames(lapply(1:length(object@samplenames), function(i) {diag(c(1, 1, 1))}), nm = names(object@samplenames))
+
+  # Collect processed/masked images
+  if ("processed" %in% rasterlists(object)) {
+    processed.images <- object["processed"]
+    processed.masks <- object["processed.masks"]
+  } else {
+    processed.images <- object["masked"]
+    processed.masks <- object["masked.masks"]
+  }
+  warped_coords <- object[[, c("pixel_x", "pixel_y")]]
 
   for (i in indices) {
-    ima <- as.cimg(object@tools$raw[[i]])
-    ima.msk <- as.cimg(object@tools$masked.masks[[i]])
-
+    ima <- as.cimg(object["raw"][[i]])
+    ima.msk <- as.cimg(object["masked.masks"][[i]])
 
     if (verbose) cat(paste0("Processing image ", i, " \n Estimating transformation function ... \n"))
-    xdim <- object@tools$xdim
-    width <- as.numeric(object@tools$dims[[i]][2]); height <- as.numeric(object@tools$dims[[i]][3])
-    ydim <- round(height/(width/xdim))
+    c(xdim, ydim) %<-% scaled.imdims(object)[[i]]
 
     # Obtain optimal transform and create map functions
     icps <- find.optimal.transform(xyset.ref, xyset[[paste0(i)]], xdim, ydim)
     tr <- icps$icp$map
-    # Collect rotation matrix
-    tr <- tr[-3, -3]#; tr[1:2, 3] <- 0
+
+    # Collect rotation matrix and convert to 3x3 matrix (column/row 3 will not be used)
+    tr <- tr[-3, -3]
     reflect.x <- icps$os[1] == xdim; reflect.y <- icps$os[2] == ydim
     center.new <- apply(xyset[[paste0(i)]], 2, mean)
     if (reflect.x) {
@@ -492,14 +591,14 @@ AlignImages <- function (
     inds <- which(imat.msk != 255)
 
     # Obtain scale factors
-    dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
-    dims.scaled <- dim(object@tools$raw[[i]])
-    sf.xy <- dims.raw/dims.scaled
+    dims.raw <- iminfo(object)[[i]][, c("width", "height")] %>% as.numeric()
+    dims.scaled <- scaled.imdims(object)[[i]]
+    sf.xy <- dims.raw[2]/dims.scaled[1]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp coordinates
-    warped_xy <- map.affine.forward(pixel_xy[, 1], pixel_xy[, 2])
-    warped_coords[rownames(pixel_xy), ] <- sapply(setNames(as.data.frame(t(t(do.call(cbind, warped_xy))*sf.xy)), nm = c("x", "y")), round, 2)
+    warped_xy <- map.affine.forward(x = pixel_xy[, 1], y = pixel_xy[, 2])
+    warped_coords[rownames(pixel_xy), ] <- sapply(setNames(as.data.frame(do.call(cbind, warped_xy)*sf.xy), nm = c("x", "y")), round, 2)
 
     if (verbose) cat(paste0(" Cleaning up background ... \n"))
     imrst <- as.raster(imat)
@@ -515,11 +614,33 @@ AlignImages <- function (
     processed.masks[[i]] <- as.raster(imat.msk)
   }
 
-  object@tools$processed <- processed.images
-  object@tools$processed.masks <- processed.masks
-  object@tools$transformations <- transformations
-  object[[c("warped_x", "warped_y")]] <- warped_coords
+  object@rasterlists$processed <- processed.images
+  object@rasterlists$processed.masks <- processed.masks
+  object@transformations <- transformations
+  object[[, c("warped_x", "warped_y")]] <- warped_coords
 
+  return(object)
+}
+
+#' @rdname AlignImages
+#' @method AlignImages Seurat
+#'
+#' @export
+#' @return  A Seurat object
+#' @examples
+#' # Load, mask, align and plot images
+#' se <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% AlignImages()
+#' ImagePlot(se)
+
+AlignImages.Seurat <- function (
+  object,
+  indices = NULL,
+  reference.index = NULL,
+  verbose = FALSE
+) {
+  # Check if masked images are available
+  if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
+  object@tools$Staffli <- AlignImages(GetStaffli(object), indices, reference.index, verbose)
   return(object)
 }
 
@@ -528,51 +649,43 @@ AlignImages <- function (
 # Align Images (manual)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#' Manual alignment of images
-#'
-#' Creates an interactive shiny application to align images manually
-#'
-#' @param object Seurat object
-#' @param Image type used for alignment
-#' @param reference.index Specifies reference sample image for alignment(default: 1)
-#' @param edges Uses the tissue edges as points set for alignment
-#' @param maxnum Maximum grid number
-#' @param verbose Print messages
-#'
-#' @inheritParams grid.from.seu
-#'
-#' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
-#' @importFrom shinyjs useShinyjs reset
+#' @rdname ManualAlignImages
+#' @method ManualAlignImages Staffli
 #'
 #' @export
+#' @return  A Staffli object
+#' @examples
+#' # Create a new Staffli object, mask, align and plot images (will start an interactive shiny session)
+#' st.obj <- CreateStaffliObject(imgs, meta.data)
+#' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% ManualAlignImages()
+#' plot(st.obj)
 
-ManualAlignImages <- function (
+ManualAlignImages.Staffli <- function (
   object,
-  type = NULL,
+  type = "masked.masks",
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
   maxnum = 1e3
 ) {
 
-  # use processed images as input if available
-  type <- type %||% {
-    if ("processed" %in% names(object@tools)) {
-      "processed"
-    } else if ("masked" %in% names(object@tools)) {
-      "masked"
-    } else {
-      stop(paste0("No masked images are available in the Seurat object"), call. = FALSE)
-    }
+  # Check if images have been masked
+  if (!"masked" %in% rasterlists(object)) stop(paste0("You have to mask images before running manual alignment "), call. = FALSE)
+
+  # Check that type is OK
+  choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
+  if (!is.null(type)) {
+    if (!type %in% rasterlists(object) | !type %in% choices) stop(paste0("type '", type, "' not present in Staffli object"), call. = FALSE)
   }
-  if (verbose) cat(paste0("Using ", type, " images as input for alignment ... \n"))
+
+  if (verbose) cat(paste0("Using '", type, "' images as input for alignment ... \n"))
 
   # Obtain point sets from each image
-  scatters <- grid.from.seu(object, type = type, edges = edges, maxnum = maxnum)
+  scatters <- grid.from.staffli(object, type = type, edges = edges, maxnum = maxnum)
   fixed.scatter <- scatters[[reference.index]]$scatter
   counter <- NULL
   coords.ls <- NULL
-  tr.matrices <- ifelse(rep(type %in% c("processed", "prossesed.masks"), length(object@tools$imgs)), se@tools$transformations, lapply(seq_along(object@tools[[type]]), function(i) diag(c(1, 1, 1))))
+  tr.matrices <- transformations <-  ifelse(rep(type %in% c("processed", "prossesed.masks"), length(names(object))), object@transformations, lapply(seq_along(names(object)), function(i) diag(c(1, 1, 1))))
   #tr.matrices <- lapply(seq_along(object@tools[[type]]), function(i) diag(c(1, 1, 1)))
 
 
@@ -719,43 +832,38 @@ ManualAlignImages <- function (
   if (verbose) cat(paste("Finished image alignment. \n\n"))
   processed.ids <- which(unlist(lapply(alignment.matrices, function(tr) {!all(tr == diag(c(1, 1, 1)))})))
 
+  # Raise error if none of the samples were processed
   if (length(processed.ids) == 0) stop("None of the samples were processed", call. = FALSE)
 
-  # Create lists for transformation
-  transformations <- setNames(ifelse(rep("transformations" %in% names(object@tools) & type != "masked", length(object@tools$imgs)), object@tools$transformations, lapply(1:length(object@tools$imgs), function(i) {diag(c(1, 1, 1))})), nm = names(object@tools$masked))
-
-  type <- type %||% match.arg(several.ok = T, names(object@tools), choices = c("processd", "masked"))[1]
-  if (!type %in% names(object@tools)) stop(paste0(type, " images not present in Seurat object"), call. = F)
-
   im.type <- ifelse(type %in% c("processed.masks", "masked.masks"), gsub(pattern = ".masks", replacement = "", x = type), type)
-  processed.images <- object@tools[[im.type]]
+  processed.images <- object[im.type]
 
   msk.type <- ifelse(type %in% c("processed", "masked"), paste0(type, ".masks"), type)
-  processed.masks <- masks <- object@tools[[msk.type]]
+  processed.masks <- masks <- object[msk.type]
 
   if (type %in% c("processed", "processed.masks")) {
     xy.names <- c("warped_x", "warped_y")
   } else {
     xy.names <- c("pixel_x", "pixel_y")
   }
-  warped_coords <- object[[xy.names]]
+  warped_coords <- object[[, xy.names]]
 
   for (i in processed.ids) {
 
     if (verbose) cat(paste0("Loading masked image for sample ", i, " ... \n"))
-    m <- object@tools$masked[[i]]
+    m <- object["masked"][[i]]
 
     # Obtain alignment matrix
     tr <- alignment.matrices[[i]]
-    transformations[[i]] <- tr%*%transformations[[i]]
+    transformations[[i]] <- tr%*%tr.matrices[[i]]
 
     map.rot.backward <- generate.map.rot(tr)
     map.rot.forward <- generate.map.rot(tr, forward = TRUE)
 
     # Obtain scale factors
-    dims.raw <- as.numeric(object@tools$dims[[i]][2:3])
-    dims.scaled <- dim(object@tools$raw[[i]])
-    sf.xy <- dims.raw/rev(dims.scaled)
+    dims.raw <- as.numeric(iminfo(object)[[i]][2:3])
+    dims.scaled <- scaled.imdims(object)[[i]]
+    sf.xy <- dims.raw[1]/dims.scaled[1]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp pixels
@@ -771,10 +879,35 @@ ManualAlignImages <- function (
     if (verbose) cat(paste0("Finished alignment for sample ", i, " \n\n"))
   }
 
-  object@tools$transformations <- transformations
-  object@tools$processed <- processed.images
-  object@tools$processed.masks <- processed.masks
-  object[[c("warped_x", "warped_y")]] <- warped_coords
-  return(object)
+  object@transformations <- transformations
+  object["processed"] <- processed.images
+  object["processed.masks"] <- processed.masks
+  object[[, c("warped_x", "warped_y")]] <- warped_coords
 
+  return(object)
+}
+
+
+#' @rdname ManualAlignImages
+#' @method ManualAlignImages Seurat
+#'
+#' @export
+#' @return  A Seurat object
+#' @examples
+#' # Load, mask, align and plot images (will start an interactive shiny session)
+#' se <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% ManualAlignImages()
+#' ImagePlot(se)
+
+ManualAlignImages.Seurat <- function (
+  object,
+  type = "masked.masks",
+  reference.index = 1,
+  edges = TRUE,
+  verbose = FALSE,
+  maxnum = 1e3
+) {
+  # Check if masked images are available
+  if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
+  object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, maxnum)
+  return(object)
 }

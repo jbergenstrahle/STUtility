@@ -1,28 +1,60 @@
-#' Obtain edges of binaryh mask stores in masked.masks list
-#'
-#' @param object Seurat object
-#' @param index Sample index
-#' @param verbose Print messages
-#'
-#' @importFrom imager imgradient add map_il
+#' @include generics.R Staffli.R
+NULL
 
-get.edges <- function (
+#' @rdname improc.utils
+#' @method get.edges Staffli
+#'
+#' @return  A list of data.frames with edge coordinates
+#' @examples
+#' # Create a new Staffli object, mask, align and plot edges for image 2
+#' st.obj <- CreateStaffliObject(imgs, meta.data)
+#' edges <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% get.edges(index = 2)
+#' plot(as.raster(edges) %>% as.cimg())
+
+get.edges.Staffli <- function (
   object,
-  index,
+  index = 1,
   verbose = FALSE,
   type = "masked.masks"
 ) {
+  # Check that type is present
+  if (!type %in% rasterlists(object)) stop(paste0(type, " invalid or not present in Staffli object ... \n"), call. = FALSE)
   if (verbose) cat(paste0(" Detecting edges of sample ", index, "\n"))
-  im <- object@tools[[type]][[index]]
 
+  # Select image by index
+  im <- object[type][[index]]
+
+  # Detect gradients
   grad <- imgradient(as.cimg(im))
   grad.sq <- grad %>% map_il(~ .^2)
 
+  # Combine edges, select maximum value and normalize to 0-1 range
   grad.sq <- add(grad.sq)
   grad.sq <- apply(grad.sq, c(1, 2), max)
-  return(grad.sq/max(grad.sq))
+  grad.sq <- grad.sq/max(grad.sq)
+
+  return(grad.sq)
 }
 
+#' @rdname improc.utils
+#' @method get.edges Seurat
+#'
+#' @return  A list of data.frames with edge coordinates
+#' @examples
+#' # Mask, align and plot edges for image 2 from a Seurat object
+#' edges <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% get.edges(index = 2)
+#' plot(as.raster(edges) %>% as.cimg())
+
+get.edges.Seurat <- function (
+  object,
+  index = 1,
+  verbose = FALSE,
+  type = "masked.masks"
+) {
+  st.object <- GetStaffli(object)
+  edges <- get.edges(st.object)
+  return(edges)
+}
 
 
 #' Match two point sets using iterative closest point search

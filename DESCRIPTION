@@ -39,3 +39,4 @@ Suggests:
 	shinyjs (>= 1.0)
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
+

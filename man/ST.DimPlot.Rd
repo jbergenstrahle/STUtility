@@ -6,53 +6,60 @@
 \usage{
 ST.DimPlot(object, dims = c(1, 2), spots = NULL, plot.type = "spots",
   blend = FALSE, min.cutoff = NA, max.cutoff = NA, pt.size = 1,
-  reduction = NULL, shape.by = NULL, palette = "MaYl", cols = NULL,
-  rev.cols = FALSE, dark.theme = FALSE, ncol = NULL, delim = NULL,
-  return.plot.list = F, grid.ncol = NULL, center.zero = T,
-  channels.use = NULL, center.tissue = FALSE, verbose = FALSE, ...)
+  pt.alpha = 1, reduction = NULL, shape.by = NULL,
+  palette = "MaYl", cols = NULL, rev.cols = FALSE,
+  dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
+  center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
 
-\item{dims}{Dimensions to plot, a numeric vector specifying number of dimensions to plot}
+\item{dims}{Dimensions to plot [default: 1, 2]}
 
-\item{spots}{Vector of spots to plot (default is all spots)}
+\item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{plot.type}{Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"}
+\item{plot.type}{Specify the type of plot to use [default: "spots"]. Available options are; "spots" (a "smooth" options will be added soon)}
 
-\item{blend}{Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)}
+\item{blend}{Scale and blend expression values to visualize coexpression of two features (this options will override other coloring parameters).
+See 'Blending values' below for a more thourough description.}
 
-\item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature,
-may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')}
+\item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature, may specify quantile in the form of 'q##' where '##'
+is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values that skew the colorscale in the plot. For example, if you specify
+'q1', you will trim of values below the 1st percentile. [default: no cuttoffs]}
 
-\item{pt.size}{Adjust point size for plotting}
+\item{pt.size}{Adjust point size for plotting [default: 1]}
 
-\item{reduction}{Which dimensionality reduction to use. If not specified, first searches for umap, then tsne, then pca}
+\item{pt.alpha}{Adjust point opacity for plotting [default: 1]}
 
-\item{shape.by}{If NULL, all points are circles (default). You can specify any
-cell attribute (that can be pulled with FetchData) allowing for both
-different colors and different shapes on cells}
+\item{reduction}{Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"}
 
-\item{palette}{Color palette used for spatial heatmap (see \code{?palette.select} for available options).
+\item{shape.by}{You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
+and different shapes on spots}
+
+\item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
-\item{rev.cols}{Logical specifying whether colorscale should be reversed}
+\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
-\item{ncol}{Number of columns in \code{facet_wrap}}
+\item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
+in just in one row or one column.}
 
-\item{delim}{delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data}
+\item{grid.ncol}{Number of columns for display when combining plots. This option will only have an effect on the sample level structure.}
 
-\item{return.plot.list}{should the plots be returned as a list? By default, the plots are arranged into a grid}
+\item{center.zero}{Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
+the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.
+If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradient2} will be used to control the coloring instead of
+\code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
+the interpretaion of the output plot.}
 
-\item{grid.ncol}{Number of columns for display when combining plots}
-
-\item{center.zero}{Should the colorscale be centered around 0? Set to TRUE for scaled data}
-
-\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
+\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis. This can be useful if your
+samples have been placed in very different parts of the capture area and you want to center the plots in the middle. This is however unnecessary if
+you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\link{WarpImages}} and \code{\link{ManualAlignImages}})}
 
 \item{verbose}{Print messages}
 
@@ -62,10 +69,38 @@ option.}
 A ggplot object
 }
 \description{
-Graphs the output of a dimensional reduction technique on a 2D scatter plot where each point is a
-spot and it's positioned based on the ST array coordinates in a grid pattern. Spots are colored
-by the dimensional reduction vectors specified by the user.
+Graphs the selected vectors of a dimensional reduction technique on a 2D grid of spots.
 }
-\details{
-Function built upon the DimPlot() function from Seurat (https://github.com/satijalab/seurat/blob/master/R/utilities.R)
+\section{Blending values}{
+
+The blend option can be useful if you wish to visualize multiple dimensions simultaneuosly and works for two or three dimensionality
+reduction vectors. Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+"A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
+}
+
+\examples{
+
+se <- RunPCA(se)
+
+# Plot the first 5 dimensions
+ST.DimPlot(se, dims = 1:5, reduction = "pca")
+
+# Plot the first 5 dimensions and put each sample in a separate row
+ST.DimPlot(se, dims = 1:5, reduction = "pca", grid.ncol = 1)
+
+# Blend values for dimensions 1 and 2
+ST.DimPlot(se, dims = 1:2, reduction = "pca", blend = T)
+
+# Plot the first 5 dimensions and trim off 1st percentile values
+ST.DimPlot(se, dims = 1:5, reduction = "pca", min.cutoff = 'q1')
+
+}
+\seealso{
+\code{\link{ST.FeaturePlot}} for how to plot features,
+\code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
+HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
+to overlay plots on the HE images in multiple samples.
 }

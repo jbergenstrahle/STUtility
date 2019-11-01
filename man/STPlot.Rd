@@ -2,55 +2,64 @@
 % Please edit documentation in R/Visualization.R
 \name{STPlot}
 \alias{STPlot}
-\title{Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector}
+\title{Graphs ST spots colored by continuous or categorical features}
 \usage{
-STPlot(data, data.type = NULL, group.by, shape.by, variable,
-  pt.size = 1, palette = "MaYl", cols = NULL, rev.cols = F,
+STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
+  pt.alpha = 1, palette = "MaYl", cols = NULL, rev.cols = F,
   ncol = NULL, spot.colors = NULL, center.zero = TRUE,
-  center.tissue = F, plot.title = NULL, xlim = NULL, ylim = NULL,
+  center.tissue = F, plot.title = NULL, dims = NULL,
   split.labels = FALSE, theme = theme_void(), ...)
 }
 \arguments{
-\item{data}{data.frame containing (x, y) coordinates, a group vector and a continuous variable vector}
+\item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
+and one column with the feature values. Can also include an additional column for shapes.}
 
-\item{data.type}{Type of data, e.g. numeric or integer}
+\item{data.type}{String specifying the class of the features in data to be plotted}
 
-\item{group.by}{Specifies column to facet the plots by, e.g. sample}
+\item{shape.by}{String specifying the column where the shaping label is stored}
 
-\item{shape.by}{Specifies column to shape points by, e.g. morphological region}
+\item{variable}{Name of feature column}
 
-\item{variable}{Name of continuous variable}
+\item{pt.size}{Point size of each ST spot [default: 1]}
 
-\item{pt.size}{Point size of each ST spot}
+\item{pt.alpha}{Opacity of each ST spot [default: 1]}
 
-\item{palette}{Color palette used for spatial heatmap (see \code{?palette.select} for available options).
+\item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
-\item{rev.cols}{Logical specifying whether colorscale should be reversed}
+\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
-\item{ncol}{Number of columns in \code{facet_wrap}}
+\item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
+in just in one row or one column.}
 
-\item{spot.colors}{Character vector woth color names that overrides default coloring with ggplot2}
+\item{spot.colors}{Character vector with color names that overrides default coloring with ggplot2}
 
-\item{center.zero}{Should the colorscale be centered around 0? Set to TRUE for scaled data}
+\item{center.zero}{Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
+the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.
+If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradient2} will be used to control the coloring instead of
+\code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
+the interpretaion of the output plot.}
 
-\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
+\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis. This can be useful if your
+samples have been placed in very different parts of the capture area and you want to center the plots in the middle. This is however unnecessary if
+you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\link{WarpImages}} and \code{\link{ManualAlignImages}})}
 
-\item{plot.title}{Add title to plot}
+\item{plot.title}{String specifying the title of the plot}
 
-\item{xlim, ylim}{Set x/y-axis limits}
+\item{dims}{List of dimensions for x and y scales. If you have mixed datasets from different arrays (platforms) with different resolution,
+this list of dimensions will be used to specify the limits along the x- and y-axis of the array for each sample.}
 
-\item{split.labels}{Only active if the features are specified by character vectors.
+\item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}
 
-\item{theme}{Object of class "theme" used to change the background theme}
+\item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Parameters passed to geom_point()}
 }
 \description{
-Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
+Graphs ST spots colored by continuous or categorical features
 }

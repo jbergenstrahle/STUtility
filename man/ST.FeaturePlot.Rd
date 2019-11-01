@@ -2,16 +2,15 @@
 % Please edit documentation in R/Visualization.R
 \name{ST.FeaturePlot}
 \alias{ST.FeaturePlot}
-\title{Visualize 'features' on an ST array grid}
+\title{Feature plot on ST coordinates}
 \usage{
 ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
   spots = NULL, plot.type = "spots", min.cutoff = NA,
   max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
-  shape.by = NULL, palette = NULL, cols = NULL, rev.cols = FALSE,
-  dark.theme = FALSE, ncol = NULL, delim = NULL,
-  return.plot.list = FALSE, grid.ncol = NULL, center.zero = FALSE,
-  channels.use = NULL, center.tissue = FALSE, theme = theme_void(),
-  verbose = FALSE, ...)
+  pt.alpha = 1, shape.by = NULL, palette = NULL, cols = NULL,
+  rev.cols = FALSE, dark.theme = FALSE, ncol = NULL,
+  grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
+  center.tissue = FALSE, theme = theme_void(), verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -21,50 +20,56 @@ ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 }}
 
-\item{split.labels}{Only active if the features are specified by character vectors.
+\item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}
 
-\item{indices}{Numeric vector specifying sample indices to include in plot. Default is to show all samples.}
+\item{indices}{Integer vector specifying sample indices to include in the plot [default: show all samples]}
 
-\item{spots}{Vector of spots to plot (default is all spots)}
+\item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{plot.type}{Specify the type of plot to use (default: "spots"). Available options are; "spots", "smooth" and "tesselation"}
+\item{plot.type}{Specify the type of plot to use [default: "spots"]. Available options are; "spots" (a "smooth" options will be added soon)}
 
-\item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature,
-may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')}
+\item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature, may specify quantile in the form of 'q##' where '##'
+is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values that skew the colorscale in the plot. For example, if you specify
+'q1', you will trim of values below the 1st percentile. [default: no cuttoffs]}
 
-\item{slot}{Which slot to pull expression data from?}
+\item{slot}{Which slot to pull the data from? [default: 'data']}
 
-\item{blend}{Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)}
+\item{blend}{Scale and blend expression values to visualize coexpression of two features (this options will override other coloring parameters).
+See 'Blending values' below for a more thourough description.}
 
-\item{pt.size}{Adjust point size for plotting}
+\item{pt.size}{Adjust point size for plotting [default: 1]}
 
-\item{shape.by}{If NULL, all points are circles (default). You can specify any
-cell attribute (that can be pulled with FetchData) allowing for both
-different colors and different shapes on cells}
+\item{pt.alpha}{Adjust point opacity for plotting [default: 1]}
 
-\item{palette}{Color palette used for spatial heatmap (see \code{?palette.select} for available options).
+\item{shape.by}{You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
+and different shapes on spots}
+
+\item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
-\item{rev.cols}{Logical specifying whether colorscale should be reversed}
+\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
-\item{ncol}{Number of columns in \code{facet_wrap}}
+\item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
+in just in one row or one column.}
 
-\item{delim}{delimiter passed to \code{\link{GetCoords}} if adjusted ST coordinates are missing in the meta data}
+\item{grid.ncol}{Number of columns for display when combining plots. This option will only have an effect on the sample level structure.}
 
-\item{return.plot.list}{should the plots be returned as a list? By default, the plots are arranged into a grid}
+\item{center.zero}{Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
+the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.
+If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradient2} will be used to control the coloring instead of
+\code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
+the interpretaion of the output plot.}
 
-\item{grid.ncol}{Number of columns for display when combining plots}
+\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis. This can be useful if your
+samples have been placed in very different parts of the capture area and you want to center the plots in the middle. This is however unnecessary if
+you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\link{WarpImages}} and \code{\link{ManualAlignImages}})}
 
-\item{center.zero}{Should the colorscale be centered around 0? Set to TRUE for scaled data}
-
-\item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis}
-
-\item{theme}{Object of class "theme" used to change the background theme}
+\item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 
@@ -74,9 +79,56 @@ option.}
 A ggplot object
 }
 \description{
-Colors spots on an an ST array grid according to a 'feature'
-(i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
+Graphs selected features on a 2D grid of spots, for example raw gene counts, normalized gene counts or cluster labels.
 }
 \details{
-Function built upon the FeaturePlot() function from Seurat (https://github.com/satijalab/seurat/blob/master/R/visualization.R)
+Note that you can only graph one specific class of features at the same time. This function does not support mixing of
+numeric and character vectors for example.
+}
+\section{Splitting categorical features}{
+
+If you are plotting a categorical feature, e.g.cluster labels, you have the option to split each label into facets using \code{split.labels=TRUE}.
+This is very useful if you have many different labels which can make it difficult to distinguish the different colors. However, splitting only
+works for one sample at the time which has to be specified by the \code{indices} argument.
+}
+
+\section{Blending values}{
+
+The blend option can be useful if you wish to visualize multiple features simultaneuosly and works for two or three vectors. Each of the
+selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping features
+"A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
+}
+
+\examples{
+
+# Plot the number of unique genes and the number of UMIs per spot
+ST.featurePlot(se, features = c("nFeature_RNA", "nCount_RNA"))
+
+# Plot selected genes
+ST.featurePlot(se, features = c("Cck", "Dcn"))
+
+# Plot normalized values
+se <- SCTransform(se)
+ST.featurePlot(se, features = c("Cck", "Dcn"))
+
+# Change to scaled data
+ST.featurePlot(se, features = c("Cck", "Dcn"), slot = "scale.data", center.zero = TRUE)
+
+# Cluster spots and plot cluster labels
+se <- se \%>\% RunPCA()
+   FindNeighbors(dims = 1:10, reduction = "pca") \%>\%
+   FindClusters()
+ST.featurePlot(se, features = "seurat_clusters")
+# Split cluster labels into facets
+ST.featurePlot(se, features = "seurat_clusters", split.labels = TRUE)
+
+}
+\seealso{
+\code{\link{ST.DimPlot}} for how to plot dimensionality reduction output,
+\code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
+HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
+to overlay plots on the HE images in multiple samples.
 }

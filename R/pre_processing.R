@@ -6,21 +6,21 @@
 #' @param path Path to count files
 #' @param delim delimiter
 #' @param row.names set column as row.names
-#' @param h5.input Load h5 output files
+#' @param visium Load 10x visium output files
 #'
 #' @importFrom data.table fread
 #'
 #' @keywords internal
 
-st.load.matrix = function(path, delim="\t", row.names=1, h5.input=F, ...) {
+st.load.matrix = function(path, delim="\t", row.names = 1, visium = F, ...) {
   stopifnot(file.exists(path))
   x = c()
-  if(h5.input==F){ #Original ST loading
+  if(visium==F){ #Original ST loading
     tmp = suppressWarnings({try({x = data.frame(fread(input = path, integer64 = "character",
                                      sep = delim),
                                row.names = row.names,
                                check.names = FALSE)})})
-  }else{ #h5 loading
+  }else{ #10X Visium loading
     tmp = suppressWarnings({try({x = Seurat::Read10X_h5(filename=path)})})
   }
   if(inherits(tmp, 'try-error')) {
