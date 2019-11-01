@@ -58,6 +58,7 @@ InputFromTable <- function(
   id.column = NULL,
   replace.column = NULL,
   visium=F,
+  h5.input=F,
   scaleVisium=0.1039393,
   ...
 ){
@@ -77,7 +78,7 @@ InputFromTable <- function(
     if(transpose==FALSE){
 
       if(length(grep(path, pattern=".h5")) == 1){ #If --> 10x file path
-        counts[[path]] <- st.load.matrix(path, visium=T)
+        counts[[path]] <- st.load.matrix(path, h5.input=T)
         visium=T
         }else{
           counts[[path]] <- st.load.matrix(path)
@@ -85,7 +86,7 @@ InputFromTable <- function(
     }else{
 
       if(length(grep(path, pattern=".h5")) == 1){
-        counts[[path]] <- t(st.load.matrix(path, visium=T))
+        counts[[path]] <- t(st.load.matrix(path, h5.input=T))
         visium=T
       }else{
         counts[[path]] <- t(st.load.matrix(path))

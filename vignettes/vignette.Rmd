@@ -422,11 +422,10 @@ We can then plot a variable number of dimensions across the samples.
 
 ```{r, fig.height=24, fig.width=24}
 
-ST.DimPlot(se, dims = 1:8, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = F, pt.size = 1, center.zero = T,palette = "RdBu")
-#ST.DimPlot(se, dims = 1:5, reduction = "ica", dark.theme = T, cols = c("black", "cyan", "white"), center.zero = F, ncol = 4, grid.ncol = 1)
+ST.DimPlot(se, dims = 1:8, ncol = 8, grid.ncol = 1, reduction = "ica", dark.theme = F, pt.size = 1, center.zero = T, palette = "RdYlBu")
 ```
 
-To extract the genes that drives the separation according to the dimensionality reduction, we can use the `ProjectDim()` function. Where we specify the dimensions of interest (here IC_1 and IC_3, which are regions that seems to confer a clear spatial expression histology. 
+To extract the genes that drives the separation according to the dimensionality reduction, we can use the `ProjectDim()` function. Where we specify the dimensions of interest (here IC_1 and IC_3, which are regions that seems to confer a clear spatial expression histology).
 
 ```{r}
 
@@ -513,7 +512,7 @@ ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme
 
 The `DimOverlay()` can be used to overlay the RGB projection onto the H&E image. By default, a single dim.component is used and plotted as a heatmap:
 
-```{r, fig.height = 10, fig.width = 10}
+```{r, fig.height = 8, fig.width = 8}
 
 DimOverlay(se, reduction = "umap.3d", sample.index = 1, dims=c(1,2,3))
 
@@ -521,7 +520,7 @@ DimOverlay(se, reduction = "umap.3d", sample.index = 1, dims=c(1,2,3))
 
 Setting the setting `blend=T` will combine the dimensional vectors
 
-```{r, fig.height = 10, fig.width = 10}
+```{r, fig.height = 8, fig.width = 8}
 
 DimOverlay(se, reduction = "umap.3d", sample.index = 1, dims=c(1,2,3), blend=T, pt.size=4)
 
