@@ -3,7 +3,7 @@ DESCRIPTION
 inst/doc
 doc
 Meta
-man/*
+#man/*
 .Rproj.user
 .gitignore
 .RData

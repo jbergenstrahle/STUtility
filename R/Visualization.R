@@ -584,8 +584,10 @@ STPlot <- function (
 
   # Center tissue along y-axis
   if (center.tissue) {
-    data <- do.call(rbind, lapply(split(data, data[, "sample"]), function(d) {
-      d[, "y"] <- d[, "y"] - median(d[, "y"]) + ylim[2]/2
+    data.split <- split(data, data[, "sample"])
+    data <- do.call(rbind, lapply(seq_along(data.split), function(i) {
+      d <- data.split[[i]]
+      d[, "y"] <- d[, "y"] - median(d[, "y"]) + dims[[i]][2]/2
       return(d)
     }))
   }
@@ -1845,9 +1847,10 @@ obtain.array.coords <- function (
     data <- cbind(data, setNames(st.object[[, c("pixel_x", "pixel_y")]], nm = c("x", "y")))
     image.type <- "processed"
   } else if (all(c("adj_x", "adj_y") %in% colnames(st.object[[]]))) {
-    data <- cbind(data, setNames(st.object[[, c("ads_x", "ads_y")]], nm = c("x", "y")))
+    data <- cbind(data, setNames(st.object[[, c("adj_x", "adj_y")]], nm = c("x", "y")))
   } else if (all(c("x", "y") %in% colnames(st.object[[]]))) {
     data <- cbind(data, st.object[[, c("x", "y")]])
   }
   return(list(data, image.type))
 }
+

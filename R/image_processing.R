@@ -33,7 +33,7 @@ LoadImages.Staffli <- function (
 
   # Add dummy pixel_x, pixel_y columns if not provided
   if (!all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
-    object[[, c(c("pixel_x", "pixel_y"))]] <- object[[, c(c("x", "y"))]]
+    object[[, c("pixel_x", "pixel_y")]] <- object[[, c("x", "y")]]
     convert.pixel.coords <- TRUE
   } else {
     convert.pixel.coords <- FALSE
@@ -98,10 +98,6 @@ LoadImages.Seurat <- function (
 ) {
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
   st.object <- object@tools$Staffli
-  # Reset ixel coordinates
-  if (all(c("pixel_x", "pixel_y") %in% colnames(st.object[[]]))) {
-    st.object[[, c("pixel_x", "pixel_y")]] <- NULL
-  }
   object@tools$Staffli <- LoadImages(object = st.object, image.paths, xdim, verbose, time.resolve)
   return(object)
 }
