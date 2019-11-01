@@ -46,11 +46,10 @@ LoadImages <- function (
 #' First of all, it can be beneficial to remove 1 or two color channels from the image
 #' using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running
 #' SLIC.
-#' The next step is to apply some blurring efect
-#'
-#'
-#' @section Masking options:
-#'
+#' The next step is to apply some blurring efect on the image to "smooth" out speckles in the image. This
+#' "smoothing" effect can be adjusted with \code{iso.blur}, where a higher \code{iso.blur} leads to more smoothing.
+#' The compactness will adjust the number of superpixels to compute. If you double this number you will get twice
+#' as many superpixels. This can sometimes be helpful to get a finer sensitivity of the masking.
 #'
 #' @section Custom mask function:
 #' Masking can sometimes very difficult to accomplish without cutting off parts of the tissue or
@@ -58,14 +57,13 @@ LoadImages <- function (
 #' write your own function that takes a "cimg" class image as input and returns a masked "pxset".
 #'
 #' @param object Seurat or Staffli object
-#' @param iso.blur Sigma value (pixels) for isoblurring of HE images prior to image segmentation
-#' @param channels.use Select channel to use for masking (default: 1)
-#' @param compactness Scales the number of super-pixels
+#' @param iso.blur Sets the level of smoothing in the pre-procesing step [default: 2]
+#' @param channels.use Select channel to use for masking [default: 1 for '1k' and '2k' platforms and 1:3 for 'Visium' platform]
+#' @param compactness Scales the number of super-pixels [default: 1]
 #' @param custom.msk.fkn Custom masking function that takes an image of class "cimg" as input and returns a mask
 #' of class "pixset" outlining the tissue area.
+#' @param add.contrast Add contrast to pre-procesing step [default: TRUE platforms and 1:3 for FALSE for 'Visium' platform]
 #' @param verbose Print messages
-#'
-#' @inheritParams slic
 #'
 #' @importFrom imager magick2cimg medianblur sRGBtoLab as.cimg split_connected add imsplit imappend RGBtoHSV blur_anisotropic HSVtoRGB add threshold isoblur imlist
 #' @importFrom magick image_read
@@ -81,9 +79,9 @@ LoadImages <- function (
 MaskImages <- function (
   object,
   iso.blur = 2,
-  channels.use = 1,
+  channels.use = NULL,
   compactness = 1,
-  add.contrast = TRUE,
+  add.contrast = NULL,
   verbose = FALSE
 ) {
   UseMethod(generic = 'MaskImages', object = object)

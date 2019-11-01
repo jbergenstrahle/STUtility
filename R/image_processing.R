@@ -246,35 +246,42 @@ MaskImages.Staffli <- function (
 
     # segmentation tests
     im <- magick2cimg(imr)
-    im <- threshold(im)
 
-    # Select channels to use for masking if not specified and depending on platform
-    if (object@platforms[i] == "Visium") {
-      channels.use <- channels.use %||% 1:3
-      add.contrast = add.contrast %||% FALSE
-    } else if (object@platforms[i] %in% c("1k", "2k")) {
-      channels.use <- channels.use %||% 1
-      add.contrast = add.contrast %||% TRUE
-    }
+    if (!is.null(custom.msk.fkn)) {
+      if (class(custom.msk.fkn) != "function") stop(paste0("custom.msk.fkn is not a function"), call. = FALSE)
+      seg <- custom.msk.fkn(im)
+      if (class(seg) != "pxset") stop(paste0("output from custom.msk.fkn is not a 'pxset' object"), call. = FALSE)
+    } else {
+      im <- threshold(im)
 
-    rm.channels <- (1:3)[-channels.use]
-    for (ind in rm.channels) {
-      im[, , , ind] <- TRUE
-    }
+      # Select channels to use for masking if not specified and depending on platform
+      if (object@platforms[i] == "Visium") {
+        channels.use <- channels.use %||% 1:3
+        add.contrast = add.contrast %||% FALSE
+      } else if (object@platforms[i] %in% c("1k", "2k")) {
+        channels.use <- channels.use %||% 1
+        add.contrast = add.contrast %||% TRUE
+      }
 
-    im <- isoblur(im, iso.blur)
+      rm.channels <- (1:3)[-channels.use]
+      for (ind in rm.channels) {
+        im[, , , ind] <- TRUE
+      }
 
-    if (verbose) {
+      im <- isoblur(im, iso.blur)
+
+      if (verbose) {
         cat(paste0("Loaded image ", i, "\n"))
         cat(paste0("Running SLIC algorithm \n"))
-    }
-    out <- slic(im, nS = object@xdim*1.5, compactness)
-    if (add.contrast) out <- out^4
-    d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
-      select(-x, -y)
+      }
+      out <- slic(im, nS = object@xdim*1.5, compactness)
+      if (add.contrast) out <- out^4
+      d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
+        select(-x, -y)
 
-    km <- kmeans(d, 2)
-    seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(20) %>% threshold()
+      km <- kmeans(d, 2)
+      seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(20) %>% threshold()
+    }
 
     # Chech that at least one masked region is found
     sp <- split_connected(seg)

@@ -153,7 +153,7 @@ ST.DimPlot <- function (
                             paste0(ifelse(length(dims) == 2, paste0(dims[1], " and ", dims[2]), paste0(dims[1], dims[2], " and ", dims[2]))),
                             ": \n", paste(paste(dims, channels.use, sep = ":"), collapse = "\n")))
     if (image.type != "empty") {
-      dims.list <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+      dims.list <- lapply(st.object@dims, function(x) {x[2:3] %>% as.numeric()})
     } else {
       dims.list <- st.object@limits
     }
@@ -176,7 +176,7 @@ ST.DimPlot <- function (
     if (plot.type == "spots") {
       # Normal visualization -------------------------------------------------------------------------------------
       if (image.type != "empty") {
-        dims.list <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+        dims.list <- lapply(st.object@dims, function(x) {x[2:3] %>% as.numeric()})
       } else {
         dims.list <- st.object@limits
       }
@@ -404,7 +404,7 @@ ST.FeaturePlot <- function (
                             paste0(ifelse(length(features) == 2, paste0(features[1], " and ", features[2]), paste0(features[1], features[2], " and ", features[2]))),
                             ": \n", paste(paste(features, channels.use, sep = ":"), collapse = "\n")))
     if (image.type != "empty") {
-      dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+      dims <- lapply(st.object@dims, function(x) {x[2:3] %>% as.numeric()})
     } else {
       dims <- st.object@limits
     }
@@ -429,7 +429,7 @@ ST.FeaturePlot <- function (
     if (plot.type == "spots") {
       # Normal visualization -------------------------------------------------------------------------------------
       if (image.type != "empty") {
-        dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+        dims <- lapply(st.object@dims, function(x) {x[2:3] %>% as.numeric()})
       } else {
         dims <- st.object@limits
       }
@@ -964,7 +964,7 @@ DimOverlay <- function (
     image[image == "#FFFFFF"]  <- "#000000"
   }
   image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
-  imdims <- iminfo(st.object)[[sample.index]][2:3] %>% as.numeric()
+  imdims <- st.object@dims[[sample.index]][2:3] %>% as.numeric()
 
   # Select spots matching sample index
   sample.index <- ifelse(class(sample.index) == "numeric", unique(st.object[[, "sample", drop = T]])[sample.index], sample.index)
@@ -1140,7 +1140,7 @@ FeatureOverlay <- function (
     image[image == "#FFFFFF"]  <- "#000000"
   }
   image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
-  imdims <- iminfo(st.object)[[sample.index]][2:3] %>% as.numeric()
+  imdims <- st.object@dims[[sample.index]][2:3] %>% as.numeric()
 
   # Select spots matching sample index
   sample.index <- ifelse(class(sample.index) == "numeric", unique(st.object[[, "sample", drop = T]])[sample.index], sample.index)
