@@ -33,6 +33,7 @@ parse.spot.file = function(path, delim = "\t", ...) {
 #' @param infotable table with paths to count files and metadata
 #' @param min.gene.count filter away genes that has a total read count below this threshold
 #' @param min.gene.spots filter away genes that is not expressed below this number of capture spots
+#' @param min.spot.feature.count filter away capture spots that contains a total feature count below this threshold
 #' @param min.spot.count filter away capture spots that contains a total read count below this threshold
 #' @param topN OPTIONAL: Filter out the top most expressed genes
 #' @param scaleVisium 10X visium scale factor for pixel coordinates, default set to 0.1039393
@@ -49,6 +50,7 @@ InputFromTable <- function (
   topN = 0,
   min.gene.count = 0,
   min.gene.spots = 0,
+  min.spot.feature.count = 0,
   min.spot.count = 0,
   annotation = NULL,
   id.column = NULL,
@@ -86,7 +88,7 @@ InputFromTable <- function (
     if (platforms[i] == "Visium") {
       # Load data
       if (length(grep(path, pattern = ".h5")) == 1) {
-        counts[[path]] <- st.load.matrix(path, visium = T)
+        counts[[path]] <- st.load.matrix(path, visium = TRUE)
       } else if (length(grep(path, pattern = ".tsv")) == 1) {
         counts[[path]] <- t(st.load.matrix(path))
       } else {
@@ -227,7 +229,7 @@ InputFromTable <- function (
 
   # ---- pre filtering
   keep.genes <- rowSums(cnt) >= min.gene.count & rowSums(cnt > 0) > min.gene.spots
-  keep.spots <- colSums(cnt) >= min.spot.count
+  keep.spots <- colSums(cnt) >= min.spot.count & colSums(cnt > 0) > min.spot.feature.count
 
   before <- dim(cnt)
   cnt <- cnt[keep.genes, keep.spots]

@@ -6,10 +6,10 @@
 This function is a wrapper to create a complete S4 object with all the samples and metadata}
 \usage{
 InputFromTable(infotable, topN = 0, min.gene.count = 0,
-  min.gene.spots = 0, min.spot.count = 0, annotation = NULL,
-  id.column = NULL, replace.column = NULL, platform = "Visium",
-  scaleVisium = 0.1039393, pattern.remove = NULL, verbose = TRUE,
-  ...)
+  min.gene.spots = 0, min.spot.feature.count = 0, min.spot.count = 0,
+  annotation = NULL, id.column = NULL, replace.column = NULL,
+  platform = "Visium", scaleVisium = 0.1039393,
+  pattern.remove = NULL, verbose = TRUE, ...)
 }
 \arguments{
 \item{infotable}{table with paths to count files and metadata}
@@ -19,6 +19,8 @@ InputFromTable(infotable, topN = 0, min.gene.count = 0,
 \item{min.gene.count}{filter away genes that has a total read count below this threshold}
 
 \item{min.gene.spots}{filter away genes that is not expressed below this number of capture spots}
+
+\item{min.spot.feature.count}{filter away capture spots that contains a total feature count below this threshold}
 
 \item{min.spot.count}{filter away capture spots that contains a total read count below this threshold}
 
