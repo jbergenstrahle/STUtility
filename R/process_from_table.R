@@ -37,7 +37,6 @@ parse.spot.file = function(path, delim = "\t", ...) {
 #' @param min.spot.count filter away capture spots that contains a total read count below this threshold
 #' @param topN OPTIONAL: Filter out the top most expressed genes
 #' @param scaleVisium 10X visium scale factor for pixel coordinates, default set to 0.1039393
-#' @param pattern.remove Regex pattern used to filter out certain genes
 #' @param verbose Print messages
 #' @param ... parameters passed to \code{\link{CreateSeuratObejct}}
 #'
@@ -47,6 +46,7 @@ parse.spot.file = function(path, delim = "\t", ...) {
 
 InputFromTable <- function (
   infotable,
+  transpose = FALSE,
   topN = 0,
   min.gene.count = 0,
   min.gene.spots = 0,
@@ -57,7 +57,6 @@ InputFromTable <- function (
   replace.column = NULL,
   platform = "Visium",
   scaleVisium = 0.1039393,
-  pattern.remove = NULL,
   verbose = TRUE,
   ...
 ){
@@ -152,6 +151,9 @@ InputFromTable <- function (
         if (ncol(spotsData) != 2) stop("No spotfiles provided and the headers are invalid. Please make sure that the count matrices are correct.")
         spotFileData[[i]] <- spotsData
       }
+    }
+    if (transpose) {
+      counts[[path]] <- t(counts[[path]])
     }
   }
 
@@ -255,17 +257,6 @@ InputFromTable <- function (
   if (topN > 0){
     m <- m[order(rowSums(as.matrix(m[["RNA"]]@counts)), decreasing = TRUE), ]
     m <- m[1:topN, ]
-  }
-
-  # Filter using regex
-  if (!is.null(pattern.remove)) {
-    remove.genes <- grep(pattern = pattern.remove, x = rownames(cnt))
-    if (length(remove.genes) > 0) {
-      if (verbose) cat(paste0("Removing ", length(x = remove.genes), " genes matching '", pattern.remove, "' regular expression \n"))
-      cnt <- cnt[-remove.genes, ]
-    } else {
-      if (verbose) cat(paste0("Provided regular expression '", pattern.remove, "' to filter genes but no matches were found \n"))
-    }
   }
 
 

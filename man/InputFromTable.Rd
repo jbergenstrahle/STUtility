@@ -5,11 +5,11 @@
 \title{Create S4 object from info table.
 This function is a wrapper to create a complete S4 object with all the samples and metadata}
 \usage{
-InputFromTable(infotable, topN = 0, min.gene.count = 0,
-  min.gene.spots = 0, min.spot.feature.count = 0, min.spot.count = 0,
-  annotation = NULL, id.column = NULL, replace.column = NULL,
-  platform = "Visium", scaleVisium = 0.1039393,
-  pattern.remove = NULL, verbose = TRUE, ...)
+InputFromTable(infotable, transpose = FALSE, topN = 0,
+  min.gene.count = 0, min.gene.spots = 0, min.spot.feature.count = 0,
+  min.spot.count = 0, annotation = NULL, id.column = NULL,
+  replace.column = NULL, platform = "Visium",
+  scaleVisium = 0.1039393, verbose = TRUE, ...)
 }
 \arguments{
 \item{infotable}{table with paths to count files and metadata}
@@ -32,8 +32,6 @@ column containing the new gene ids}
 \item{replace.column}{character vector of unique gene ids to replace the old ids}
 
 \item{scaleVisium}{10X visium scale factor for pixel coordinates, default set to 0.1039393}
-
-\item{pattern.remove}{Regex pattern used to filter out certain genes}
 
 \item{verbose}{Print messages}
 

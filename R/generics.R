@@ -225,8 +225,8 @@ iminfo <- function (object) {
 #' @param object A Staffli object
 #' @export
 
-scaled.imdims <- function (object) {
-  UseMethod("scaled.imdims", object)
+scaled.imdims <- function (object, ...) {
+  UseMethod("scaled.imdims", object, ...)
 }
 
 
