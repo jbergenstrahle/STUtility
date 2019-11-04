@@ -37,7 +37,9 @@ ManualAnnotation <- function (
   verbose = FALSE
 ) {
 
-  sampleChoice <- unique(object@meta.data$sample)
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object not present in Seurat object", call. = FALSE)
+  st.object <- GetStaffli(object)
+  sampleChoice <- unique(st.object[[, "sample", drop = T]])
 
   # ===================== UI =======================
   ui <-  pageWithSidebar(
@@ -68,13 +70,14 @@ ManualAnnotation <- function (
   # ===================== Server ================================
     server <- function(input, output, session){
 
-      df <- reactiveValues(label=object@meta.data$labels, id=object@meta.data$id,
-                           sample=object@meta.data$sample)
+      df <- reactiveValues(label = object@meta.data$labels,
+                           id = object@meta.data$id,
+                           sample = st.object[[, "sample", drop = T]])
 
       output$Plot1 <- ggiraph::renderGirafe({
 
         x <- ggiraph::girafe(ggobj = make.plot(object,
-                                               sampleNr = as.numeric(input$sampleInput),
+                                               sampleNr = input$sampleInput,
                                                spotAlpha = input$alphaValue,
                                                Labels = df$label[which(df$sample == input$sampleInput)],
                                                res = res,
@@ -129,7 +132,7 @@ ManualAnnotation <- function (
 #'
 #' @keywords internal
 
-make.plot <- function(
+make.plot <- function (
   object,
   sampleNr,
   spotAlpha,
@@ -137,15 +140,16 @@ make.plot <- function(
   SpotSize,
   res
 ) {
-  object.use <- colnames(object[, which(object$"sample" == sampleNr)])
-  object <- subset(object, cells = object.use)
-  coordinates <- data.frame(x=object@meta.data$pixel_x,
-                            y=object@meta.data$pixel_y,
-                            id=object@meta.data$id,
-                            label=object@meta.data$labels)
-  image <- image_read(object@tools$imgs[sampleNr])
+  object.use <- colnames(object[, which(st.object[[, "sample", drop = T]] == sampleNr)])
+  object <- SubsetSTData(object, spots = object.use)
+  st.object <- GetStaffli(object)
+  coordinates <- data.frame(x = st.object[[, "pixel_x", drop = T]],
+                            y = st.object[[, "pixel_y", drop = T]],
+                            id = object@meta.data$id,
+                            Labels = object@meta.data$labels)
+  image <- image_read(st.object@imgs)
   old_width <- image_info(image)$width
-  image <- image_scale(image, geometry_size_pixels(width=res, preserve_aspect = T))
+  image <- image_scale(image, geometry_size_pixels(width = res, preserve_aspect = T))
   coordinates[, c("x","y")] <- coordinates[, c("x","y")]*(res/old_width)
 
   r <- min(dist(coordinates[, c("x","y")])) / 2
@@ -175,9 +179,9 @@ make.plot <- function(
   }
 
   coordinates$y <- ymax - coordinates$y+ ymin
-  gg <- ggplot(coordinates, aes(x=x, y=y, data_id=id)) +
-    annotation+
-    ggiraph::geom_point_interactive(size = SpotSize, alpha=spotAlpha, aes(col=Labels)) +
+  gg <- ggplot(coordinates, aes(x = x, y = y, data_id = id)) +
+    annotation +
+    ggiraph::geom_point_interactive(size = SpotSize, alpha = spotAlpha, aes(col = Labels)) +
     #coord_fixed() +
     scale_x_continuous(expand = c(0, 0), limits = c(xmin,xmax)) +
     scale_y_continuous(expand = c(0, 0), limits = c(ymin,ymax)) +
