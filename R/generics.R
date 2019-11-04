@@ -167,6 +167,7 @@ AlignImages <- function (
 #'
 #' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
 #' @importFrom shinyjs useShinyjs reset
+#' @importFrom zeallot %<-%
 #'
 #' @export
 

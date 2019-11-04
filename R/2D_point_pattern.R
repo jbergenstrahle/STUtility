@@ -66,7 +66,7 @@ grid.from.staffli <- function (
     coords <- subset(object[[]], sample == sample.index)[, xy.names]
     dims.raw <- iminfo(object)[[sample.index]][2:3] %>% as.numeric()
     dims.scaled <- scaled.imdims(object)[[sample.index]]
-    sf.xy <- dims.raw[1]/dims.scaled[1]
+    sf.xy <- dims.raw[2]/dims.scaled[1]
     coords <- coords/sf.xy
     return(list(scatter = scatter, coords = coords))
   }), nm = names(object))

@@ -67,7 +67,6 @@ LoadImages.Staffli <- function (
       limits <- object@limits[[i]]
       im.limits <- dims[[i]][2:3] %>% as.numeric()
       object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- t(t(object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]])*(im.limits/limits))
-      #object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_y"))]] <- im.limits[2] - object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_y"))]]
     }
   }
 
@@ -690,13 +689,16 @@ ManualAlignImages.Staffli <- function (
   counter <- NULL
   coords.ls <- NULL
   tr.matrices <- transformations <-  ifelse(rep(type %in% c("processed", "prossesed.masks"), length(names(object))), object@transformations, lapply(seq_along(names(object)), function(i) diag(c(1, 1, 1))))
-  #tr.matrices <- lapply(seq_along(object@tools[[type]]), function(i) diag(c(1, 1, 1)))
+  image.dims <- lapply(object[type], dim)
 
 
   ui <- fluidPage(
     useShinyjs(),
     fluidRow(
       column(3,
+             shiny::hr(),
+             actionButton(inputId = "info", label = "Instructions"),
+             shiny::hr(),
              sliderInput(
                inputId = "angle",
                label = "Rotation angle",
@@ -781,19 +783,19 @@ ManualAlignImages.Staffli <- function (
       scatter.t <- t(tr%*%rbind(t(scatter.t), 1))[, 1:2]
       coords.t <- t(tr%*%rbind(t(coords.t), 1))[, 1:2]
 
-      return(list(scatter = scatter.t, coords = coords.t, tr = tr))
+      return(list(scatter = scatter.t, coords = coords.t, tr = tr, xylimits = image.dims[[input$sample]]))
     })
 
     output$scatter <- renderPlot({
 
       coords.ls <<- coords_list()
-      scatter.t <- coords.ls[[1]]; coords.t <- coords.ls[[2]]
+      c(scatter.t, coords.t, tr, xylimit) %<-% coords.ls
 
-      d <- round((sqrt(400^2 + 400^2) - 400)/2)
+      d <- round((sqrt(xylimit[1]^2 + xylimit[2]^2) - xylimit[2])/2)
 
-      plot(fixed.scatter[, 1], 400 - fixed.scatter[, 2], xlim = c(-d, 400 + d), ylim = c(-d, 400 + d))
-      points(scatter.t[, 1], 400 - scatter.t[, 2], col = "gray")
-      points(coords.t[, 1], 400 - coords.t[, 2], col = "red", cex = pt_size())
+      plot(fixed.scatter[, 1], xylimit[2] - fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(-d, xylimit[2] + d), xaxt = 'n', yaxt = 'n', ann = FALSE)
+      points(scatter.t[, 1], xylimit[2] - scatter.t[, 2], col = "gray")
+      points(coords.t[, 1], xylimit[2] - coords.t[, 2], col = "red", cex = pt_size())
 
     }, height = 800, width = 800)
 
@@ -829,6 +831,20 @@ ManualAlignImages.Staffli <- function (
       }
     })
 
+    observeEvent(input$info, {
+      showModal(modalDialog(
+        title = "Instructions",
+        HTML("The selected sample is highlighted by its coordinates under the tissue <br>",
+             "highlighted in red. only rigid transformations are allowed, meaning <br>",
+             "rotation, shifts along x/y-axes and reflections.<br><br>",
+             "1. Select sample that you want to align to a reference [default: 2]<br>",
+             "2. Adjust transformation parameters to fit the sample image to the reference<br>",
+             "3. Repeat 1-4 until all samples are aligned<br>",
+             "4. Press the 'return aligned data' button to return results"),
+        easyClose = TRUE,
+        footer = NULL
+      ))
+    })
   }
 
   # Returned transformation matrices
