@@ -6,18 +6,22 @@
 \alias{MaskImages.Seurat}
 \title{Image masking}
 \usage{
-MaskImages(object, iso.blur = 2, channels.use = NULL,
-  compactness = 1, add.contrast = NULL, verbose = FALSE)
+MaskImages(object, thresholding = FALSE, iso.blur = 2,
+  channels.use = NULL, compactness = 1, add.contrast = NULL,
+  verbose = FALSE, custom.msk.fkn = NULL)
 
-\method{MaskImages}{Staffli}(object, iso.blur = 2, channels.use = NULL,
-  compactness = 1, add.contrast = NULL, verbose = FALSE,
-  custom.msk.fkn = NULL)
+\method{MaskImages}{Staffli}(object, thresholding = TRUE, iso.blur = 2,
+  channels.use = NULL, compactness = 1, add.contrast = NULL,
+  verbose = FALSE, custom.msk.fkn = NULL, ...)
 
-\method{MaskImages}{Seurat}(object, iso.blur = 2, channels.use = NULL,
-  compactness = 1, add.contrast = NULL, verbose = FALSE)
+\method{MaskImages}{Seurat}(object, thresholding = TRUE, iso.blur = 2,
+  channels.use = NULL, compactness = 1, add.contrast = NULL,
+  verbose = FALSE, custom.msk.fkn = NULL, ...)
 }
 \arguments{
-\item{object}{Seurat or Staffli object}
+\item{object}{Seurat or Staffli object o pre-procesing step [default: TRUE]}
+
+\item{thresholding}{Applies thresholding step}
 
 \item{iso.blur}{Sets the level of smoothing in the pre-procesing step [default: 2]}
 
@@ -48,9 +52,9 @@ The masking method provided uses the SLIC method; Simple Linear Iterative Cluste
 clustering pixels based on their color similarity and proximity in the image plane.
 Before running the SLIC method on the HE images we have noticed that some pre-processing can improve the
 masking significantly.
-First of all, it can be beneficial to remove 1 or two color channels from the image
-using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running
-SLIC.
+First of all, a thresholding is applied to the image using a variant of Otsu's method (see \code{\link{imager::threshold}}.
+Thereafter, you can select which color channels to use for the masking. it can be beneficial to remove 1 or two color channels from the image
+using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running SLIC.
 The next step is to apply some blurring efect on the image to "smooth" out speckles in the image. This
 "smoothing" effect can be adjusted with \code{iso.blur}, where a higher \code{iso.blur} leads to more smoothing.
 The compactness will adjust the number of superpixels to compute. If you double this number you will get twice

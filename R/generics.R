@@ -43,9 +43,9 @@ LoadImages <- function (
 #' clustering pixels based on their color similarity and proximity in the image plane.
 #' Before running the SLIC method on the HE images we have noticed that some pre-processing can improve the
 #' masking significantly.
-#' First of all, it can be beneficial to remove 1 or two color channels from the image
-#' using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running
-#' SLIC.
+#' First of all, a thresholding is applied to the image using a variant of Otsu's method (see \code{\link{imager::threshold}}.
+#' Thereafter, you can select which color channels to use for the masking. it can be beneficial to remove 1 or two color channels from the image
+#' using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running SLIC.
 #' The next step is to apply some blurring efect on the image to "smooth" out speckles in the image. This
 #' "smoothing" effect can be adjusted with \code{iso.blur}, where a higher \code{iso.blur} leads to more smoothing.
 #' The compactness will adjust the number of superpixels to compute. If you double this number you will get twice
@@ -56,7 +56,8 @@ LoadImages <- function (
 #' including unwanted parts of the tissue. If the masking fails you also have the option to
 #' write your own function that takes a "cimg" class image as input and returns a masked "pxset".
 #'
-#' @param object Seurat or Staffli object
+#' @param object Seurat or Staffli object o pre-procesing step [default: TRUE]
+#' @param thresholding Applies thresholding step
 #' @param iso.blur Sets the level of smoothing in the pre-procesing step [default: 2]
 #' @param channels.use Select channel to use for masking [default: 1 for '1k' and '2k' platforms and 1:3 for 'Visium' platform]
 #' @param compactness Scales the number of super-pixels [default: 1]
@@ -78,11 +79,13 @@ LoadImages <- function (
 
 MaskImages <- function (
   object,
+  thresholding = FALSE,
   iso.blur = 2,
   channels.use = NULL,
   compactness = 1,
   add.contrast = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  custom.msk.fkn = NULL
 ) {
   UseMethod(generic = 'MaskImages', object = object)
 }
