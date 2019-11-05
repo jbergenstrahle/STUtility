@@ -43,6 +43,7 @@ Collate:
     '2D_point_pattern.R'
     'HSVencoding.R'
     'Image_resolution_switch.R'
+    'Mask_functions.R'
     'QC.R'
     'Rigid_transformation.R'
     'generics.R'

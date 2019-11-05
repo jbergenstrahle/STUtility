@@ -226,12 +226,14 @@ ImagePlot <- function (
 
 MaskImages.Staffli <- function (
   object,
+  thresholding = TRUE,
   iso.blur = 2,
   channels.use = NULL,
   compactness = 1,
   add.contrast = NULL,
   verbose = FALSE,
-  custom.msk.fkn = NULL
+  custom.msk.fkn = NULL,
+  ...
 ) {
 
   # obtain Staffli object
@@ -248,10 +250,11 @@ MaskImages.Staffli <- function (
 
     if (!is.null(custom.msk.fkn)) {
       if (class(custom.msk.fkn) != "function") stop(paste0("custom.msk.fkn is not a function"), call. = FALSE)
-      seg <- custom.msk.fkn(im)
-      if (class(seg) != "pxset") stop(paste0("output from custom.msk.fkn is not a 'pxset' object"), call. = FALSE)
+      seg <- custom.msk.fkn(im, ...)
+      if (dim(seg)[4] == 3) seg <- seg[, , , 1] %>% as.cimg()
+      if (!"pixset" %in% class(seg)) stop(paste0("output from custom.msk.fkn is not a 'pxset' object"), call. = FALSE)
     } else {
-      im <- threshold(im)
+      if (thresholding) im <- threshold(im)
 
       # Select channels to use for masking if not specified and depending on platform
       if (object@platforms[i] == "Visium") {
@@ -361,14 +364,17 @@ MaskImages.Staffli <- function (
 
 MaskImages.Seurat <- function (
   object,
+  thresholding = TRUE,
   iso.blur = 2,
   channels.use = NULL,
   compactness = 1,
   add.contrast = NULL,
-  verbose = FALSE
+  verbose = FALSE,
+  custom.msk.fkn = NULL,
+  ...
 ) {
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
-  object@tools$Staffli <- MaskImages(object@tools$Staffli, iso.blur, channels.use, compactness, add.contrast, verbose)
+  object@tools$Staffli <- MaskImages(object@tools$Staffli, thresholding, iso.blur, channels.use, compactness, add.contrast, verbose, custom.msk.fkn)
   return(object)
 }
 
@@ -900,8 +906,8 @@ ManualAlignImages.Staffli <- function (
   }
 
   object@transformations <- transformations
-  object["processed"] <- processed.images
-  object["processed.masks"] <- processed.masks
+  object@rasterlists$processed <- processed.images
+  object@rasterlists$processed.masks <- processed.masks
   object[[, c("warped_x", "warped_y")]] <- warped_coords
 
   return(object)
