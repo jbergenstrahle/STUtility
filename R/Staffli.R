@@ -104,12 +104,13 @@ CreateStaffliObject <- function (
   return(object)
 }
 
-#' Subset a Seurat objectcontaining Staffli image data
+#' Subset a Seurat object containing Staffli image data
 #'
 #' Subsets a Seurat object containing Spatial Transcriptomics data while
-#' making sure that the images are subsetted correctly. If you use the default
-#' \code{\link{subset}} function you will not be able to use any of the
-#' STUtility visualization methods.
+#' making sure that the images and the spot coordinates are subsetted correctly.
+#' If you use the default \code{\link{subset}} function there is a risk that images
+#' are kept in the output Seurat object which will make the STUtility functions
+#' crash.
 #'
 #' @param spots A vector of spots to keep
 #' @param features A vector of features to keep
@@ -179,6 +180,155 @@ SubsetSTData <- function (
   object@tools$Staffli <- st.object
   return(object)
 }
+
+#' Merge two or more Seurat objects containing Staffli image data
+#'
+#' Merges Seurat objects containing Spatial Transcriptomics data while
+#' making sure that the images and spot coordinates are correctly structures.
+#' If you use the default \code{\link{merge}} function you will not be able
+#' to use any of the STUtility visualization methods on the output object.
+#'
+#' @param x Seurat object
+#' @param y Seurat object (or list of multiple Seurat obejctsa)
+#' @param add.spot.ids A character vector of length(x = c(x, y)). Appends the corresponding
+#' values to the start of each objects' spot names.
+#' @param merge.data 	Merge the data slots instead of just merging the counts (which requires renormalization).
+#' This is recommended if the same normalization approach was applied to all objects.
+#' @param project Sets the project name for the Seurat object.
+#' @param ... Arguments passed to other methods
+#'
+#' @rdname MergeSTData
+#' @export
+#'
+MergeSTData <- function (
+  x = NULL,
+  y = NULL,
+  add.spot.ids = NULL,
+  merge.data = TRUE,
+  idents = NULL,
+  project = "SeuratProject",
+  ...
+) {
+
+  # Check that a Staffli object is present
+  if (!"Staffli" %in% names(x@tools)) {
+    stop("The first Seurat object does not contain any Staffli image object", call. = FALSE)
+  }
+  i <- 1
+  for (obj in y) {
+    if (!"Staffli" %in% names(obj@tools)) {
+      stop(paste0("Seurat object ", i, " does not contain any Staffli image object"), call. = FALSE)
+    }
+    i <- i + 1
+  }
+
+  # Obtain Staffli objects
+  st.x <- GetStaffli(x)
+  st.y <- lapply(y, GetStaffli)
+
+  # Merge seurat data
+  object <- merge(x = x, y = y, add.cell.ids = add.spot.ids, merge.data = merge.data, project = project)#, ...)
+
+  # Combine Staffli objects into a list
+  st.objects <- c(list(st.x), st.y)
+
+  # Check that version matches
+  versions <- unlist(lapply(st.objects, function(x) paste0(x@version)))
+  if (length(unique(versions)) > 1) {
+    warning(paste0("Different versions; ", paste(versions, collapse = ", "), " have been used to process the data"), call. = FALSE)
+  }
+
+  # and check that the same xdim has been used
+  xdims.check <- unlist(lapply(st.objects, function(x) x@xdim))
+  if (length(unique(xdims.check)) > 1) {
+    warning(paste0("Different xdims have been used for the different objects; ", paste(xdims.check, collapse = ", "), ". \nAny loaded images will be removed and a defualt value of 400 pixels in width will be set."), call. = FALSE)
+    xdim <- 400
+  } else {
+    xdim <- unique(xdims.check)
+  }
+
+  # Merge meta data
+  unique.cols <- Reduce(intersect, lapply(st.objects, function(x) colnames(x[[]])))
+  st.meta_data <- dplyr::bind_rows(lapply(st.object, `[[`), )
+  st.meta_data <- st.meta_data[, unique.cols]
+  rownames(st.meta_data) <- colnames(object)
+
+  if (length(unique(xdims.check)) > 1 & all(c("warped_x", "warepd_y") %in% colnames(st.meta_data))) {
+    st.meta_data[, c("warped_x", "warepd_y")] <- NULL
+  }
+
+  # Check that all objects have images
+  imgs.class <- unlist(lapply(st.objects, function(x) class(x@imgs)))
+  if (all(imgs.class == "character")) {
+    imgs <- unlist(lapply(st.objects, function(x) x@imgs))
+  } else {
+    imgs <- NULL
+  }
+
+  # Define new sample ids
+  samples <- c()
+  n <- 0
+  for (i in seq_along(st.objects)) {
+    obj <- st.objects[[i]]
+    unique.samples <- unique(obj[[, "sample", drop = TRUE]])
+    convert.samples <-seq_along(unique.samples) + n
+    names(convert.samples) <- unique.samples
+    samples <- c(samples, convert.samples[obj[[, "sample", drop = TRUE]]])
+    n <- convert.samples[length(convert.samples)]
+  }
+  samples <- samples %>% as.numeric() %>% as.character()
+
+  # Replace new sample column of meta data
+  st.meta_data[, "sample"] <- samples
+  samplenames <- unique(samples)
+
+  if (!length(unique(xdims.check)) > 1) {
+    # Check for transformations
+    transf.check <- unlist(lapply(st.objects, function(x) length(x@transformations)))
+    if (any(transf.check == 0)) {
+      transformations <- list()
+    } else {
+      transformations <- setNames(Reduce(c, lapply(st.objects, function(x) x@transformations)), nm  = samplenames)
+    }
+
+    # Check and combine rasterlists
+    rasterlists.check <- Reduce(intersect, lapply(st.objects, function(x) names(x@rasterlists)))
+    rasterlists <- list()
+    if (!is.null(rasterlists.check)) {
+      for (rst in rasterlists.check) {
+        rasterlists[[rst]] <- setNames(Reduce(c, lapply(st.objects, function(x) x[rst])), nm  = samplenames)
+      }
+    }
+  } else {
+    transformations <- list()
+    rasterlists <- list()
+  }
+
+  # Merge limits
+  limits <- setNames(Reduce(c, lapply(st.objects, function(x) x@limits)), nm = samplenames)
+
+  # Merge dims
+  check.dims <- unlist(lapply(st.objects, function(x) length(x@dims)))
+  if (any(check.dims == 0)) {
+    dims <- list()
+  } else {
+    dims <- setNames(Reduce(c, lapply(st.objects, function(x) x@dims)), nm = samplenames)
+  }
+
+  # Merge platforms
+  platforms <- unlist(lapply(st.objects, function(x) x@platforms))
+
+  # Create Staffli object
+  m <- CreateStaffliObject(imgs = imgs, meta.data = st.meta_data, xdim = xdim, platforms = platforms)
+  m@rasterlists <- rasterlists
+  m@transformations <- transformations
+  m@limits <- limits
+  m@dims <- dims
+
+  object@tools$Staffli <- m
+  return(object)
+}
+
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Staffli methods

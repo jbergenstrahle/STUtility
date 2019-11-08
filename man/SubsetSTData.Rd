@@ -2,7 +2,7 @@
 % Please edit documentation in R/Staffli.R
 \name{SubsetSTData}
 \alias{SubsetSTData}
-\title{Subset a Seurat objectcontaining Staffli image data}
+\title{Subset a Seurat object containing Staffli image data}
 \usage{
 SubsetSTData(object, expression, spots = NULL, features = NULL,
   idents = NULL, ...)
@@ -20,7 +20,8 @@ SubsetSTData(object, expression, spots = NULL, features = NULL,
 }
 \description{
 Subsets a Seurat object containing Spatial Transcriptomics data while
-making sure that the images are subsetted correctly. If you use the default
-\code{\link{subset}} function you will not be able to use any of the
-STUtility visualization methods.
+making sure that the images and the spot coordinates are subsetted correctly.
+If you use the default \code{\link{subset}} function there is a risk that images
+are kept in the output Seurat object which will make the STUtility functions
+crash.
 }
