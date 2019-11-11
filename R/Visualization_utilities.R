@@ -216,28 +216,35 @@ labelRGB <- function(object,
 #' @param center.zero Specifies whether or not the colorscale should be centered at zero
 #' @param cols Character vector with color ids to be used in colorscale
 #' @param val.limits Specifies the limits for values in colorscale
+#' @param dark.theme Should a dark theme be used?
 #'
 #' @importFrom ggplot2 ggplot geom_point aes_string scale_fill_gradient2 labs scale_fill_gradientn element_rect element_text ggplot_gtable ggplot_build theme
 
 g_legend <- function (
   data,
+  data.type = "numeric",
   variable,
   center.zero,
   cols,
-  val.limits
+  val.limits,
+  dark.theme = TRUE
 ) {
-  lg <- ggplot() + geom_point(data = data, aes_string("x", "y", fill = paste0("`", variable, "`")), shape = 22, alpha = 0)
-  if (center.zero) {
+  lg <- ggplot() + geom_point(data = data, aes_string("x", "y", fill = paste0("`", variable, "`")), shape = 21, alpha = 1, size = 8)
+  if (center.zero & !any(data.type %in% c("character", "factor"))) {
     lg <- lg +
-      scale_fill_gradient2(low = cols[1], mid = cols[median(seq_along(cols))], high = cols[length(cols)], midpoint = 0, na.value = "#000000", limits = val.limits)
+      scale_fill_gradient2(low = cols[1], mid = cols[median(seq_along(cols))], high = cols[length(cols)], midpoint = 0, na.value = ifelse(dark.theme, "#000000", "#FFFFFF"), limits = val.limits)
   } else if (any(data.type %in% c("character", "factor"))) {
     lg <- lg +
-      labs(fill = variable)
+      labs(fill = variable) +
+      scale_fill_manual(values = cols)
   } else {
     lg <- lg +
-      scale_fill_gradientn(colours = cols, na.value = "#000000", limits = val.limits)
+      scale_fill_gradientn(colours = cols, na.value = ifelse(dark.theme, "#000000", "#FFFFFF"), limits = val.limits)
   }
-  lg <- lg + theme(legend.background = element_rect(fill = "#000000"), legend.key = element_rect(fill = "#FFFFFF"), legend.text = element_text(color = "#FFFFFF"), legend.title = element_text(colour = "#FFFFFF"))
+  lg <- lg + theme(legend.background = element_rect(fill = ifelse(dark.theme, "#000000", "#FFFFFF")),
+                   legend.key = element_rect(fill = ifelse(dark.theme, "#000000", "#FFFFFF"), colour = ifelse(dark.theme, "#000000", "#FFFFFF")),
+                   legend.text = element_text(color = ifelse(dark.theme, "#FFFFFF", "#000000")),
+                   legend.title = element_text(colour = ifelse(dark.theme, "#FFFFFF", "#000000")))
   tmp <- ggplot_gtable(ggplot_build(lg))
   leg <- which(sapply(tmp$grobs, function(x) x$name) == "guide-box")
   legend <- tmp$grobs[[leg]]

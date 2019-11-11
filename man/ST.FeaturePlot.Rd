@@ -8,9 +8,10 @@ ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
   spots = NULL, plot.type = "spots", min.cutoff = NA,
   max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
   pt.alpha = 1, shape.by = NULL, palette = NULL, cols = NULL,
-  rev.cols = FALSE, dark.theme = FALSE, ncol = NULL,
-  grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
-  center.tissue = FALSE, theme = theme_void(), verbose = FALSE, ...)
+  rev.cols = FALSE, dark.theme = FALSE, highlight.edges = TRUE,
+  ncol = NULL, grid.ncol = NULL, center.zero = FALSE,
+  channels.use = NULL, center.tissue = FALSE, theme = theme_void(),
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -53,6 +54,8 @@ create a gradient color scale going from blue to white to red. This options will
 option.}
 
 \item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
+
+\item{highlight.edges}{SHould edges be highlighted? [default: TRUE]}
 
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}

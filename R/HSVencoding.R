@@ -25,15 +25,19 @@
 #'     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
 #'     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 #' }
+#' @param plot.type Select one of 'spots' or 'smooth' [default: 'spots']
+#' @param split.hsv Should the HSV colored features be split into separate plots? [default: FALSE]
 #' @param indices Numeric vector specifying sample indices to include in plot. Default is to show all samples.
 #' @param spots Vector of spots to plot (default is all spots)
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param slot Which slot to pull expression data from?
-#' @param blend Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)
 #' @param pt.size Adjust point size for plotting
 #' @param pt.alpha Adjust opacity of spots
 #' @param shape.by If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot
+#' @param sigma Smoothing bandwidth; only active if \code{plot.type = 'smooth'}. A single positive number, a numeric vector of length 2, or a function that selects the bandwidth automatically [default: 2].
+#' See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.
+#' @param highlight.edges Highlights the edges of the tissue. Only active if \code{plot.type = 'smooth'} and if the images have been masked.
 #' @param grid.ncol Number of columns for display when combining plots
 #' @param verbose Print messages
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
@@ -43,6 +47,9 @@
 #' @importFrom scales rescale
 #' @importFrom ggplot2 ggplot theme theme_void
 #' @importFrom zeallot %<-%
+#' @importFrom grDevices hsv
+#' @importFrom spatstat ppp owin Smooth
+#' @importFrom imager imgradient enorm as.cimg
 #'
 #' @return A ggplot object
 #' @export
@@ -50,6 +57,8 @@
 HSVFeaturePlot <- function (
   object,
   features,
+  plot.type = 'spots',
+  split.hsv = FALSE,
   indices = NULL,
   spots = NULL,
   min.cutoff = NA,
@@ -58,12 +67,14 @@ HSVFeaturePlot <- function (
   pt.size = 1,
   pt.alpha = 1,
   shape.by = NULL,
+  sigma = 2,
+  highlight.edges = FALSE,
   cols = NULL,
   dark.theme = TRUE,
-  ncol = NULL,
   grid.ncol = NULL,
   verbose = FALSE,
   theme = theme_void(),
+  scale.res = 1,
   ...
 ) {
 
@@ -120,65 +131,224 @@ HSVFeaturePlot <- function (
   rownames(hsv.matrix) <- c("h", "s", "v")
   ann.cols <- hsv2hex(hsv.matrix)
 
-  # Select highest V
-  d <- list()
-  if (verbose) cat("Converting values to HSV ... \n")
-  for (i in 1:length(features)) {
-    ftr <- features[i]
-    s <- data.frame(data,
-                    h = hue_breaks[i],
-                    s = 1,
-                    v = scales::rescale(data[, ftr, drop = T] %>% as.numeric()))
-    s$cols <- hsv2hex(t(s[, c("h", "s", "v")]))
-    d <- c(d, list(s))
+
+  # Plot HSV encoded feature data
+  if (plot.type == 'spots') {
+    # Select highest V
+    d <- array(dim = c(nrow(data), 3, length(x = features)))
+    if (verbose) cat("Converting values to HSV ... \n")
+    for (i in 1:length(features)) {
+      ftr <- features[i]
+      s <- data.frame(h = hue_breaks[i],
+                      s = 1,
+                      v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+      d[, , i] <- s
+    }
+
+    #red.cols <- data.frame()
+    if (verbose) cat("Selecting HSV colors for each spot ... \n")
+    if (!split.hsv) {
+      red.cols <- apply(d, 1, function (x) {
+        max.val <- which.max(x[3, ])
+        hsv(h = x[1, ][which.max(x[3, ])], s = 1, v = max(x[3, ]))
+      })
+      data$cols <- red.cols
+    } else {
+      full.data <- matrix(ncol = ncol(data), nrow = 0)
+      for (i in 1:dim(d)[3]) {
+        full.data <- rbind(full.data, cbind(data, setNames(data.frame(d[, , i]), nm = c("h", "s", "v")), variable = features[i]))
+      }
+      red.cols <- apply(full.data, 1, function (x) {
+        hsv(h = x["h"], s = x["s"], v = x["v"])
+      })
+      full.data$cols <- red.cols
+      full.data.split <- split(full.data, full.data$variable)
+    }
+
+    if (verbose) cat("Plotting features:",
+                     ifelse(length(features) == 1, features,  paste0(paste(features[1:(length(features) - 1)], collapse = ", "), " and ", features[length(features)])))
+    # Normal visualization -------------------------------------------------------------------------------------
+
+    if (image.type != "empty") {
+      dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+    } else {
+      dims <- st.object@limits
+    }
+
+    if (!is.null(indices)) dims <- dims[indices]
+
+    # Plot combined HSV
+    if (!split.hsv) {
+      plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
+                     palette = NULL, cols = NULL, rev.cols = F, ncol, spot.colors = data$cols,
+                     center.zero = F, center.tissue = F, plot.title = "",
+                     dims, FALSE, theme = theme, ...)
+      if (dark.theme) {
+        plot <- plot + dark_theme()
+      }
+      plot <- plot +
+        geom_point(data = data.frame(x = rep(-1, length(features)), y = rep(-1, length(features)), features), aes(x, y, colour = features)) +
+        scale_color_manual(values = setNames(ann.cols, features))
+      suppressWarnings({print(plot)})
+    } else {
+      plots <- lapply(full.data.split, function (data) {
+        plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
+               palette = NULL, cols = NULL, rev.cols = F, ncol, spot.colors = data$cols,
+               center.zero = F, center.tissue = F, plot.title = "",
+               dims, FALSE, theme = theme, ...)
+        if (dark.theme) {
+          plot <- plot + dark_theme()
+        }
+        plot <- plot +
+          geom_point(data = data.frame(x = rep(-1, length(features)), y = rep(-1, length(features)), features), aes(x, y, colour = features)) +
+          scale_color_manual(values = setNames(ann.cols, features))
+      })
+      ncols <- grid.ncol %||% ceiling(sqrt(length(x = features)))
+      nrows <- ceiling(length(x = features)/ncols)
+      plot <- cowplot::plot_grid(plotlist = plots, ncol = ncols, nrow = nrows)
+      plot <- plot + dark_theme()
+      suppressWarnings({print(plot)})
+    }
+  } else if (plot.type == 'smooth') {
+    feature.list <- list()
+    edges.list <- list()
+    for (ftr in features) {
+      val.limits <- range(data[, ftr])
+      p.list <- list()
+      for (i in 1:length(unique(data$sample))) {
+        data_subset <- subset(data, sample == i)
+        dims <- st.object@rasterlists$processed.masks[[i]] %>% dim()
+        if (image.type %in% c('raw', 'masked', 'processed')) {
+          extents <- st.object@dims[[i]][2:3] %>% as.numeric()
+          data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/((extents[1]/scale.res)/dims[2])
+        } else {
+          extents <- st.object@limits[[i]]
+          data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/((extents[1]/scale.res)*scale.res/dims[2])
+        }
+
+        data_subset[, ftr] <- scales::rescale(data_subset[, ftr], to = c(0, val.limits[2]))
+        ow <- owin(xrange = c(0, dims[2]*scale.res), yrange = c(0, dims[1]*scale.res))
+        p <- ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, ftr])
+        suppressWarnings({s <- Smooth(p, sigma*scale.res, dimyx = dims*scale.res)})
+        m <-  as.matrix(s)
+        m[m < 0] <- 0
+        m <- m/max(m)
+
+        if (image.type %in% c('processed', 'masked')) {
+          msk.type <- paste0(image.type, ".masks")
+          msk <- st.object['processed.masks'][[i]]
+          if (scale.res != 1) {
+            msk <- image_read(msk) %>% image_scale(paste0(st.object@xdim*scale.res)) %>% magick2cimg()
+          } else {
+            msk <- msk %>% as.cimg()
+          }
+          if (highlight.edges) {
+            edges.list[[i]] <- imgradient(msk, "xy") %>% enorm()
+          }
+          msk <- msk[, , , 1] %>% as.cimg() %>% threshold()
+          m <- t(m) %>% as.cimg()
+          masked.m <- m*msk
+          p.list[[i]] <- masked.m
+        } else {
+          p.list[[i]] <- m %>% as.cimg()
+        }
+      }
+      feature.list[[ftr]] <- p.list
+    }
+
+    # HSV plot
+    hue_breaks <- seq(0, 1, length.out = length(x = features) + 1)[1:length(x = features)]
+    rsts <- list()
+
+    if (!split.hsv) {
+      for (j in 1:length(unique(data[, "sample"]))) {
+        ar <- array(dim = c(rev(dims*scale.res), length(features)))
+        n <- 1
+        for (i in features) {
+          ar[, , n] <- feature.list[[i]][[j]]
+          n <- n + 1
+        }
+        ftr.rst <- apply(ar[, , ], c(1, 2), function(x) {
+          hsv(h = hue_breaks[which.max(x)], s = 1, v = max(x))
+        }) %>% t() %>% as.raster() %>% as.cimg()
+        if (length(edges.list) > 0) {
+          ftr.rst <- ftr.rst + edges.list[[j]]
+        }
+        rsts[[j]] <- ftr.rst %>% as.raster()
+      }
+      ncols <- length(unique(data[, "sample"]))
+      nrows <- ceiling(length(unique(data[, "sample"]))/ncols)
+    } else {
+      for (j in 1:length(unique(data[, "sample"]))) {
+        feature.rsts <- list()
+        for (i in seq_along(features)) {
+          ftr.rst <- apply(feature.list[[i]][[j]], 3, function(x) {
+            hsv(h = hue_breaks[i], s = 1, v = x)
+          }) %>% matrix(nrow = dims[2]*scale.res, ncol = dims[1]*scale.res) %>% t() %>% as.raster() %>% as.cimg()
+          if (length(edges.list) > 0) {
+            ftr.rst <- ftr.rst + edges.list[[j]]
+          }
+          feature.rsts[[i]] <-  ftr.rst %>% as.raster()
+        }
+        rsts[[j]] <- feature.rsts
+      }
+      rsts <- Reduce(c, rsts)
+      # rearrange results
+      reord <- rep(seq_along(features), each = 2)
+      reord[seq(2, length(reord), 2)] <- reord[seq(2, length(reord), 2)] + length(x = features)
+      rsts <- rsts[reord]
+      ncols <- length(unique(data[, "sample"]))
+      nrows <- length(x = features)
+    }
+
+    rsts <- lapply(seq_along(rsts), function(i) {
+      im <- rsts[[i]]
+      im <- im %>% image_read()
+      im <- image_border(im, ifelse(dark.theme, "#000000", "#FFFFFF"), paste(st.object@xdim*scale.res/10, st.object@xdim*scale.res/10, sep = "x"))
+      im <- image_annotate(im, text = i, size = round(st.object@xdim/10), color = ifelse(dark.theme, "#FFFFFF", "#000000"))
+    })
+
+    tmp.file <- tempfile(pattern = "", fileext = ".png")
+    png(width = st.object@xdim*ncols*scale.res, height = st.object@xdim*nrows*scale.res, file = tmp.file)
+    par(mfrow = c(nrows, ncols), mar = c(0, 0, 0, 0), bg = ifelse(dark.theme, "black", "white"))
+    for (rst in rsts) {
+      plot(rst)
+    }
+    dev.off()
+
+    im <- image_read(tmp.file)
+    if (!split.hsv) {
+      im <- image_border(im, ifelse(dark.theme, "#000000", "#FFFFFF"), paste0(st.object@xdim*scale.res/2))
+    } else {
+      im <- image_border(im, ifelse(dark.theme, "#000000", "#FFFFFF"), paste0(st.object@xdim*scale.res))
+    }
+    tmp.file <- tempfile(pattern = "", fileext = ".png")
+    lg <- g_legend(data.frame(x = 1, y = 1, feature = features), data.type = "character", variable = "feature", center.zero = FALSE, cols = ann.cols, val.limits = NULL, dark.theme = dark.theme)
+
+    grobHeight <- function(x) {
+      grid::convertHeight(sum(x$heights), "in", TRUE)
+    }
+
+    grobWidth <- function(x) {
+      grid::convertWidth(sum(x$widths), "in", TRUE)
+    }
+
+    ggsave(plot = lg, width = grobWidth(lg), height = grobHeight(lg), filename = tmp.file)
+    iminf <- image_info(im)[2:3] %>% as.numeric()
+    if (!split.hsv) {
+      lgim <- image_read(tmp.file) %>% image_scale(paste0(iminf[2]/5))
+    } else {
+      lgim <- image_read(tmp.file) %>% image_scale(paste0(iminf[2]/(nrows*2)))
+    }
+    iminf.lgm <- image_info(lgim)[2:3] %>% as.numeric()
+    lgim <- image_crop(lgim, paste0(iminf.lgm[1] - 2, "x", iminf.lgm[2] - 2, "x", 1, "x", 1))
+    if (!split.hsv) {
+      im <- image_composite(image = im, composite_image = lgim, offset = paste0("+", iminf[1] - st.object@xdim*scale.res/length(features), "+", (iminf[2])/2 - (iminf.lgm[2])/2))
+    } else {
+      im <- image_composite(image = im, composite_image = lgim, offset = paste0("+", st.object@xdim*ncols*scale.res*1.5, "+", (iminf[2])/2 - (iminf.lgm[2])/2))
+    }
+    par(mar = c(0, 0, 0, 0), bg = ifelse(dark.theme, "black", "white"))
+    plot(im %>% as.raster())
   }
-
-  red.cols <- data.frame()
-  if (verbose) cat("Selecting HSV colors for each spot ... \n")
-  for (i in 1:nrow(data)) {
-    n <- which.max(unlist(lapply(d, function(x) {
-      x[i, "v"]
-    })))
-
-    red.cols <- rbind(red.cols, d[[n]][i, ])
-  }
-
-  if (verbose) cat("Plotting features:",
-                   ifelse(length(features) == 1, features,  paste0(paste(features[1:(length(features) - 1)], collapse = ", "), " and ", features[length(features)])))
-  # Normal visualization -------------------------------------------------------------------------------------
-
-  if (image.type != "empty") {
-    dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
-  } else {
-    dims <- st.object@limits
-  }
-
-  if (!is.null(indices)) dims <- dims[indices]
-
-  plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
-                 palette = NULL, cols = NULL, rev.cols = F, ncol, spot.colors = red.cols$cols,
-                 center.zero = F, center.tissue = F, plot.title = "",
-                 dims, FALSE, theme = theme, ...)
-
-  if (dark.theme) {
-    plot <- plot + dark_theme()
-  }
-  plot <- plot +
-    geom_point(data = data.frame(x = rep(-1, length(features)), y = rep(-1, length(features)), features), aes(x, y, colour = features)) +
-    scale_color_manual(values = setNames(ann.cols, features))
-
-  suppressWarnings({print(plot)})
 }
 
-
-#' Tranforms hsv color codes into hex color code
-#'
-#' @param col vector of length 3 containing values for "h", "s" and "v"
-
-hsv2hex <- function (
-  col
-) {
-  apply(col, 2, function(x) {
-    hsv(h = x["h"], s = x["s"], v = x["v"])
-  })
-}

@@ -4,10 +4,10 @@
 \alias{SmoothPlot}
 \title{Graphs a smooth interpolation heatmap colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
-SmoothPlot(data, image.type, data.type = NULL, variable,
+SmoothPlot(st.object, data, image.type, data.type = NULL, variable,
   palette = "MaYl", cols = NULL, rev.cols = F, ncol = NULL,
-  center.zero = TRUE, xlim = NULL, ylim = NULL, darken = FALSE,
-  whiten = FALSE, ...)
+  center.zero = TRUE, dark.theme = FALSE, highlight.edges = TRUE,
+  ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
@@ -37,9 +37,7 @@ If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradien
 \code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
 the interpretaion of the output plot.}
 
-\item{darken}{Adds black color to the bottom of the colorscale to increase the contrast of the colorscale}
-
-\item{whiten}{Adds white color to the top of the colorscale to increase the contrast of the colorscale}
+\item{highlight.edges}{SHould edges be highlighted? [default: TRUE]}
 
 \item{...}{Parameters passed to geom_point()}
 }

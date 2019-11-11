@@ -4,11 +4,12 @@
 \alias{HSVFeaturePlot}
 \title{HSV encoded plots}
 \usage{
-HSVFeaturePlot(object, features, indices = NULL, spots = NULL,
-  min.cutoff = NA, max.cutoff = NA, slot = "data", pt.size = 1,
-  pt.alpha = 1, shape.by = NULL, cols = NULL, dark.theme = TRUE,
-  ncol = NULL, grid.ncol = NULL, verbose = FALSE,
-  theme = theme_void(), ...)
+HSVFeaturePlot(object, features, plot.type = "spots",
+  split.hsv = FALSE, indices = NULL, spots = NULL, min.cutoff = NA,
+  max.cutoff = NA, slot = "data", pt.size = 1, pt.alpha = 1,
+  shape.by = NULL, sigma = 2, highlight.edges = FALSE, cols = NULL,
+  dark.theme = TRUE, grid.ncol = NULL, verbose = FALSE,
+  theme = theme_void(), scale.res = 1, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -17,6 +18,10 @@ HSVFeaturePlot(object, features, indices = NULL, spots = NULL,
     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 }}
+
+\item{plot.type}{Select one of 'spots' or 'smooth' [default: 'spots']}
+
+\item{split.hsv}{Should the HSV colored features be split into separate plots? [default: FALSE]}
 
 \item{indices}{Numeric vector specifying sample indices to include in plot. Default is to show all samples.}
 
@@ -33,12 +38,14 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 
 \item{shape.by}{If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot}
 
+\item{sigma}{Smoothing bandwidth; only active if \code{plot.type = 'smooth'}. A single positive number, a numeric vector of length 2, or a function that selects the bandwidth automatically [default: 2].
+See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.}
+
+\item{highlight.edges}{Highlights the edges of the tissue. Only active if \code{plot.type = 'smooth'} and if the images have been masked.}
+
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
-in just in one row or one column.}
 
 \item{grid.ncol}{Number of columns for display when combining plots}
 
@@ -47,8 +54,6 @@ in just in one row or one column.}
 \item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
-
-\item{blend}{Scale and blend expression values to visualize coexpression of two features (This options will override other coloring parameters)}
 }
 \value{
 A ggplot object

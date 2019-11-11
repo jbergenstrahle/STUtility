@@ -4,7 +4,8 @@
 \alias{g_legend}
 \title{Create legend}
 \usage{
-g_legend(data, variable, center.zero, cols, val.limits)
+g_legend(data, data.type = "numeric", variable, center.zero, cols,
+  val.limits, dark.theme = TRUE)
 }
 \arguments{
 \item{data}{data.frame with values that should be mapped onto colorscale}
@@ -16,6 +17,8 @@ g_legend(data, variable, center.zero, cols, val.limits)
 \item{cols}{Character vector with color ids to be used in colorscale}
 
 \item{val.limits}{Specifies the limits for values in colorscale}
+
+\item{dark.theme}{Should a dark theme be used?}
 }
 \description{
 Creates a colorscale legend for a dataset in grob format

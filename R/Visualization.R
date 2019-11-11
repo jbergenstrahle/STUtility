@@ -269,6 +269,7 @@ ST.DimPlot <- function (
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
 #' @inheritParams STPlot
+#' @inheritParams SmoothPlot
 #' @importFrom cowplot plot_grid
 #' @importFrom scales rescale
 #' @importFrom ggplot2 ggplot theme theme_void
@@ -325,6 +326,7 @@ ST.FeaturePlot <- function (
   cols = NULL,
   rev.cols = FALSE,
   dark.theme = FALSE,
+  highlight.edges = TRUE,
   ncol = NULL,
   grid.ncol = NULL,
   center.zero = FALSE,
@@ -450,12 +452,12 @@ ST.FeaturePlot <- function (
       plot_grid(plotlist = plots, ncol = grid.ncol)
 
     } else if (plot.type == "smooth") {
-      stop("Smooth options not yet implemented")
+      #stop("Smooth options not yet implemented")
       if (data.type %in% c("factor", "character")) stop(paste0("Smoothing has not yet been implemented for categorical variables"), call. = FALSE)
       # Smooth visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(d) {
-        plot <- SmoothPlot(data, image.type, data.type, d,
-                       palette, cols, rev.cols, ncol, center.zero, xlim, ylim, ...)
+        plot <- SmoothPlot(st.object, data, image.type, data.type, d,
+                       palette, cols, rev.cols, ncol, center.zero, dark.theme, highlight.edges, ...)
         return(plot)
       })
 
@@ -470,7 +472,8 @@ ST.FeaturePlot <- function (
       }
 
       final_img <- image_append(Reduce(c, stack), stack = T)
-      print(final_img)
+      par(mar = c(0, 0, 0, 0), bg = ifelse(dark.theme, "black", "white"))
+      plot(final_img %>% as.raster())
     }
   }
 }
@@ -690,8 +693,7 @@ STPlot <- function (
 #' Graphs a smooth interpolation heatmap colored by continuous variable, e.g. dimensional reduction vector
 #'
 #' @param image.type Specifies the image is "processed", otherwise NULL
-#' @param darken Adds black color to the bottom of the colorscale to increase the contrast of the colorscale
-#' @param whiten Adds white color to the top of the colorscale to increase the contrast of the colorscale
+#' @param highlight.edges SHould edges be highlighted? [default: TRUE]
 #'
 #' @inheritParams STPlot
 #'
@@ -701,6 +703,7 @@ STPlot <- function (
 #' @importFrom grDevices as.raster
 
 SmoothPlot <- function (
+  st.object,
   data,
   image.type,
   data.type = NULL,
@@ -710,22 +713,18 @@ SmoothPlot <- function (
   rev.cols = F,
   ncol = NULL,
   center.zero = TRUE,
-  xlim = NULL,
-  ylim = NULL,
-  darken = FALSE,
-  whiten = FALSE,
+  dark.theme = FALSE,
+  highlight.edges = TRUE,
   ...
 ) {
 
-  xlim <- xlim %||% c(0, 67); ylim <- ylim %||% c(0, 64)
-
   image.masks <- NULL
   if (image.type == "processed") {
-    image.masks <- object@tools$processed.masks
+    image.masks <- st.object['processed.masks']
   } else if ("masked.masks" %in% names(object@tools)) {
-    image.masks <- object@tools$masked.masks
+    image.masks <- st.object['masked.masks']
   }
-  samplenames <- names(object@tools$raw)
+  samplenames <- names(st.object@samplenames)
 
   # Set colors
   # Obtain colors from selected palette or from provided cols
@@ -736,102 +735,134 @@ SmoothPlot <- function (
     cols <- rev(cols)
   }
 
-  if (darken) cols <- c("black", cols); if (whiten) cols <- c(cols, "white")
+  #if (darken) cols <- c("black", cols); if (whiten) cols <- c(cols, "white")
 
   val.limits <- range(data[, variable])
 
   # Create legend
-  lg <- g_legend(data, variable, center.zero, cols, val.limits)
+  lg <- g_legend(data, "numeric", variable, center.zero, cols, val.limits, dark.theme = dark.theme)
+
+  if (image.type %in% c('processed', 'masked')) {
+    masks <- lapply(st.object[msk.type], as.cimg)
+  } else {
+    masks <- NULL
+  }
 
   # Subset only based on one value's expression
+  edges.list <- list()
   p.list <- lapply(1:length(unique(data[, "sample"])), function(i) {
-    data.subset <- subset(data, sample == i)
-    if ("xdim" %in% names(object@tools)) {
-      xdim <- 400; ydim <- round(as.numeric(object@tools$dims[[i]][2])/(as.numeric(object@tools$dims[[i]][2])/xdim))
-      #data.subset <- data.subset[data.subset[, variable] != 0, ]
-      s.xy <- as.numeric(object@tools$dims[[1]][, 2:3])/c(xdim, ydim)
-      data.subset[, c("x", "y")] <- data.subset[, c("x", "y")]/s.xy
+    data_subset <- subset(data, sample == i)
+    dims <- st.object@rasterlists$processed.masks[[i]] %>% dim()
+    if (image.type %in% c('raw', 'masked', 'processed')) {
+      extents <- st.object@dims[[i]][2:3] %>% as.numeric()
+      data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/(extents[1]/dims[2])
     } else {
-      xdim <- 67; ydim <- 64
+      extents <- st.object@limits[[i]]
+      data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/(extents[1]/dims[2])
     }
 
-    x <- data.subset[, "x"]; y <- data.subset[, "y"]
-    min.x <- min(x); min.y <- min(y); max.x <- max(x); max.y <- max(y)
-    tissue.width <- max.x - min.x; tissue.height <- max.y - min.y
+    ow <- owin(xrange = c(0, dims[2]), yrange = c(0, dims[1]))
+    p <- ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, variable])
+    suppressWarnings({s <- Smooth(p, 2, dimyx = dims)})
+    m <-  as.matrix(s)
+    m[m < 0] <- 0
+    m <- m/max(m)
 
-    # Run interpolation
-    s =  akima::interp(data.subset[, "x"], data.subset[, "y"], data.subset[, variable], nx = tissue.width, ny = tissue.height, extrap = FALSE, linear = FALSE, xo = 1:xdim, yo = 1:ydim)
-
-    z <- t(s$z)
-    x <- 1:ncol(z)
-    y <- 1:nrow(z)
-    gg <- data.frame(x = rep(x, each = nrow(z)), y = rep(y, times = ncol(z)), val = as.numeric(z))
-    gg$val[gg$val < val.limits[1]] <- val.limits[1]; gg$val[gg$val > val.limits[2]] <- val.limits[2]
-
-
-    p <- ggplot(gg, aes(x, 64 - y, fill = val)) +
-      geom_raster(interpolate = TRUE) +
-      scale_x_continuous(expand = c(0, 0)) +
-      scale_y_continuous(expand = c(0, 0)) +
-      theme_void() +
-      guides(fill = FALSE)
-
-    # Center colorscale at 0
-    if (center.zero) {
-      p <- p +
-        scale_fill_gradient2(low = cols[1], mid = cols[median(seq_along(cols))], high = cols[length(cols)], midpoint = 0, na.value = "#000000", limits = val.limits)
-    } else if (any(data.type %in% c("character", "factor"))) {
-      p <- p +
-        labs(fill = variable)
+    if (image.type %in% c('processed', 'masked')) {
+      msk <- masks[[i]]
+      if (highlight.edges) {
+        edges.list[[i]] <<- imgradient(msk, "xy") %>% enorm()
+      }
+      msk <- msk[, , , 1] %>% as.cimg() %>% threshold()
+      m <- t(m) %>% as.cimg()
+      masked.m <- m*msk
+      p <- masked.m
     } else {
-      p <- p +
-        scale_fill_gradientn(colours = cols, na.value = "#000000", limits = val.limits)
-    }
-
-    tmp.file <- tempfile(pattern = "", fileext = ".png")
-
-    png(width = xdim, height = ydim, file = tmp.file)
-    par(mar = c(0, 0, 0, 0))
-    plot(p)
-    dev.off()
-
-    p <- image_read(tmp.file)
-
-    if (image.type != "empty") {
-      msk <- as.cimg(image.masks[[i]])
-      masked.plot <- as.raster(magick2cimg(p)*(msk/255))
-      masked.plot <- as.raster(image_annotate(image_read(masked.plot), text = samplenames[i], size = round(xdim/10), color = "#FFFFFF"))
-      return(masked.plot)
-    } else {
-      return(as.raster(p))
+      p <- m %>% as.cimg()
     }
   })
-
-  xdim <- ydim <- 400
 
   # Draw on new device
   ncol <- ncol %||% ceiling(sqrt(length(p.list)))
   nrow <- ceiling(length(p.list)/ncol)
 
-  tmp.file <- tempfile(pattern = "", fileext = ".png")
+  cscale <- scales::gradient_n_pal(cols, seq(val.limits[1], 1, length.out = length(x = cols)))
 
-  png(width = xdim*ncol, height = ydim*nrow, file = tmp.file)
-  par(mfrow = c(nrow, ncol), mar = c(0, 0, 0, 0), bg = "#000000")
-  for (p in p.list) {
-    plot(p)
+  ims <- list()
+  for (i in seq_along(p.list)) {
+    p <- p.list[[i]]
+    tmp.file2 <- tempfile(pattern = "", fileext = ".png")
+    png(width = dim(p)[1], height = dim(p)[2], file = tmp.file2)
+    par(mar = c(0, 0, 0, 0), bg = ifelse(dark.theme, "#000000", "#FFFFFF"))
+    plot(p, rescale = FALSE, colourscale = cscale)
+    dev.off()
+    im <- image_read(tmp.file2)
+    ims[[i]] <- magick2cimg(im)
   }
+
+  if (!dark.theme & !is.null(masks)) {
+    ims <- lapply(seq_along(ims), function(i) {
+      im <- ims[[i]]
+      msk <- masks[[i]]
+      im.masked <- im + !msk
+      im.masked[im.masked > 1] <- 1
+      ims[[i]] <- im.masked
+    })
+  }
+
+  if (dark.theme) {
+    ims <- lapply(seq_along(ims), function(i) {
+      im <- ims[[i]]
+      msk <- masks[[i]] %>% threshold()
+      im.masked <- im*msk
+      ims[[i]] <- im.masked
+    })
+  }
+
+  if (highlight.edges) {
+    ims <- lapply(seq_along(ims), function(i) {
+      im <- ims[[i]]
+      im <- im + edges.list[[i]]
+      im[im > 1] <- 1
+      return(im)
+    })
+  }
+
+  ims <- lapply(ims, function(im) {
+    im <- im %>% as.raster() %>% image_read()
+    im <- image_border(im, ifelse(dark.theme, "#000000", "#FFFFFF"), paste(st.object@xdim/10, st.object@xdim/10, sep = "x"))
+    im <- image_annotate(im, text = i, size = round(st.object@xdim/10), color = ifelse(dark.theme, "#FFFFFF", "#000000"))
+  })
+
+  tmp.file <- tempfile(pattern = "", fileext = ".png")
+  png(width = dim(p)[1]*ncol, height = dim(p)[1]*nrow, file = tmp.file)
+  par(mfrow = c(nrow, ncol), mar = c(0, 0, 0, 0), bg = ifelse(dark.theme, "#000000", "#FFFFFF"))
+  for (im in ims) plot(im)
   dev.off()
 
   im <- image_read(tmp.file)
-  im <- image_border(im, "#000000", paste(xdim/10, xdim/10, sep = "x"))
-  im <- image_annotate(im, text = variable, size = round(xdim/10), color = "#FFFFFF")
+  im <- image_border(im, ifelse(dark.theme, "#000000", "#FFFFFF"), paste(st.object@xdim/7, st.object@xdim/10, sep = "x"))
+  im <- image_annotate(im, text = variable, size = round(st.object@xdim/10), color = ifelse(dark.theme, "#FFFFFF", "#000000"))
 
   # Draw legend
   tmp.file <- tempfile(pattern = "", fileext = ".png")
-  ggsave(plot = lg, width = 2.8/5, height = 7.8/5, filename = tmp.file, dpi = 150, units = "in")
-  lgim <- image_read(tmp.file)
+  #ggsave(plot = lg, width = 2.8/5, height = 7.8/5, filename = tmp.file, dpi = 150, units = "in")
+  #lgim <- image_read(tmp.file)
 
-  im <- image_composite(image = im, composite_image = lgim, offset = paste0("+", xdim*ncol, "+", (ydim*nrow)/2))
+  grobHeight <- function(x) {
+    grid::convertHeight(sum(x$heights), "in", TRUE)
+  }
+
+  grobWidth <- function(x) {
+    grid::convertWidth(sum(x$widths), "in", TRUE)
+  }
+
+  ggsave(plot = lg, width = grobWidth(lg), height = grobHeight(lg), filename = tmp.file)
+  iminf <- image_info(im)[2:3] %>% as.numeric()
+  lgim <- image_read(tmp.file) %>% image_scale(paste0(iminf[2]/5))
+  iminf.lgm <- image_info(lgim)[2:3] %>% as.numeric()
+
+  im <- image_composite(image = im, composite_image = lgim, offset = paste0("+", st.object@xdim*ncol, "+", (iminf[2])/2 - (iminf.lgm[2])/2))
 
   return(im)
 }
