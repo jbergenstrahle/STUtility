@@ -4,7 +4,7 @@
 \alias{obtain.array.coords}
 \title{Obtain array coordinates}
 \usage{
-obtain.array.coords(st.object, data, image.type)
+obtain.array.coords(st.object, data, image.type, spots)
 }
 \arguments{
 \item{object}{Seurat object}

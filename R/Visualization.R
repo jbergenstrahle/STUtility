@@ -127,7 +127,8 @@ ST.DimPlot <- function (
   }
 
   # Add group column to data
-  data[,  "sample"] <- st.object[[, "sample", drop = TRUE]]
+  data[,  "sample"] <- st.object[[spots, "sample", drop = TRUE]]
+  indices <- unique(data[,  "sample"]) %>% as.numeric()
 
   # Extract shape.by column from meta data if applicable
   if (!is.null(x = shape.by)) {
@@ -139,7 +140,7 @@ ST.DimPlot <- function (
 
   # Obtain array coordinates
   image.type <- "empty"
-  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type)
+  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type, spots)
 
   # Scale data values
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
@@ -180,6 +181,9 @@ ST.DimPlot <- function (
       } else {
         dims.list <- st.object@limits
       }
+
+      if (!is.null(indices)) dims.list <- dims.list[indices]
+
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha,
                        palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, dims.list, ...)
@@ -364,7 +368,8 @@ ST.FeaturePlot <- function (
   }
 
   # Add group column to data
-  data[,  "sample"] <- st.object[[, "sample", drop = TRUE]]
+  data[,  "sample"] <- st.object[[spots, "sample", drop = TRUE]]
+  indices <- unique(data[,  "sample"]) %>% as.numeric()
 
   # Add shape column if specified
   if (!is.null(x = shape.by)) {
@@ -376,7 +381,7 @@ ST.FeaturePlot <- function (
 
   # Obtain array coordinates
   image.type <- "empty"
-  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type)
+  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type, spots)
 
   # Raise error if features are not present in Seurat object
   if (ncol(x = data) < 4) {

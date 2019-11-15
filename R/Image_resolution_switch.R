@@ -127,20 +127,29 @@ SwitchResolution <- function (
       imat <- imwarp(m, map = map.affine.backward, dir = "backward", interpolation = "cubic")
       if (verbose) cat(paste0("Scaling processed image mask for ", i, " ... \n"))
       imat.msk <- image_read(processed.masks[[i]]) %>% image_scale(paste0(xdim)) %>% magick2cimg()*255
-      inds <- which(imat.msk != 255)
+      #inds <- which(imat.msk != 255)
 
-      if (verbose) cat(paste0(" Cleaning up background ... \n"))
-      imrst <- as.raster(imat)
-      imat[inds] <- 255
-      imrst <- as.raster(imat)
-      tab.im <- table(imrst)
-      if (length(tab.im) > 2) {
-        imrst[imrst == names(which.max(tab.im))] <- "#FFFFFF"
+      diff <- ncol(imat.msk) - ncol(imat)
+
+      if (diff > 0) {
+        imat.msk <- imsub(imat.msk, y <= ncol(imat))
+      } else if (diff < 0) {
+        imat.msk <- as.array(imat.msk)
+        empty_msk <- array(dim = c(dim(imat.msk)[1], ncol(imat.msk) + abs(diff), dim(imat.msk)[3:4]))
+        for (j in 1:dim(imat.msk)[4]) {
+          empty_msk[, , 1, j] <- cbind(imat.msk[, , 1, j], matrix(rep(0, nrow(imat.msk)*abs(diff)), ncol = abs(diff)))
+        }
+        imat.msk <- as.cimg(empty_msk)
       }
 
+      if (verbose) cat(paste0(" Cleaning up background ... \n"))
+      imat.masked <- imat*threshold(imat.msk, thr = 1)
+      imat.masked <- imat.masked + (!threshold(imat.msk, thr = 1))*255
+      imat.masked[imat.masked > 255] <- 255
+
       if (verbose) cat(paste0(" Image ", i, " processing complete. \n\n"))
-      processed.images[[i]] <- imrst
-      processed.masks[[i]] <- imat.msk
+      processed.images[[i]] <- imat.masked %>% as.raster()
+      processed.masks[[i]] <- imat.msk %>% as.raster()
     }
     st.object@rasterlists$processed <- processed.images
     st.object@rasterlists$processed.masks <- processed.masks
