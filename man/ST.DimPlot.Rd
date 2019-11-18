@@ -4,10 +4,10 @@
 \alias{ST.DimPlot}
 \title{Dimensional reduction plot on ST coordinates}
 \usage{
-ST.DimPlot(object, dims = c(1, 2), spots = NULL, plot.type = "spots",
-  blend = FALSE, min.cutoff = NA, max.cutoff = NA, pt.size = 1,
-  pt.alpha = 1, reduction = NULL, shape.by = NULL,
-  palette = "MaYl", cols = NULL, rev.cols = FALSE,
+ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
+  plot.type = "spots", blend = FALSE, min.cutoff = NA,
+  max.cutoff = NA, pt.size = 1, pt.alpha = 1, reduction = NULL,
+  shape.by = NULL, palette = "MaYl", cols = NULL, rev.cols = FALSE,
   dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
   verbose = FALSE, ...)
