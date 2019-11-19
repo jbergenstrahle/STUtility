@@ -1,0 +1,2 @@
+year <- sub(“-.*”, “”, meta$Date) note <- sprintf(“R package version %s”, meta$Version)  bibentry(bibtype = “Manual”,          title = “{STUtility}: Visualization and analysis tools for Spatial Transcriptomics data”,          author = c(person(“Joseph”, “Bergenstraahle”),                     person(“Ludvig”, “Larsson”),                    ),          year = year,          note = note,          url = “https://github.com/jbergenstrahle/STUtility”)
+
