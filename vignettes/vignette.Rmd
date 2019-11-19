@@ -73,6 +73,8 @@ devtools::install_github(
 
 library(STutility)
 
+#TODO: addera workflow att ifall man ska använda seurat funktioern med features, så får man först lägga in det från meta datan som ligger i STaffli objektet
+
 ```
 
 # Background
