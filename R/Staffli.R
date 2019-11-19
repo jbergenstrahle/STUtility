@@ -98,7 +98,7 @@ CreateStaffliObject <- function (
     limits = setNames(limits, samples),
     platforms = platforms,
     samplenames = samples,
-    version = packageVersion(pkg = 'STUtility')
+    version = packageVersion(pkg = 'STutility')
   )
 
   return(object)

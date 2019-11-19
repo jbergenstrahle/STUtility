@@ -74,6 +74,7 @@ ST.DimPlot <- function (
   object,
   dims = c(1, 2),
   spots = NULL,
+  indices = NULL,
   plot.type = "spots",
   blend = FALSE,
   min.cutoff = NA,
@@ -128,7 +129,6 @@ ST.DimPlot <- function (
 
   # Add group column to data
   data[,  "sample"] <- st.object[[spots, "sample", drop = TRUE]]
-  indices <- unique(data[,  "sample"]) %>% as.numeric()
 
   # Extract shape.by column from meta data if applicable
   if (!is.null(x = shape.by)) {
@@ -144,6 +144,15 @@ ST.DimPlot <- function (
 
   # Scale data values
   data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
+
+  # Subset by index
+  if (!is.null(indices)) {
+    print(indices)
+    if (!all(as.character(indices) %in% data[, "sample"])) stop(paste0("Index out of range. "), call. = FALSE)
+    data <- data[data[, "sample"] %in% as.character(indices), ]
+  } else {
+    indices <- unique(data[,  "sample"]) %>% as.numeric()
+  }
 
   # blend colors or plot each dimension separately
   if (blend) {
@@ -369,7 +378,6 @@ ST.FeaturePlot <- function (
 
   # Add group column to data
   data[,  "sample"] <- st.object[[spots, "sample", drop = TRUE]]
-  indices <- unique(data[,  "sample"]) %>% as.numeric()
 
   # Add shape column if specified
   if (!is.null(x = shape.by)) {
@@ -400,6 +408,8 @@ ST.FeaturePlot <- function (
   if (!is.null(indices)) {
     if (!all(as.character(indices) %in% data[, "sample"])) stop(paste0("Index out of range. "), call. = FALSE)
     data <- data[data[, "sample"] %in% as.character(indices), ]
+  } else {
+    indices <- unique(data[,  "sample"]) %>% as.numeric()
   }
 
 
