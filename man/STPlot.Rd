@@ -5,10 +5,10 @@
 \title{Graphs ST spots colored by continuous or categorical features}
 \usage{
 STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
-  pt.alpha = 1, palette = "MaYl", cols = NULL, rev.cols = F,
-  ncol = NULL, spot.colors = NULL, center.zero = TRUE,
-  center.tissue = F, plot.title = NULL, dims = NULL,
-  split.labels = FALSE, theme = theme_void(), ...)
+  pt.alpha = 1, palette = "MaYl", cols = NULL, ncol = NULL,
+  spot.colors = NULL, center.zero = TRUE, center.tissue = F,
+  plot.title = NULL, dims = NULL, split.labels = FALSE,
+  theme = theme_void(), ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
@@ -30,8 +30,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}

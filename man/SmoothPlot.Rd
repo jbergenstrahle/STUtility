@@ -5,9 +5,8 @@
 \title{Graphs a smooth interpolation heatmap colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
 SmoothPlot(st.object, data, image.type, data.type = NULL, variable,
-  palette = "MaYl", cols = NULL, rev.cols = F, ncol = NULL,
-  center.zero = TRUE, dark.theme = FALSE, highlight.edges = TRUE,
-  ...)
+  palette = "MaYl", cols = NULL, ncol = NULL, center.zero = TRUE,
+  dark.theme = FALSE, highlight.edges = TRUE, ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
@@ -25,8 +24,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}

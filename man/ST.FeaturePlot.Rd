@@ -8,10 +8,9 @@ ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
   spots = NULL, plot.type = "spots", min.cutoff = NA,
   max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
   pt.alpha = 1, shape.by = NULL, palette = NULL, cols = NULL,
-  rev.cols = FALSE, dark.theme = FALSE, highlight.edges = TRUE,
-  ncol = NULL, grid.ncol = NULL, center.zero = FALSE,
-  channels.use = NULL, center.tissue = FALSE, theme = theme_void(),
-  verbose = FALSE, ...)
+  dark.theme = FALSE, highlight.edges = TRUE, ncol = NULL,
+  grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
+  center.tissue = FALSE, theme = theme_void(), verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -52,8 +51,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
 \item{highlight.edges}{SHould edges be highlighted? [default: TRUE]}
 

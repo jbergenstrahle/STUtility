@@ -85,7 +85,6 @@ ST.DimPlot <- function (
   shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
-  rev.cols = FALSE,
   dark.theme = FALSE,
   ncol = NULL,
   grid.ncol = NULL,
@@ -171,7 +170,7 @@ ST.DimPlot <- function (
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 3, 2)):ncol(data)]
     plot <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha,
-                   palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue,
+                   palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), dims.list, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
@@ -195,7 +194,7 @@ ST.DimPlot <- function (
 
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha,
-                       palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue, NULL, dims.list, ...)
+                       palette, cols, ncol, spot.colors, center.zero, center.tissue, NULL, dims.list, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -211,7 +210,7 @@ ST.DimPlot <- function (
       stop("Smooth options not yet implemented")
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- SmoothPlot(data, image.type, data.type = "numeric", d,
-                           palette, rev.cols, ncol, center.zero, xlim, ylim, ...)
+                           palette, ncol, center.zero, xlim, ylim, ...)
         return(plot)
       })
 
@@ -337,7 +336,6 @@ ST.FeaturePlot <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
-  rev.cols = FALSE,
   dark.theme = FALSE,
   highlight.edges = TRUE,
   ncol = NULL,
@@ -365,6 +363,7 @@ ST.FeaturePlot <- function (
 
   # If blend option is set, stop if the number of features are not equal to 2 or 3
   if (blend) {
+    if (plot.type == "smooth") stop(paste0("Smoothing option not available when blending ..."), call. = FALSE)
     if (!(length(x = features) %in% c(2, 3)) | !all(data.type %in% c("numeric", "integer"))) {
       stop("Blending feature plots only works with two or three numeric features")
     }
@@ -400,7 +399,7 @@ ST.FeaturePlot <- function (
          call. = FALSE)
   }
 
-  if (data.type %in% c("numeric", "integer")) {
+  if (all(data.type %in% c("numeric", "integer"))) {
     data <- feature.scaler(data, features = features, min.cutoff, max.cutoff, spots)
   }
 
@@ -431,7 +430,7 @@ ST.FeaturePlot <- function (
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 4, 3)):ncol(data)]
     plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
-                   palette, cols, rev.cols, ncol, spot.colors, center.zero, center.tissue,
+                   palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
                    dims, FALSE, theme, ...)
     if (dark.theme) {
@@ -455,8 +454,8 @@ ST.FeaturePlot <- function (
 
       plots <- lapply(X = features, FUN = function(ftr) {
         plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha,
-                       palette, cols, rev.cols, ncol, spot.colors, center.zero,
-                       center.tissue, NULL, dims, split.labels, theme, ...)
+                       palette, cols, ncol, spot.colors, center.zero,
+                       center.tissue, ftr, dims, split.labels, theme, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -468,11 +467,11 @@ ST.FeaturePlot <- function (
 
     } else if (plot.type == "smooth") {
       #stop("Smooth options not yet implemented")
-      if (data.type %in% c("factor", "character")) stop(paste0("Smoothing has not yet been implemented for categorical variables"), call. = FALSE)
+      if (any(data.type %in% c("factor", "character"))) stop(paste0("Smoothing has not yet been implemented for categorical variables"), call. = FALSE)
       # Smooth visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(d) {
         plot <- SmoothPlot(st.object, data, image.type, data.type, d,
-                       palette, cols, rev.cols, ncol, center.zero, dark.theme, highlight.edges, ...)
+                       palette, cols, ncol, center.zero, dark.theme, highlight.edges, ...)
         return(plot)
       })
 
@@ -508,7 +507,6 @@ ST.FeaturePlot <- function (
 #' @param cols A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 #' create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 #' option.
-#' @param rev.cols Logical specifying whether colorscale should be reversed [default: FALSE]
 #' @param ncol Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 #' in just in one row or one column.
 #' @param spot.colors Character vector with color names that overrides default coloring with ggplot2
@@ -541,7 +539,6 @@ STPlot <- function (
   pt.alpha = 1,
   palette = "MaYl",
   cols = NULL,
-  rev.cols = F,
   ncol = NULL,
   spot.colors = NULL,
   center.zero = TRUE,
@@ -623,10 +620,6 @@ STPlot <- function (
     ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(3))
   }
 
-  if (rev.cols) {
-    cols <- rev(cols)
-  }
-
   # Define scales for each facet
   if (!split.labels) {
     limits_x <- lapply(seq_along(dims), function(i) {
@@ -679,10 +672,11 @@ STPlot <- function (
 
   # Add ST array dimensions and plot title
   p <- p +
-    labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = "")
+    labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
 
   # Set theme
-  p <- p + theme_void() + theme
+  p <- p + theme
+  p <- p + theme(plot.margin = unit(c(0.05, 0.05, 0.05, 0.05), "npc"))
 
   # Facet plots by group variable
   if (!split.labels) {
@@ -733,7 +727,6 @@ SmoothPlot <- function (
   variable,
   palette = "MaYl",
   cols = NULL,
-  rev.cols = F,
   ncol = NULL,
   center.zero = TRUE,
   dark.theme = FALSE,
@@ -743,22 +736,18 @@ SmoothPlot <- function (
 
   image.masks <- NULL
   if (image.type == "processed") {
-    image.masks <- st.object['processed.masks']
+    msk.type <- paste0(image.type, ".masks")
+    image.masks <- st.object[msk.type]
   } else if ("masked.masks" %in% names(object@tools)) {
-    image.masks <- st.object['masked.masks']
+    msk.type <- paste0(image.type, ".masks")
+    image.masks <- st.object[msk.type]
   }
   samplenames <- names(st.object@samplenames)
 
-  # Set colors
   # Obtain colors from selected palette or from provided cols
   cols <- cols %||% {
     ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(5))
   }
-  if (rev.cols) {
-    cols <- rev(cols)
-  }
-
-  #if (darken) cols <- c("black", cols); if (whiten) cols <- c(cols, "white")
 
   val.limits <- range(data[, variable])
 
@@ -865,7 +854,7 @@ SmoothPlot <- function (
 
   im <- image_read(tmp.file)
   im <- image_border(im, ifelse(dark.theme, "#000000", "#FFFFFF"), paste(st.object@xdim/7, st.object@xdim/10, sep = "x"))
-  im <- image_annotate(im, text = variable, size = round(st.object@xdim/10), color = ifelse(dark.theme, "#FFFFFF", "#000000"))
+  im <- image_annotate(im, text = variable, size = round(st.object@xdim/20), color = ifelse(dark.theme, "#FFFFFF", "#000000"))
 
   # Draw legend
   tmp.file <- tempfile(pattern = "", fileext = ".png")
@@ -882,7 +871,7 @@ SmoothPlot <- function (
 
   ggsave(plot = lg, width = grobWidth(lg), height = grobHeight(lg), filename = tmp.file)
   iminf <- image_info(im)[2:3] %>% as.numeric()
-  lgim <- image_read(tmp.file) %>% image_scale(paste0(iminf[2]/5))
+  lgim <- image_read(tmp.file) %>% image_scale(paste0(iminf[2]/7))
   iminf.lgm <- image_info(lgim)[2:3] %>% as.numeric()
 
   im <- image_composite(image = im, composite_image = lgim, offset = paste0("+", st.object@xdim*ncol, "+", (iminf[2])/2 - (iminf.lgm[2])/2))
@@ -970,7 +959,6 @@ DimOverlay <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
-  rev.cols = FALSE,
   grid.ncol = NULL,
   center.zero = TRUE,
   channels.use = NULL,
@@ -1074,7 +1062,7 @@ DimOverlay <- function (
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha,
-                         palette, cols, rev.cols, ncol = NULL, spot.colors, center.zero,
+                         palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, dark.theme, ...)
     return(plot)
   } else {
@@ -1086,7 +1074,7 @@ DimOverlay <- function (
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, dark.theme, ...)
+                           ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, dark.theme, ...)
 
       return(plot)
     })
@@ -1167,7 +1155,6 @@ FeatureOverlay <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
-  rev.cols = FALSE,
   grid.ncol = NULL,
   center.zero = FALSE,
   channels.use = NULL,
@@ -1252,7 +1239,7 @@ FeatureOverlay <- function (
          call. = FALSE)
   }
 
-  if (data.type %in% c("numeric", "integer")) {
+  if (all(data.type %in% c("numeric", "integer"))) {
     data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
   }
 
@@ -1268,7 +1255,7 @@ FeatureOverlay <- function (
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha,
-                         palette, cols, rev.cols, ncol = NULL, spot.colors, center.zero,
+                         palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels, dark.theme, ...)
     return(plot)
   } else {
@@ -1280,7 +1267,7 @@ FeatureOverlay <- function (
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           rev.cols, ncol = NULL, spot.colors, center.zero, NULL, split.labels, dark.theme, ...)
+                           ncol = NULL, spot.colors, center.zero, NULL, split.labels, dark.theme, ...)
 
       return(plot)
     })
@@ -1316,7 +1303,6 @@ ST.ImagePlot <- function (
   pt.alpha = 1,
   palette = "MaYl",
   cols = NULL,
-  rev.cols = F,
   ncol = NULL,
   spot.colors = NULL,
   center.zero = T,
@@ -1385,10 +1371,6 @@ ST.ImagePlot <- function (
     ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(3))
   }
 
-  if (rev.cols) {
-    cols <- rev(cols)
-  }
-
   # Define limits
   c(x_dim, y_dim) %<-% dims
 
@@ -1424,6 +1406,7 @@ ST.ImagePlot <- function (
       scale_x_continuous(limits = c(0, x_dim), expand = c(0, 0)) +
       scale_y_continuous(limits = c(0, y_dim), expand = c(0, 0)) +
       theme_void() +
+      theme(plot.margin = unit(c(0.05, 0.05, 0.05, 0.05), "npc")) +
       labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = "")
 
     # Center colorscale at 0
@@ -1506,7 +1489,6 @@ MultiDimOverlay <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
-  rev.cols = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
@@ -1535,7 +1517,7 @@ MultiDimOverlay <- function (
     DimOverlay(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
                reduction = reduction, shape.by = shape.by, palette = palette,
-               cols = cols, rev.cols = rev.cols, grid.ncol = NULL,
+               cols = cols, grid.ncol = NULL,
                center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme, ... = ...)
   })
 
@@ -1628,7 +1610,6 @@ MultiFeatureOverlay <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
-  rev.cols = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
   verbose = FALSE,
@@ -1657,7 +1638,7 @@ MultiFeatureOverlay <- function (
     FeatureOverlay(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
-                   palette = palette, cols = cols, rev.cols = rev.cols,
+                   palette = palette, cols = cols,
                    grid.ncol = NULL, center.zero = center.zero,
                    channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,... = ...)
   })

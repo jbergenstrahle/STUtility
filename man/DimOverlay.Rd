@@ -7,7 +7,7 @@
 DimOverlay(object, dims = 1:2, sample.index = 1, spots = NULL,
   type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
   pt.size = 1, pt.alpha = 1, reduction = NULL, shape.by = NULL,
-  palette = NULL, cols = NULL, rev.cols = FALSE, grid.ncol = NULL,
+  palette = NULL, cols = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, verbose = FALSE,
   dark.theme = FALSE, sample.label = TRUE, ...)
 }
@@ -50,8 +50,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
 \item{grid.ncol}{Number of columns for display when combining plots. This option will only have an effect on the sample level structure.}
 

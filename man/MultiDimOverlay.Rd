@@ -8,8 +8,8 @@ MultiDimOverlay(object, sampleids, spots = NULL, method = "viewer",
   ncols = NULL, dims = c(1:2), type = NULL, min.cutoff = NA,
   max.cutoff = NA, blend = FALSE, pt.size = 1, pt.alpha = 1,
   reduction = NULL, shape.by = NULL, palette = NULL, cols = NULL,
-  rev.cols = FALSE, center.zero = FALSE, channels.use = NULL,
-  verbose = FALSE, dark.theme = FALSE, ...)
+  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
+  dark.theme = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -57,8 +57,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
 \item{center.zero}{Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
 the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.

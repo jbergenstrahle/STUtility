@@ -7,7 +7,7 @@
 ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
   plot.type = "spots", blend = FALSE, min.cutoff = NA,
   max.cutoff = NA, pt.size = 1, pt.alpha = 1, reduction = NULL,
-  shape.by = NULL, palette = "MaYl", cols = NULL, rev.cols = FALSE,
+  shape.by = NULL, palette = "MaYl", cols = NULL,
   dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
   verbose = FALSE, ...)
@@ -43,8 +43,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}

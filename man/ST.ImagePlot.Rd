@@ -6,7 +6,7 @@
 \usage{
 ST.ImagePlot(data, data.type, shape.by, variable, image, dims,
   pt.size = 2, pt.alpha = 1, palette = "MaYl", cols = NULL,
-  rev.cols = F, ncol = NULL, spot.colors = NULL, center.zero = T,
+  ncol = NULL, spot.colors = NULL, center.zero = T,
   plot.title = NULL, split.labels = FALSE, dark.theme = FALSE, ...)
 }
 \arguments{
@@ -34,8 +34,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{rev.cols}{Logical specifying whether colorscale should be reversed [default: FALSE]}
 
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}
