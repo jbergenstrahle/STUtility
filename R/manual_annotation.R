@@ -48,19 +48,19 @@ ManualAnnotation <- function (
 
 
     sidebarPanel(
-    actionButton(inputId="info", label="Instructions"),  #icon = shiny::icon("info", lib="glyphicon")),
-    shiny::hr(),
-    selectInput(inputId = "sampleInput", label = "Select sample", choices = sampleChoice, selected = "1"),
-    shiny::hr(),
-    textInput(inputId = "labelInput", label = "Choose label name", value="", placeholder = "Default"),
-    shiny::hr(),
-    sliderInput(inputId="alphaValue", label="Opacity [0-1]", min=0, max=1, value=0.2, step=0.2),
-    shiny::hr(),
-    sliderInput(inputId="spotSize", label="Capture-Spot Size [1-5]", min=0, max=5, value=2, step=1),
-    shiny::hr(),
-    actionButton(inputId = "confirm", label="Confirm selection"),
-    shiny::hr(),
-    actionButton(inputId = "stopApp", label="Quit annotation tool")
+      actionButton(inputId="info", label="Instructions"),  #icon = shiny::icon("info", lib="glyphicon")),
+      shiny::hr(),
+      selectInput(inputId = "sampleInput", label = "Select sample", choices = sampleChoice, selected = "1"),
+      shiny::hr(),
+      textInput(inputId = "labelInput", label = "Choose label name", value="", placeholder = "Default"),
+      shiny::hr(),
+      sliderInput(inputId="alphaValue", label="Opacity [0-1]", min=0, max=1, value=0.2, step=0.2),
+      shiny::hr(),
+      sliderInput(inputId="spotSize", label="Capture-Spot Size [1-5]", min=0, max=5, value=2, step=1),
+      shiny::hr(),
+      actionButton(inputId = "confirm", label="Confirm selection"),
+      shiny::hr(),
+      actionButton(inputId = "stopApp", label="Quit annotation tool")
     ),
     mainPanel(
       ggiraphOutput("Plot1", height = res)
@@ -68,55 +68,55 @@ ManualAnnotation <- function (
   )
 
   # ===================== Server ================================
-    server <- function(input, output, session){
+  server <- function(input, output, session){
 
-      df <- reactiveValues(label = object@meta.data$labels,
-                           id = object@meta.data$id,
-                           sample = st.object[[, "sample", drop = T]])
+    df <- reactiveValues(label = object@meta.data$labels,
+                         id = object@meta.data$id,
+                         sample = st.object[[, "sample", drop = T]])
 
-      output$Plot1 <- ggiraph::renderGirafe({
+    output$Plot1 <- ggiraph::renderGirafe({
 
-        x <- ggiraph::girafe(ggobj = make.plot(object,
-                                               sampleNr = input$sampleInput,
-                                               spotAlpha = input$alphaValue,
-                                               Labels = df$label[which(df$sample == input$sampleInput)],
-                                               res = res,
-                                               SpotSize = input$spotSize))
-        x <- ggiraph::girafe_options(x,
-                                     ggiraph::opts_zoom(max=5),
-                                     ggiraph::opts_selection(type = "multiple",
-                                                             css = "fill:red;stroke:black;r:2pt;" ))
-        x
-      })
+      x <- ggiraph::girafe(ggobj = make.plot(object,
+                                             sampleNr = input$sampleInput,
+                                             spotAlpha = input$alphaValue,
+                                             Labels = df$label[which(df$sample == input$sampleInput)],
+                                             res = res,
+                                             SpotSize = input$spotSize))
+      x <- ggiraph::girafe_options(x,
+                                   ggiraph::opts_zoom(max=5),
+                                   ggiraph::opts_selection(type = "multiple",
+                                                           css = "fill:red;stroke:black;r:2pt;" ))
+      x
+    })
 
-      observeEvent(input$confirm, {
-        ids.selected <- as.numeric(input$Plot1_selected)
-        df$label[which(df$id %in% ids.selected)] <- input$labelInput
-        session$sendCustomMessage(type = 'Plot1_set', message = character(0))
-      })
+    observeEvent(input$confirm, {
+      ids.selected <- as.numeric(input$Plot1_selected)
+      df$label[which(df$id %in% ids.selected)] <- input$labelInput
+      session$sendCustomMessage(type = 'Plot1_set', message = character(0))
+    })
 
-      observe({
-        if(input$stopApp > 0){
-          print("Stopped")
-          object@meta.data$labels <-df$label
-          stopApp(returnValue = object)
-        }
-      })
+    observe({
+      if(input$stopApp > 0){
+        print("Stopped")
+        object@meta.data$labels <-df$label
+        stopApp(returnValue = object)
+      }
+    })
 
     observeEvent(input$info, {
       showModal(modalDialog(
         title = "Instructions",
         HTML("1. Select sample (might take a while to load)<br>",
-        "2. Specifiy label you want to use<br>",
-        "3. Use the blue(select) lasso to label the caputure-spots<br>",
-        "4. Press Confirm to set the labels<br>",
-        "5. Repeat 1-4 until all labels are set<br>",
-        "6. Close the shiny tool to return"),
+             "2. Specifiy label you want to use<br>",
+             "3. Use the blue(select) lasso to label the caputure-spots<br>",
+             "4. Press Confirm to set the labels<br>",
+             "5. Repeat 1-4 until all labels are set<br>",
+             "6. Close the shiny tool to return"),
         easyClose = TRUE,
         footer = NULL
       ))
     })
-    }
+  }
 
   runApp(list(ui = ui, server = server), launch.browser = T)
 }
@@ -196,8 +196,3 @@ make.plot <- function (
     )
   return(gg)
 }
-
-
-
-
-

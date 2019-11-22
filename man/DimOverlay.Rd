@@ -4,12 +4,12 @@
 \alias{DimOverlay}
 \title{Dimensional reduction plot on ST coordinates on top of HE image}
 \usage{
-DimOverlay(object, dims = 1:2, sample.index = 1, type = NULL,
-  min.cutoff = NA, max.cutoff = NA, blend = FALSE, pt.size = 1,
-  pt.alpha = 1, reduction = NULL, shape.by = NULL, palette = NULL,
-  cols = NULL, rev.cols = FALSE, grid.ncol = NULL,
+DimOverlay(object, dims = 1:2, sample.index = 1, spots = NULL,
+  type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
+  pt.size = 1, pt.alpha = 1, reduction = NULL, shape.by = NULL,
+  palette = NULL, cols = NULL, rev.cols = FALSE, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, verbose = FALSE,
-  dark.theme = FALSE, ...)
+  dark.theme = FALSE, sample.label = TRUE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -18,6 +18,8 @@ DimOverlay(object, dims = 1:2, sample.index = 1, type = NULL,
 should be a vector of length 2 specifying the dimensions of the original HE image.}
 
 \item{sample.index}{Index specifying the sample that you want to use for plotting}
+
+\item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
@@ -60,6 +62,8 @@ If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradien
 the interpretaion of the output plot.}
 
 \item{verbose}{Print messages}
+
+\item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
 \item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}
 

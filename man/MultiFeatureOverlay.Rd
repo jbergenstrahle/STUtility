@@ -4,17 +4,19 @@
 \alias{MultiFeatureOverlay}
 \title{Apply FeatureOverlay to multiple samples}
 \usage{
-MultiFeatureOverlay(object, sampleids, method = "viewer", ncols = NULL,
-  features, type = NULL, min.cutoff = NA, max.cutoff = NA,
-  slot = "data", blend = FALSE, pt.size = 2, pt.alpha = 1,
-  shape.by = NULL, palette = NULL, cols = NULL, rev.cols = FALSE,
-  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  dark.theme = FALSE, ...)
+MultiFeatureOverlay(object, sampleids, spots = NULL, method = "viewer",
+  ncols = NULL, features, type = NULL, min.cutoff = NA,
+  max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 2,
+  pt.alpha = 1, shape.by = NULL, palette = NULL, cols = NULL,
+  rev.cols = FALSE, center.zero = FALSE, channels.use = NULL,
+  verbose = FALSE, dark.theme = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
 
 \item{sampleids}{Names of samples to plot}
+
+\item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
 \item{method}{Display method}
 

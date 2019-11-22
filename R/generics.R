@@ -133,6 +133,8 @@ WarpImages <- function (
 #' @param object A Seurat object
 #' @param indices Integer: sample indices of images to align with reference
 #' @param reference.index Integer: sample index of referece image
+#' @param use.masked Setting this to TRUE will ignore any "processed" images available in the object and
+#' apply the alignment from scratch.
 #' @param verbose Print messages
 #'
 #' @importFrom imager as.cimg imwarp
@@ -145,6 +147,7 @@ AlignImages <- function (
   object,
   indices = NULL,
   reference.index = NULL,
+  use.masked = FALSE,
   verbose = FALSE
 ) {
   UseMethod(generic = "AlignImages", object = object)

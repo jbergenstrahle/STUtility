@@ -4,12 +4,12 @@
 \alias{FeatureOverlay}
 \title{Visualize 'features' on an ST array grid overlayed on top of HE image}
 \usage{
-FeatureOverlay(object, features, sample.index = 1, type = NULL,
-  min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
-  pt.size = 2, pt.alpha = 1, shape.by = NULL, palette = NULL,
-  cols = NULL, rev.cols = FALSE, grid.ncol = NULL,
+FeatureOverlay(object, features, sample.index = 1, spots = NULL,
+  type = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
+  blend = FALSE, pt.size = 2, pt.alpha = 1, shape.by = NULL,
+  palette = NULL, cols = NULL, rev.cols = FALSE, grid.ncol = NULL,
   center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  split.labels = FALSE, dark.theme = FALSE, ...)
+  split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -20,6 +20,8 @@ FeatureOverlay(object, features, sample.index = 1, type = NULL,
 }}
 
 \item{sample.index}{Index specifying the sample that you want to use for plotting}
+
+\item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
@@ -65,6 +67,8 @@ the interpretaion of the output plot.}
 
 \item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}
+
+\item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
 \item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}
 }

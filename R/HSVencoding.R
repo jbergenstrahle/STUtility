@@ -50,6 +50,7 @@
 #' @importFrom grDevices hsv
 #' @importFrom spatstat ppp owin Smooth
 #' @importFrom imager imgradient enorm as.cimg
+#' @importFrom magick image_crop image_info image_read image_composite image_border image_scale
 #'
 #' @return A ggplot object
 #' @export
@@ -105,7 +106,7 @@ HSVFeaturePlot <- function (
 
   # Obtain array coordinates
   image.type <- "empty"
-  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type)
+  c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type, spots)
 
   # Raise error if features are not present in Seurat object
   if (ncol(x = data) < 3) {
@@ -118,10 +119,13 @@ HSVFeaturePlot <- function (
 
   data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
 
+
   # Subset by index
   if (!is.null(indices)) {
     if (!all(as.character(indices) %in% data[, "sample"])) stop(paste0("Index out of range. "), call. = FALSE)
     data <- data[data[, "sample"] %in% as.character(indices), ]
+  } else {
+    indices <- unique(data[, "sample"]) %>% as.numeric()
   }
 
   # Generate HSV encoded colors
@@ -129,7 +133,7 @@ HSVFeaturePlot <- function (
   hue_breaks <- seq(0, 1, length.out = length(x = features) + 1)[1:length(x = features)]
   hsv.matrix <- t(matrix(c(hue_breaks, rep(1, length(hue_breaks )), rep(1, length(hue_breaks))), ncol = 3))
   rownames(hsv.matrix) <- c("h", "s", "v")
-  ann.cols <- hsv2hex(hsv.matrix)
+  ann.cols <- apply(hsv.matrix, 2, function(x) hsv(x[1], x[2], x[3]))
 
 
   # Plot HSV encoded feature data

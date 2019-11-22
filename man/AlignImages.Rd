@@ -7,13 +7,13 @@
 \title{Automatic alignment of HE stained tissue images}
 \usage{
 AlignImages(object, indices = NULL, reference.index = NULL,
-  verbose = FALSE)
+  use.masked = FALSE, verbose = FALSE)
 
 \method{AlignImages}{Staffli}(object, indices = NULL,
-  reference.index = NULL, verbose = FALSE)
+  reference.index = NULL, use.masked = FALSE, verbose = FALSE)
 
 \method{AlignImages}{Seurat}(object, indices = NULL,
-  reference.index = NULL, verbose = FALSE)
+  reference.index = NULL, use.masked = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{object}{A Seurat object}
@@ -21,6 +21,9 @@ AlignImages(object, indices = NULL, reference.index = NULL,
 \item{indices}{Integer: sample indices of images to align with reference}
 
 \item{reference.index}{Integer: sample index of referece image}
+
+\item{use.masked}{Setting this to TRUE will ignore any "processed" images available in the object and
+apply the alignment from scratch.}
 
 \item{verbose}{Print messages}
 }

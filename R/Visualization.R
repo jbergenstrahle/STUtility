@@ -562,7 +562,11 @@ STPlot <- function (
     if (class(data[, variable]) == "factor") {
       if (!is.null(cols)) {
         stopifnot(length(cols) >= length(unique(data[, variable])))
-        label.colors <- cols[1:length(unique(data[, variable]))]
+        if (is.null(names(cols))) {
+          label.colors <- cols[1:length(unique(data[, variable]))]
+        } else {
+          label.colors <- cols[unique(data[, variable])]
+        }
       } else {
         label.colors <- gg_color_hue(length(levels(data[, variable])))
       }
@@ -570,7 +574,11 @@ STPlot <- function (
     } else if (class(data[, variable]) == "character") {
       if (!is.null(cols)) {
         stopifnot(length(cols) >= length(unique(data[, variable])))
-        label.colors <- cols[1:length(unique(data[, variable]))]
+        if (is.null(names(cols))) {
+          label.colors <- cols[1:length(unique(data[, variable]))]
+        } else {
+          label.colors <- cols[unique(data[, variable])]
+        }
       } else {
         label.colors <- gg_color_hue(length(levels(data[, variable])))
       }
@@ -671,7 +679,7 @@ STPlot <- function (
 
   # Add ST array dimensions and plot title
   p <- p +
-    labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+    labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = "")
 
   # Set theme
   p <- p + theme_void() + theme
@@ -904,12 +912,13 @@ SmoothPlot <- function (
 #' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
 #' where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
 #'
-#'
 #' @param sample.index Index specifying the sample that you want to use for plotting
+#' @param spots Character vector with spot IDs to plot [default: all spots]
 #' @param type Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 #' run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
 #' order if they are available; "processed", "masked" and "raw".
 #' @param slot Which slot to pull expression data from? [default: 'data']
+#' @param sample.label Should the sample label be included in the image? [default: TRUE]
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
 #' @inheritParams ST.ImagePlot
@@ -950,6 +959,7 @@ DimOverlay <- function (
   object,
   dims = 1:2,
   sample.index = 1,
+  spots = NULL,
   type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
@@ -966,12 +976,16 @@ DimOverlay <- function (
   channels.use = NULL,
   verbose = FALSE,
   dark.theme = FALSE,
+  sample.label = TRUE,
   ...
 ) {
 
   # Check to see if Staffli object is present
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
   st.object <- object@tools$Staffli
+
+  # Collect data
+  spots <- spots %||% colnames(x = object)
 
   # Check length of sample index
   if (length(sample.index) > 1) stop(paste0("Only one sample index can be selected."), call. = FALSE)
@@ -1009,13 +1023,16 @@ DimOverlay <- function (
   if (dark.theme & type %in% c("masked", "processed")) {
     image[image == "#FFFFFF"]  <- "#000000"
   }
-  image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
+  if (sample.label) {
+    image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
+  }
   imdims <- st.object@dims[[sample.index]][2:3] %>% as.numeric()
 
   # Select spots matching sample index
   sample.index <- ifelse(class(sample.index) == "numeric", unique(st.object[[, "sample", drop = T]])[sample.index], sample.index)
   # Select spots matching sample.index
-  spots <- colnames(object)[st.object[[, "sample", drop = T]] == sample.index]
+  spots <- intersect(colnames(object)[st.object[[, "sample", drop = T]] == sample.index], spots)
+  if (length(spots) == 0) stop(paste0("All selected spots are missing from sample ", sample.index, " ... \n"), call. = FALSE)
   if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
 
   # Collect dim-red data
@@ -1052,7 +1069,7 @@ DimOverlay <- function (
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
-    if (verbose) cat(paste0("Blending colors from features ", paste(paste(dims, channels.use, sep = ":"), collapse = ", ")))
+    if (verbose) cat(paste0("Blending colors from dimensions ", paste(paste(dims, channels.use, sep = ":"), collapse = ", ")))
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
@@ -1063,7 +1080,7 @@ DimOverlay <- function (
   } else {
     spot.colors <- NULL
 
-    if (verbose) cat("Plotting features:",
+    if (verbose) cat("Plotting dimensions:",
                      ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
 
     # Create plots
@@ -1090,10 +1107,12 @@ DimOverlay <- function (
 #' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
 #'
 #' @param sample.index Index specifying the sample that you want to use for plotting
+#' @param spots Character vector with spot IDs to plot [default: all spots]
 #' @param type Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 #' run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
 #' order if they are available; "processed", "masked" and "raw".
 #' @param slot Which slot to pull expression data from? [dafault: 'data']
+#' @param sample.label Should the sample label be included in the image? [default: TRUE]
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
 #' @inheritParams ST.ImagePlot
@@ -1137,6 +1156,7 @@ FeatureOverlay <- function (
   object,
   features,
   sample.index = 1,
+  spots = NULL,
   type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
@@ -1154,12 +1174,16 @@ FeatureOverlay <- function (
   verbose = FALSE,
   split.labels = FALSE,
   dark.theme = FALSE,
+  sample.label = TRUE,
   ...
 ) {
 
   # Check to see if Staffli object is present
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
   st.object <- object@tools$Staffli
+
+  # Obtain spots
+  spots <- spots %||% colnames(object)
 
   # Check length of sample index
   if (length(sample.index) > 1) stop(paste0("Only one sample index can be selected."), call. = FALSE)
@@ -1185,13 +1209,15 @@ FeatureOverlay <- function (
   if (dark.theme & type %in% c("masked", "processed")) {
     image[image == "#FFFFFF"]  <- "#000000"
   }
-  image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
+  if (sample.label) {
+    image <- as.raster(image_annotate(image_read(image), text = paste(sample.index), color = ifelse(dark.theme, "#FFFFFF", "#000000"), size = round(st.object@xdim/10)))
+  }
   imdims <- st.object@dims[[sample.index]][2:3] %>% as.numeric()
 
   # Select spots matching sample index
   sample.index <- ifelse(class(sample.index) == "numeric", unique(st.object[[, "sample", drop = T]])[sample.index], sample.index)
-  # Select spots matching sample.index
-  spots <- colnames(object)[st.object[[, "sample", drop = T]] == sample.index]
+  spots <- intersect(colnames(object)[st.object[[, "sample", drop = T]] == sample.index], spots)
+  if (length(spots) == 0) stop(paste0("All selected spots are missing from sample ", sample.index, " ... \n"), call. = FALSE)
   if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
 
   data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
@@ -1258,7 +1284,8 @@ FeatureOverlay <- function (
 
       return(plot)
     })
-    plot_grid(plotlist = plots, ncol = grid.ncol)
+
+    if (length(plots) > 1) plot_grid(plotlist = plots, ncol = grid.ncol) else plots[[1]]
   }
 }
 
@@ -1306,10 +1333,28 @@ ST.ImagePlot <- function (
 
   if (is.null(spot.colors)) {
     if (class(data[, variable]) == "factor") {
-      label.colors <- gg_color_hue(length(levels(data[, variable])))
+      if (!is.null(cols)) {
+        stopifnot(length(cols) >= length(unique(data[, variable])))
+        if (is.null(names(cols))) {
+          label.colors <- cols[1:length(unique(data[, variable]))]
+        } else {
+          label.colors <- cols[unique(data[, variable])]
+        }
+      } else {
+        label.colors <- gg_color_hue(length(levels(data[, variable])))
+      }
       names(label.colors) <- levels(data[, variable])
-    } else if ((class(data[, variable]) == "character")) {
-      label.colors <- gg_color_hue(length(unique(data[, variable])))
+    } else if (class(data[, variable]) == "character") {
+      if (!is.null(cols)) {
+        stopifnot(length(cols) >= length(unique(data[, variable])))
+        if (is.null(names(cols))) {
+          label.colors <- cols[1:length(unique(data[, variable]))]
+        } else {
+          label.colors <- cols[unique(data[, variable])]
+        }
+      } else {
+        label.colors <- gg_color_hue(length(levels(data[, variable])))
+      }
       names(label.colors) <- unique(data[, variable])
     }
   }
@@ -1379,7 +1424,7 @@ ST.ImagePlot <- function (
       scale_x_continuous(limits = c(0, x_dim), expand = c(0, 0)) +
       scale_y_continuous(limits = c(0, y_dim), expand = c(0, 0)) +
       theme_void() +
-      labs(title = ifelse(!is.null(plot.title), plot.title, variable), color = "")
+      labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = "")
 
     # Center colorscale at 0
     if (center.zero & !any(data.type %in% c("character", "factor"))) {
@@ -1447,6 +1492,7 @@ ST.ImagePlot <- function (
 MultiDimOverlay <- function (
   object,
   sampleids,
+  spots = NULL,
   method = "viewer",
   ncols = NULL,
   dims = c(1:2),
@@ -1472,11 +1518,21 @@ MultiDimOverlay <- function (
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
   st.object <- object@tools$Staffli
 
+  # Select spots
+  Staffli_meta <- subset(st.object[[]], sample %in% paste0(sampleids))
+  selected.spots <- rownames(Staffli_meta)
+  spots <- spots %||% intersect(colnames(object), selected.spots)
+  if (length(spots) == 0) stop(paste0("None of the selected spots are present in samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
+
+  # Check that spots are present in all sampleids samples
+  Staffli_meta_subset <- Staffli_meta[spots, ]
+  if (length(x = unique(Staffli_meta_subset$sample)) != length(x = sampleids)) stop(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
+
   ncols <- ncols %||% ceiling(sqrt(length(x = sampleids)))
   nrows <- ceiling(length(x = sampleids)/ncols)
 
   p.list <- lapply(sampleids, function(i) {
-    DimOverlay(object, dims = dims, sample.index = i, type = type, min.cutoff = min.cutoff,
+    DimOverlay(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
                reduction = reduction, shape.by = shape.by, palette = palette,
                cols = cols, rev.cols = rev.cols, grid.ncol = NULL,
@@ -1558,6 +1614,7 @@ MultiDimOverlay <- function (
 MultiFeatureOverlay <- function (
   object,
   sampleids,
+  spots = NULL,
   method = "viewer",
   ncols = NULL,
   features,
@@ -1583,11 +1640,21 @@ MultiFeatureOverlay <- function (
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
   st.object <- object@tools$Staffli
 
+  # Select spots
+  Staffli_meta <- subset(st.object[[]], sample %in% paste0(sampleids))
+  selected.spots <- rownames(Staffli_meta)
+  spots <- spots %||% intersect(colnames(object), selected.spots)
+  if (length(spots) == 0) stop(paste0("None of the selected spots are present in samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
+
+  # Check that spots are present in all sampleids samples
+  Staffli_meta_subset <- Staffli_meta[spots, ]
+  if (length(x = unique(Staffli_meta_subset$sample)) != length(x = sampleids)) stop(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
+
   ncols <- ncols %||% ceiling(sqrt(length(x = sampleids)))
   nrows <- ceiling(length(x = sampleids)/ncols)
 
   p.list <- lapply(sampleids, function(s) {
-    FeatureOverlay(object, features = features, sample.index = s, type = type,
+    FeatureOverlay(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
                    palette = palette, cols = cols, rev.cols = rev.cols,

@@ -4,17 +4,19 @@
 \alias{MultiDimOverlay}
 \title{Apply DimOverlay to multiple samples}
 \usage{
-MultiDimOverlay(object, sampleids, method = "viewer", ncols = NULL,
-  dims = c(1:2), type = NULL, min.cutoff = NA, max.cutoff = NA,
-  blend = FALSE, pt.size = 1, pt.alpha = 1, reduction = NULL,
-  shape.by = NULL, palette = NULL, cols = NULL, rev.cols = FALSE,
-  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  dark.theme = FALSE, ...)
+MultiDimOverlay(object, sampleids, spots = NULL, method = "viewer",
+  ncols = NULL, dims = c(1:2), type = NULL, min.cutoff = NA,
+  max.cutoff = NA, blend = FALSE, pt.size = 1, pt.alpha = 1,
+  reduction = NULL, shape.by = NULL, palette = NULL, cols = NULL,
+  rev.cols = FALSE, center.zero = FALSE, channels.use = NULL,
+  verbose = FALSE, dark.theme = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
 
 \item{sampleids}{Integer vector specifying sample indices to include in the plot}
+
+\item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
 \item{method}{Display method; "viewer" or "raster" [default: "viewer"]. The option "viewer" only works within an
 RStudio session and makes use of the Viewer pane. If you want to include images in an rmarkdown document or export

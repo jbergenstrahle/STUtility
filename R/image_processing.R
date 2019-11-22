@@ -523,6 +523,7 @@ AlignImages.Staffli <- function (
   object,
   indices = NULL,
   reference.index = NULL,
+  use.masked = FALSE,
   verbose = FALSE
 ) {
 
@@ -557,7 +558,7 @@ AlignImages.Staffli <- function (
   transformations <- setNames(lapply(1:length(object@samplenames), function(i) {diag(c(1, 1, 1))}), nm = names(object@samplenames))
 
   # Collect processed/masked images
-  if ("processed" %in% rasterlists(object)) {
+  if ("processed" %in% rasterlists(object) & !use.masked) {
     processed.images <- object["processed"]
     processed.masks <- object["processed.masks"]
   } else {
@@ -600,7 +601,7 @@ AlignImages.Staffli <- function (
     inds <- which(imat.msk != 255)
 
     # Obtain scale factors
-    dims.raw <- iminfo(object)[[i]][, c("width", "height")] %>% as.numeric()
+    dims.raw <- object@dims[[i]][, c("width", "height")] %>% as.numeric()
     dims.scaled <- scaled.imdims(object)[[i]]
     sf.xy <- dims.raw[2]/dims.scaled[1]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
@@ -645,11 +646,12 @@ AlignImages.Seurat <- function (
   object,
   indices = NULL,
   reference.index = NULL,
+  use.masked = FALSE,
   verbose = FALSE
 ) {
   # Check if masked images are available
   if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-  object@tools$Staffli <- AlignImages(GetStaffli(object), indices, reference.index, verbose)
+  object@tools$Staffli <- AlignImages(GetStaffli(object), indices, reference.index, use.masked, verbose)
   return(object)
 }
 
@@ -694,7 +696,8 @@ ManualAlignImages.Staffli <- function (
   fixed.scatter <- scatters[[reference.index]]$scatter
   counter <- NULL
   coords.ls <- NULL
-  tr.matrices <- transformations <-  ifelse(rep(type %in% c("processed", "prossesed.masks"), length(names(object))), object@transformations, lapply(seq_along(names(object)), function(i) diag(c(1, 1, 1))))
+  transformations <-  ifelse(rep(type %in% c("processed", "prossesed.masks"), length(names(object))), object@transformations, lapply(seq_along(names(object)), function(i) diag(c(1, 1, 1))))
+  tr.matrices <- lapply(object@transformations, function(x) diag(c(1, 1, 1)))
   image.dims <- lapply(object[type], dim)
 
 
@@ -887,7 +890,7 @@ ManualAlignImages.Staffli <- function (
     map.rot.forward <- generate.map.rot(tr, forward = TRUE)
 
     # Obtain scale factors
-    dims.raw <- as.numeric(iminfo(object)[[i]][2:3])
+    dims.raw <- as.numeric(object@dims[[i]][2:3])
     dims.scaled <- scaled.imdims(object)[[i]]
     sf.xy <- dims.raw[1]/dims.scaled[1]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
