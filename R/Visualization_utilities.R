@@ -307,11 +307,16 @@ draw_scalebar <- function (
   sb.size = 2.5,
   dark.theme = FALSE
 ) {
+
+  if (sb.size == 0) {
+    return(p)
+  }
   end.width <- sb.size/25
   mid.width <- sb.size/50
   sb.color = ifelse(dark.theme, "white", "black")
+
   if (!is.null(pxum)) {
-    p + geom_segment(data = pxum, aes(x = x, xend = xend, y = y, yend = y, group = sample), color = sb.color) +
+    p <- p + geom_segment(data = pxum, aes(x = x, xend = xend, y = y, yend = y, group = sample), color = sb.color) +
       geom_segment(data = pxum, aes(x = x, xend = x, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width, group = sample), color = sb.color) +
       geom_segment(data = pxum, aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
       geom_segment(data = pxum, aes(x = x + (2*(xend - x))/5, xend = x + (2*(xend - x))/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
@@ -320,7 +325,7 @@ draw_scalebar <- function (
       geom_segment(data = pxum, aes(x = xend, xend = xend, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width, group = sample), color = sb.color) +
       geom_text(data = pxum, aes(x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), group = sample), size = sb.size, color = sb.color)
   } else {
-    p + geom_segment(aes(x = x, xend = xend, y = y, yend = y), color = sb.color) +
+    p <- p + geom_segment(aes(x = x, xend = xend, y = y, yend = y), color = sb.color) +
       geom_segment(aes(x = x, xend = x, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width), color = sb.color) +
       geom_segment(aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
       geom_segment(aes(x = x + 2*(xend - x)/5, xend = x + 2*(xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
@@ -329,4 +334,5 @@ draw_scalebar <- function (
       geom_segment(aes(x = xend, xend = xend, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width), color = sb.color) +
       annotate(geom = "text", x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), size = sb.size, color = sb.color)
   }
+  return(p)
 }
