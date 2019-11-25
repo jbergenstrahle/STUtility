@@ -66,6 +66,8 @@ the interpretaion of the output plot.}
 \item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}
 
+\item{dark.theme}{Switches color of scalebar to 'white'}
+
 \item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
 \item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}

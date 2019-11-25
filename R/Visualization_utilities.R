@@ -289,6 +289,9 @@ obtain.array.coords <- function (
 #' @param p An object of class 'ggplot'
 #' @param x,xend The start and positions of the scalebar along the x axis.
 #' @param y The position of the scalebar along the y axis.
+#' @param pxum A data.frame object with columns for 'x', 'xend', 'y' and 'sample'
+#' used for facetted plots.
+#' @param dark.theme Switches color of scalebar to 'white'
 #'
 #' @return An object of class 'ggplot' with a scalebar drawn on top of it
 #'
@@ -297,16 +300,33 @@ obtain.array.coords <- function (
 
 draw_scalebar <- function (
   p,
-  x,
-  xend,
-  y
+  x = NULL,
+  xend = NULL,
+  y = NULL,
+  pxum = NULL,
+  sb.size = 2.5,
+  dark.theme = FALSE
 ) {
-  p + geom_segment(aes(x = x, xend = xend, y = y, yend = y)) +
-    geom_segment(aes(x = x, xend = x, y = y - (xend - x)/10, yend = y + (xend - x)/10)) +
-    geom_segment(aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
-    geom_segment(aes(x = x + 2*(xend - x)/5, xend = x + 2*(xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
-    geom_segment(aes(x = x + 3*(xend - x)/5, xend = x + 3*(xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
-    geom_segment(aes(x = x + 4*(xend - x)/5, xend = x + 4*(xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
-    geom_segment(aes(x = xend, xend = xend, y = y - (xend - x)/10, yend = y + (xend - x)/10)) +
-    annotate(geom = "text", x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), size = 2.5)
+  end.width <- sb.size/25
+  mid.width <- sb.size/50
+  sb.color = ifelse(dark.theme, "white", "black")
+  if (!is.null(pxum)) {
+    p + geom_segment(data = pxum, aes(x = x, xend = xend, y = y, yend = y, group = sample), color = sb.color) +
+      geom_segment(data = pxum, aes(x = x, xend = x, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width, group = sample), color = sb.color) +
+      geom_segment(data = pxum, aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
+      geom_segment(data = pxum, aes(x = x + (2*(xend - x))/5, xend = x + (2*(xend - x))/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
+      geom_segment(data = pxum, aes(x = x + (3*(xend - x))/5, xend = x + (3*(xend - x))/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
+      geom_segment(data = pxum, aes(x = x + (4*(xend - x))/5, xend = x + (4*(xend - x))/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
+      geom_segment(data = pxum, aes(x = xend, xend = xend, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width, group = sample), color = sb.color) +
+      geom_text(data = pxum, aes(x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), group = sample), size = sb.size, color = sb.color)
+  } else {
+    p + geom_segment(aes(x = x, xend = xend, y = y, yend = y), color = sb.color) +
+      geom_segment(aes(x = x, xend = x, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width), color = sb.color) +
+      geom_segment(aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
+      geom_segment(aes(x = x + 2*(xend - x)/5, xend = x + 2*(xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
+      geom_segment(aes(x = x + 3*(xend - x)/5, xend = x + 3*(xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
+      geom_segment(aes(x = x + 4*(xend - x)/5, xend = x + 4*(xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
+      geom_segment(aes(x = xend, xend = xend, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width), color = sb.color) +
+      annotate(geom = "text", x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), size = sb.size, color = sb.color)
+  }
 }

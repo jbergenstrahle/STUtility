@@ -4,7 +4,8 @@
 \alias{draw_scalebar}
 \title{Draws a scalebar for ST plots}
 \usage{
-draw_scalebar(p, x, xend, y)
+draw_scalebar(p, x = NULL, xend = NULL, y = NULL, pxum = NULL,
+  sb.size = 2.5, dark.theme = FALSE)
 }
 \arguments{
 \item{p}{An object of class 'ggplot'}
@@ -12,6 +13,11 @@ draw_scalebar(p, x, xend, y)
 \item{x, xend}{The start and positions of the scalebar along the x axis.}
 
 \item{y}{The position of the scalebar along the y axis.}
+
+\item{pxum}{A data.frame object with columns for 'x', 'xend', 'y' and 'sample'
+used for facetted plots.}
+
+\item{dark.theme}{Switches color of scalebar to 'white'}
 }
 \value{
 An object of class 'ggplot' with a scalebar drawn on top of it

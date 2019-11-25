@@ -34,6 +34,8 @@ If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradien
 \code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
 the interpretaion of the output plot.}
 
+\item{dark.theme}{Switches color of scalebar to 'white'}
+
 \item{highlight.edges}{SHould edges be highlighted? [default: TRUE]}
 
 \item{...}{Parameters passed to geom_point()}

@@ -36,6 +36,7 @@ NULL
 #'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
+#' @inheritParams draw_scalebar
 #' @inheritParams STPlot
 #'
 #' @return A ggplot object
@@ -92,6 +93,8 @@ ST.DimPlot <- function (
   channels.use = NULL,
   center.tissue = FALSE,
   verbose = FALSE,
+  theme = theme_void(),
+  sb.size = 2.5,
   ...
 ) {
 
@@ -146,7 +149,6 @@ ST.DimPlot <- function (
 
   # Subset by index
   if (!is.null(indices)) {
-    print(indices)
     if (!all(as.character(indices) %in% data[, "sample"])) stop(paste0("Index out of range. "), call. = FALSE)
     data <- data[data[, "sample"] %in% as.character(indices), ]
   } else {
@@ -167,11 +169,27 @@ ST.DimPlot <- function (
       dims.list <- st.object@limits
     }
 
+    if (!is.null(indices)) dims.list <- dims.list[indices]
+
+    # Prepare data for scalebar
+    # --------------------------------------------------------------------
+    pixels.per.um <- st.object@pixels.per.um[indices]
+    pxum <- data.frame(pixels.per.um, sample = paste0(indices))
+    hewidths <- lapply(dims.list, function(x) x[1]) %>% unlist()
+    heheights <- lapply(dims.list, function(x) x[2]) %>% unlist()
+    pxum$sb500 <- pxum$pixels.per.um*500
+    pxum$hewidth <-  hewidths
+    pxum$x <- 7*pxum$hewidth/9
+    pxum$xend <- 7*pxum$hewidth/9 + pxum$sb500
+    pxum$y <- heheights - heheights/8
+    # --------------------------------------------------------------------
+
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 3, 2)):ncol(data)]
     plot <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha,
                    palette, cols, ncol, spot.colors, center.zero, center.tissue,
-                   plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), dims.list, ...)
+                   plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "),
+                   dims.list, split.labels = FALSE, theme = theme, pxum = pxum, sb.size = sb.size, dark.theme, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -192,9 +210,23 @@ ST.DimPlot <- function (
 
       if (!is.null(indices)) dims.list <- dims.list[indices]
 
+      # Prepare data for scalebar
+      # --------------------------------------------------------------------
+      pixels.per.um <- st.object@pixels.per.um[indices]
+      pxum <- data.frame(pixels.per.um, sample = paste0(indices))
+      hewidths <- lapply(dims.list, function(x) x[1]) %>% unlist()
+      heheights <- lapply(dims.list, function(x) x[2]) %>% unlist()
+      pxum$sb500 <- pxum$pixels.per.um*500
+      pxum$hewidth <-  hewidths
+      pxum$x <- 7*pxum$hewidth/9
+      pxum$xend <- 7*pxum$hewidth/9 + pxum$sb500
+      pxum$y <- heheights - heheights/8
+      # --------------------------------------------------------------------
+
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha,
-                       palette, cols, ncol, spot.colors, center.zero, center.tissue, NULL, dims.list, ...)
+                       palette, cols, ncol, spot.colors, center.zero, center.tissue,
+                       d, dims.list, FALSE, theme = theme, pxum = pxum, sb.size = sb.size, dark.theme, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -203,7 +235,12 @@ ST.DimPlot <- function (
       })
 
       # Draw plots
-      plot_grid(plotlist = plots, ncol = grid.ncol)
+      plot <- plot_grid(plotlist = plots, ncol = grid.ncol)
+      if (dark.theme) {
+        plot <- plot + dark_theme()
+      }
+
+      return(plot)
 
     } else if (plot.type == "smooth") {
       # Smooth visualization -------------------------------------------------------------------------------------
@@ -345,6 +382,7 @@ ST.FeaturePlot <- function (
   center.tissue = FALSE,
   theme = theme_void(),
   verbose = FALSE,
+  sb.size = 2.5,
   ...
 ) {
   # Check to see if Staffli object is present
@@ -427,12 +465,34 @@ ST.FeaturePlot <- function (
 
     if (!is.null(indices)) dims <- dims[indices]
 
+    # Prepare data for scalebar
+    # --------------------------------------------------------------------
+    pixels.per.um <- st.object@pixels.per.um[indices]
+    if (split.labels) {
+      if (length(x = features) > 1) stop(paste0("Only one feature allowed when splitting labels ..."), call. = FALSE)
+      if (!data.type %in% c("character", "factor")) stop(paste0("Only categorical variables can be used for splitting ..."), call = FALSE)
+      pxum <- data.frame(pixels.per.um = rep(pixels.per.um[indices], length(unique(data[, features]))), sample = unique(data[, features]))
+      hewidths <- rep(dims[[indices]][1], length(unique(data[, features])))
+      heheights <- rep(dims[[indices]][2], length(unique(data[, features])))
+    } else {
+      pxum <- data.frame(pixels.per.um, sample = paste0(indices))
+      hewidths <- lapply(dims, function(x) x[1]) %>% unlist()
+      heheights <- lapply(dims, function(x) x[2]) %>% unlist()
+    }
+    pxum$sb500 <- pxum$pixels.per.um*500
+    pxum$hewidth <-  hewidths
+    pxum$x <- 7*pxum$hewidth/9
+    pxum$xend <- 7*pxum$hewidth/9 + pxum$sb500
+    pxum$y <- heheights - heheights/8
+
+    # --------------------------------------------------------------------
+
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 4, 3)):ncol(data)]
     plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
                    palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
-                   dims, FALSE, theme, ...)
+                   dims, FALSE, theme, pxum, sb.size, dark.theme, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -452,10 +512,32 @@ ST.FeaturePlot <- function (
 
       if (!is.null(indices)) dims <- dims[indices]
 
+      # Prepare data for scalebar
+      # --------------------------------------------------------------------
+      pixels.per.um <- st.object@pixels.per.um[indices]
+      if (split.labels) {
+        if (length(x = features) > 1) stop(paste0("Only one feature allowed when splitting labels ..."), call. = FALSE)
+        if (!data.type %in% c("character", "factor")) stop(paste0("Only categorical variables can be used for splitting ..."), call = FALSE)
+        pxum <- data.frame(pixels.per.um = rep(pixels.per.um[indices], length(unique(data[, features]))), sample = unique(data[, features]))
+        hewidths <- rep(dims[[indices]][1], length(unique(data[, features])))
+        heheights <- rep(dims[[indices]][2], length(unique(data[, features])))
+      } else {
+        pxum <- data.frame(pixels.per.um, sample = paste0(indices))
+        hewidths <- lapply(dims, function(x) x[1]) %>% unlist()
+        heheights <- lapply(dims, function(x) x[2]) %>% unlist()
+      }
+      pxum$sb500 <- pxum$pixels.per.um*500
+      pxum$hewidth <-  hewidths
+      pxum$x <- 7*pxum$hewidth/9
+      pxum$xend <- 7*pxum$hewidth/9 + pxum$sb500
+      pxum$y <- heheights - heheights/8
+
+      # --------------------------------------------------------------------
+
       plots <- lapply(X = features, FUN = function(ftr) {
         plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha,
                        palette, cols, ncol, spot.colors, center.zero,
-                       center.tissue, ftr, dims, split.labels, theme, ...)
+                       center.tissue, ftr, dims, split.labels, theme, pxum, sb.size, dark.theme, ...)
 
         if (dark.theme) {
           plot <- plot + dark_theme()
@@ -463,7 +545,13 @@ ST.FeaturePlot <- function (
         return(plot)
       })
 
-      plot_grid(plotlist = plots, ncol = grid.ncol)
+      plot <- plot_grid(plotlist = plots, ncol = grid.ncol)
+
+      if (dark.theme) {
+        plot <- plot + dark_theme()
+      }
+
+      return(plot)
 
     } else if (plot.type == "smooth") {
       #stop("Smooth options not yet implemented")
@@ -526,6 +614,8 @@ ST.FeaturePlot <- function (
 #' @param theme Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})
 #' @param ... Parameters passed to geom_point()
 #'
+#' @inheritParams draw_scalebar
+#'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn scale_color_manual
 #'
 #' @export
@@ -547,6 +637,9 @@ STPlot <- function (
   dims = NULL,
   split.labels = FALSE,
   theme = theme_void(),
+  pxum = NULL,
+  sb.size = 2.5,
+  dark.theme = FALSE,
   ...
 ) {
 
@@ -686,6 +779,11 @@ STPlot <- function (
     p <- p + facet_wrap(~sample, ncol = ncol) +
       scale_x_continuous(limits = c(0, lims[1])) +
       scale_y_continuous(limits = c(0, lims[2]))
+  }
+
+  ## Set the scale bar
+  if (!is.null(pxum)) {
+    p <- draw_scalebar(p, pxum = pxum, sb.size = sb.size, dark.theme = dark.theme)
   }
 
   # Center colorscale at 0
@@ -1417,12 +1515,11 @@ ST.ImagePlot <- function (
     p <- p +
       labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
 
-
     ## Set the scale bar
     if (!is.null(pixels.per.um)) {
       hewidth <- dims[1]
       sb500 <- pixels.per.um*500
-      p <- draw_scalebar(p, x = 7*hewidth/9, xend = 7*hewidth/9 + sb500, y = dims[2] - dims[2]/8)
+      p <- draw_scalebar(p, x = 7*hewidth/9, xend = 7*hewidth/9 + sb500, y = dims[2] - dims[2]/8, dark.theme = dark.theme)
     }
 
     # Center colorscale at 0

@@ -47,6 +47,8 @@ See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package f
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
+\item{dark.theme}{Switches color of scalebar to 'white'}
+
 \item{grid.ncol}{Number of columns for display when combining plots}
 
 \item{verbose}{Print messages}

@@ -70,6 +70,8 @@ the interpretaion of the output plot.}
 
 \item{verbose}{Print messages}
 
+\item{dark.theme}{Switches color of scalebar to 'white'}
+
 \item{...}{Parameters passed to DimOverlay}
 }
 \description{

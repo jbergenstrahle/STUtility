@@ -61,6 +61,8 @@ the interpretaion of the output plot.}
 
 \item{verbose}{Print messages}
 
+\item{dark.theme}{Switches color of scalebar to 'white'}
+
 \item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
 \item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}

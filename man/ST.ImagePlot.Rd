@@ -52,6 +52,8 @@ the interpretaion of the output plot.}
 \item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}
 
+\item{dark.theme}{Switches color of scalebar to 'white'}
+
 \item{pixels.per.um}{Defines the number of pixels per micrometer to draw the scale bar}
 
 \item{...}{Parameters passed to geom_point()}

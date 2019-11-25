@@ -10,7 +10,7 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
   shape.by = NULL, palette = "MaYl", cols = NULL,
   dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
-  verbose = FALSE, ...)
+  verbose = FALSE, theme = theme_void(), sb.size = 2.5, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -44,6 +44,8 @@ Disabled if a color vector is provided (see \code{cols} below).}
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
+\item{dark.theme}{Switches color of scalebar to 'white'}
+
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}
 
@@ -60,6 +62,8 @@ samples have been placed in very different parts of the capture area and you wan
 you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\link{WarpImages}} and \code{\link{ManualAlignImages}})}
 
 \item{verbose}{Print messages}
+
+\item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }
