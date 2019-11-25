@@ -957,7 +957,7 @@ DimOverlay <- function (
   pt.alpha = 1,
   reduction = NULL,
   shape.by = NULL,
-  palette = NULL,
+  palette = "MaYl",
   cols = NULL,
   grid.ncol = NULL,
   center.zero = TRUE,
@@ -1032,7 +1032,7 @@ DimOverlay <- function (
   # Select colorscale
   palette.info <- palette.select(info = T)
   palette <- palette %||% {
-    palette <- subset(palette.info, category == "seq")$palette[1]
+    palette <- subset(palette.info, category == "div")$palette[1]
   }
 
   # Check that the number of dimensions are 2 or three if blending is active
@@ -1063,7 +1063,7 @@ DimOverlay <- function (
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, dark.theme, ...)
+                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, dark.theme, pixels.per.um = st.object@pixels.per.um[sample.index], ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1074,7 +1074,7 @@ DimOverlay <- function (
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           ncol = NULL, spot.colors, center.zero, plot.title = NULL, FALSE, dark.theme, ...)
+                           ncol = NULL, spot.colors, center.zero, plot.title = d, FALSE, dark.theme, pixels.per.um = st.object@pixels.per.um[sample.index], ...)
 
       return(plot)
     })
@@ -1256,7 +1256,7 @@ FeatureOverlay <- function (
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels, dark.theme, ...)
+                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels, dark.theme, pixels.per.um = st.object@pixels.per.um[sample.index], ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1267,7 +1267,7 @@ FeatureOverlay <- function (
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           ncol = NULL, spot.colors, center.zero, NULL, split.labels, dark.theme, ...)
+                           ncol = NULL, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = st.object@pixels.per.um[sample.index], ...)
 
       return(plot)
     })
@@ -1278,6 +1278,8 @@ FeatureOverlay <- function (
 
 
 #' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
+#'
+#' @param pixels.per.um Defines the number of pixels per micrometer to draw the scale bar
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn annotation_custom scale_color_manual
 #' @importFrom magick image_info
@@ -1309,14 +1311,17 @@ ST.ImagePlot <- function (
   plot.title = NULL,
   split.labels = FALSE,
   dark.theme = FALSE,
+  pixels.per.um = NULL,
   ...
 ) {
 
+  # Define function to generate ggplot2 default colors
   gg_color_hue <- function(n) {
     hues = seq(15, 375, length = n + 1)
     hcl(h = hues, l = 65, c = 100)[1:n]
   }
 
+  # Run checks to obtain spot colors
   if (is.null(spot.colors)) {
     if (class(data[, variable]) == "factor") {
       if (!is.null(cols)) {
@@ -1406,8 +1411,19 @@ ST.ImagePlot <- function (
       scale_x_continuous(limits = c(0, x_dim), expand = c(0, 0)) +
       scale_y_continuous(limits = c(0, y_dim), expand = c(0, 0)) +
       theme_void() +
-      theme(plot.margin = unit(c(0.05, 0.05, 0.05, 0.05), "npc")) +
-      labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = "")
+      theme(plot.margin = unit(c(0.05, 0.05, 0.05, 0.05), "npc"))
+
+    # Add ST array dimensions and plot title
+    p <- p +
+      labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
+
+
+    ## Set the scale bar
+    if (!is.null(pixels.per.um)) {
+      hewidth <- dims[1]
+      sb500 <- pixels.per.um*500
+      p <- draw_scalebar(p, x = 7*hewidth/9, xend = 7*hewidth/9 + sb500, y = dims[2] - dims[2]/8)
+    }
 
     # Center colorscale at 0
     if (center.zero & !any(data.type %in% c("character", "factor"))) {
@@ -1434,13 +1450,24 @@ ST.ImagePlot <- function (
 
 #' Apply DimOverlay to multiple samples
 #'
+#' @section Arrange plots:
+#'
+#' \code{\link{MultiDimOverlay()}} will first draw one plot for all `dims` in each sample using
+#' \code{\link{DimOverlay()}}. The `ncols.dims` argument will determine how each subplot called using
+#' \code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+#' `ncols.dims = length(dims)`. The `ncols.samples` argument will determine how these subplots
+#' are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+#' The output layout matrix would then be `length(samples)*length(dims)`
+#'
 #' @param object Seurat object
 #' @param sampleids Integer vector specifying sample indices to include in the plot
-#' @param method Display method; "viewer" or "raster" [default: "viewer"]. The option "viewer" only works within an
-#' RStudio session and makes use of the Viewer pane. If you want to include images in an rmarkdown document or export
-#' it to a file you have to set \code{method = "raster"}.
-#' @param ncols Number of columns in output image. This will override the default which is to arrange the plots in
-#' \code{ncols = ceiling(sqrt(#samples)); nrows = ceiling(#samples/ncols)}
+#' @param ncols.dims Number of columns passed to \code{\link{DimOverlay()}}. For example,
+#' if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay()}}
+#' plots into a 2x2 grid [default: `length(dims)`]. (see \emph{Arrange plots*} for a detailed description)
+#' @param ncols.samples Number of columns in the layout grid for the samples. For example,
+#' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
+#' from \code{\link{DimOverlay()}} plots into a 2x2 grid [default: `1`].
+#' (see \emph{Arrange plots} for a detailed description)
 #' @param ... Parameters passed to DimOverlay
 #'
 #' @inheritParams DimOverlay
@@ -1476,8 +1503,8 @@ MultiDimOverlay <- function (
   object,
   sampleids,
   spots = NULL,
-  method = "viewer",
-  ncols = NULL,
+  ncols.dims = NULL,
+  ncols.samples = NULL,
   dims = c(1:2),
   type = NULL,
   min.cutoff = NA,
@@ -1487,7 +1514,7 @@ MultiDimOverlay <- function (
   pt.alpha = 1,
   reduction = NULL,
   shape.by = NULL,
-  palette = NULL,
+  palette = "MaYl",
   cols = NULL,
   center.zero = FALSE,
   channels.use = NULL,
@@ -1510,56 +1537,40 @@ MultiDimOverlay <- function (
   Staffli_meta_subset <- Staffli_meta[spots, ]
   if (length(x = unique(Staffli_meta_subset$sample)) != length(x = sampleids)) stop(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
 
-  ncols <- ncols %||% ceiling(sqrt(length(x = sampleids)))
-  nrows <- ceiling(length(x = sampleids)/ncols)
+  ncols.dims <- ncols.dims %||% length(x = dims)
+  ncols.samples <- ncols.samples %||% 1
 
   p.list <- lapply(sampleids, function(i) {
     DimOverlay(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
                reduction = reduction, shape.by = shape.by, palette = palette,
-               cols = cols, grid.ncol = NULL,
+               cols = cols, grid.ncol = ncols.dims,
                center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme, ... = ...)
   })
-
-  tmp.file <- tempfile(pattern = "", fileext = ".png")
-
-  colf <- ceiling(sqrt(length(x = dims)))
-  colr <- round(length(x = dims)/colf)
-
-  png(width = st.object@xdim*ncols*colf, height = st.object@xdim*nrows*colr, file = tmp.file)
-  if (dark.theme) {
-    par(mar = c(0, 0, 0, 0), bg = "black")
-  } else {
-    par(mar = c(0, 0, 0, 0))
-  }
-  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
-  dev.off()
-
-  p <- image_read(tmp.file)
-
-  if (method == "viewer") {
-    print(p)
-    unlink(tmp.file)
-  } else if (method == "raster") {
-    if (dark.theme) {
-      par(mar = c(0, 0, 0, 0), bg = "black")
-    } else {
-      par(mar = c(0, 0, 0, 0))
-    }
-    plot(as.raster(p))
-    unlink(tmp.file)
-  } else {
-    stop(paste0("Invalid method ", method), call. = FALSE)
-  }
+  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples))
 }
 
 
 #' Apply FeatureOverlay to multiple samples
 #'
+#' @section Arrange plots:
+#'
+#' \code{\link{MultiFeatureverlay()}} will first draw one plot for all `features` in each sample using
+#' \code{\link{FeatureOverlay()}}. The `ncols.features` argument will determine how each subplot called using
+#' \code{\link{FeatureOverlay()}} is arranged and will by default put all features in 1 row, i.e.
+#' `ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
+#' are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+#' The output layout matrix would then be `length(samples)*length(features)`
+#'
 #' @param object Seurat object
 #' @param sampleids Names of samples to plot
-#' @param method Display method
-#' @param ncols Number of columns in output image
+#' @param ncols.features Number of columns passed to \code{\link{FeatureOverlay()}}. For example,
+#' if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay()}}
+#' plots into a 2x2 grid [default: `length(features)`]. (see \emph{Arrange plots*} for a detailed description)
+#' @param ncols.samples Number of columns in the layout grid for the samples. For example,
+#' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
+#' from \code{\link{FeatureOverlay()}} plots into a 2x2 grid [default: `1`].
+#' (see \emph{Arrange plots*} for a detailed description)
 #' @param ... Parameters passed to DimOverlay
 #' @inheritParams FeatureOverlay
 #'
@@ -1597,8 +1608,8 @@ MultiFeatureOverlay <- function (
   object,
   sampleids,
   spots = NULL,
-  method = "viewer",
-  ncols = NULL,
+  ncols.features = NULL,
+  ncols.samples = NULL,
   features,
   type = NULL,
   min.cutoff = NA,
@@ -1631,47 +1642,18 @@ MultiFeatureOverlay <- function (
   Staffli_meta_subset <- Staffli_meta[spots, ]
   if (length(x = unique(Staffli_meta_subset$sample)) != length(x = sampleids)) stop(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
 
-  ncols <- ncols %||% ceiling(sqrt(length(x = sampleids)))
-  nrows <- ceiling(length(x = sampleids)/ncols)
+  ncols.features <- ncols.features %||% length(x = sampleids)
+  ncols.samples <- ncols.samples %||% 1
 
   p.list <- lapply(sampleids, function(s) {
     FeatureOverlay(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
                    palette = palette, cols = cols,
-                   grid.ncol = NULL, center.zero = center.zero,
+                   grid.ncol = ncols.features, center.zero = center.zero,
                    channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,... = ...)
   })
 
-  tmp.file <- tempfile(pattern = "", fileext = ".png")
-
-  colf <- ceiling(sqrt(length(x = features)))
-  colr <- round(length(x = features)/colf)
-
-  png(width = st.object@xdim*ncols*colf, height = st.object@xdim*nrows*colr, file = tmp.file)
-  if (dark.theme) {
-    par(mar = c(0, 0, 0, 0), bg = "black")
-  } else {
-    par(mar = c(0, 0, 0, 0))
-  }
-  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols))
-  dev.off()
-
-  p <- image_read(tmp.file)
-
-  if (method == "viewer") {
-    print(p)
-    unlink(tmp.file)
-  } else if (method == "raster") {
-    if (dark.theme) {
-      par(mar = c(0, 0, 0, 0), bg = "black")
-    } else {
-      par(mar = c(0, 0, 0, 0))
-    }
-    plot(p)
-    unlink(tmp.file)
-  } else {
-    stop(paste0("Invalid method ", method), call. = FALSE)
-  }
+  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples))
 }
 

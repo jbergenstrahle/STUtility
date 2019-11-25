@@ -277,3 +277,36 @@ obtain.array.coords <- function (
   return(list(data, image.type))
 }
 
+#' Draws a scalebar for ST plots
+#'
+#' Takes a ggplot object as input together with some additional parameters
+#' specifying the position and widht of a scalebar representing the actual
+#' width of corresponding 500um in the plot. The actual width of the scale
+#' bar is determined by the x, xend parameters and has to be calulated
+#' separately. To do this, you can use the pixels.per.um slot of the
+#' `Staffli` object.
+#'
+#' @param p An object of class 'ggplot'
+#' @param x,xend The start and positions of the scalebar along the x axis.
+#' @param y The position of the scalebar along the y axis.
+#'
+#' @return An object of class 'ggplot' with a scalebar drawn on top of it
+#'
+#' @importFrom ggplot2 geom_segment annotate aes
+#'
+
+draw_scalebar <- function (
+  p,
+  x,
+  xend,
+  y
+) {
+  p + geom_segment(aes(x = x, xend = xend, y = y, yend = y)) +
+    geom_segment(aes(x = x, xend = x, y = y - (xend - x)/10, yend = y + (xend - x)/10)) +
+    geom_segment(aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
+    geom_segment(aes(x = x + 2*(xend - x)/5, xend = x + 2*(xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
+    geom_segment(aes(x = x + 3*(xend - x)/5, xend = x + 3*(xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
+    geom_segment(aes(x = x + 4*(xend - x)/5, xend = x + 4*(xend - x)/5, y = y - (xend - x)/20, yend = y + (xend - x)/20)) +
+    geom_segment(aes(x = xend, xend = xend, y = y - (xend - x)/10, yend = y + (xend - x)/10)) +
+    annotate(geom = "text", x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), size = 2.5)
+}

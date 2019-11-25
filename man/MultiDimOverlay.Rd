@@ -4,12 +4,12 @@
 \alias{MultiDimOverlay}
 \title{Apply DimOverlay to multiple samples}
 \usage{
-MultiDimOverlay(object, sampleids, spots = NULL, method = "viewer",
-  ncols = NULL, dims = c(1:2), type = NULL, min.cutoff = NA,
-  max.cutoff = NA, blend = FALSE, pt.size = 1, pt.alpha = 1,
-  reduction = NULL, shape.by = NULL, palette = NULL, cols = NULL,
-  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  dark.theme = FALSE, ...)
+MultiDimOverlay(object, sampleids, spots = NULL, ncols.dims = NULL,
+  ncols.samples = NULL, dims = c(1:2), type = NULL,
+  min.cutoff = NA, max.cutoff = NA, blend = FALSE, pt.size = 1,
+  pt.alpha = 1, reduction = NULL, shape.by = NULL,
+  palette = "MaYl", cols = NULL, center.zero = FALSE,
+  channels.use = NULL, verbose = FALSE, dark.theme = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -18,12 +18,14 @@ MultiDimOverlay(object, sampleids, spots = NULL, method = "viewer",
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{method}{Display method; "viewer" or "raster" [default: "viewer"]. The option "viewer" only works within an
-RStudio session and makes use of the Viewer pane. If you want to include images in an rmarkdown document or export
-it to a file you have to set \code{method = "raster"}.}
+\item{ncols.dims}{Number of columns passed to \code{\link{DimOverlay()}}. For example,
+if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay()}}
+plots into a 2x2 grid [default: `length(dims)`]. (see \emph{Arrange plots*} for a detailed description)}
 
-\item{ncols}{Number of columns in output image. This will override the default which is to arrange the plots in
-\code{ncols = ceiling(sqrt(#samples)); nrows = ceiling(#samples/ncols)}}
+\item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
+if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
+from \code{\link{DimOverlay()}} plots into a 2x2 grid [default: `1`].
+(see \emph{Arrange plots} for a detailed description)}
 
 \item{dims}{List of dimensions for original images. This list has to contain one element for each sample and each element
 should be a vector of length 2 specifying the dimensions of the original HE image.}
@@ -71,6 +73,17 @@ the interpretaion of the output plot.}
 \description{
 Apply DimOverlay to multiple samples
 }
+\section{Arrange plots}{
+
+
+\code{\link{MultiDimOverlay()}} will first draw one plot for all `dims` in each sample using
+\code{\link{DimOverlay()}}. The `ncols.dims` argument will determine how each subplot called using
+\code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+`ncols.dims = length(dims)`. The `ncols.samples` argument will determine how these subplots
+are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+The output layout matrix would then be `length(samples)*length(dims)`
+}
+
 \examples{
 
 # Load images and run PCA

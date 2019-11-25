@@ -41,6 +41,7 @@ Staffli <- setClass (
     dims = 'list',
     platforms = 'ANY',
     samplenames = 'character',
+    pixels.per.um = 'numeric',
     version = 'package_version'
   )
 )

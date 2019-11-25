@@ -70,9 +70,28 @@ LoadImages.Staffli <- function (
     }
   }
 
+  # Compute minimum spot distance
+  pixels.per.um <- c()
+  for (i in seq_along(object@imgs)) {
+    xy <- subset(object[[]], sample == i)[, c("pixel_x", "pixel_y")]
+    d <- dist(xy) %>% as.matrix()
+    diag(d) <- Inf
+    min.distance <- apply(d, 2, min) %>% median() %>% round(digits = 1)
+    if (object@platforms[i] == "1k") {
+      min.spot.distance <- 200
+    } else if (object@platforms[i] == "2k") {
+      min.spot.distance <- 141
+    } else if (object@platforms[i] == "Visium") {
+      min.spot.distance <- 100
+    }
+   pixels.per.um[i] <- min.distance/min.spot.distance
+  }
+  names(pixels.per.um) <- object@samplenames
+
   object@dims <- setNames(dims, nm = object@samplenames)
   object@rasterlists$raw <- setNames(imgs, nm = object@samplenames)
   object@xdim <- xdim
+  object@pixels.per.um <- pixels.per.um
 
   return(object)
 }

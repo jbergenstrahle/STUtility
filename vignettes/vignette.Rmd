@@ -180,7 +180,6 @@ Note that you have to specify which platform the data comes from. The default pl
 
 #TODO: add warnings if ids missmatch. Check that ids are in the data.frame ...
 se <- InputFromTable(infotable = infoTable, 
-                      transpose = T, 
                       min.gene.count = 100, 
                       min.gene.spots = 5,
                       min.spot.count = 500, 

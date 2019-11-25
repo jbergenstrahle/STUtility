@@ -7,7 +7,8 @@
 ST.ImagePlot(data, data.type, shape.by, variable, image, dims,
   pt.size = 2, pt.alpha = 1, palette = "MaYl", cols = NULL,
   ncol = NULL, spot.colors = NULL, center.zero = T,
-  plot.title = NULL, split.labels = FALSE, dark.theme = FALSE, ...)
+  plot.title = NULL, split.labels = FALSE, dark.theme = FALSE,
+  pixels.per.um = NULL, ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
@@ -50,6 +51,8 @@ the interpretaion of the output plot.}
 
 \item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}
+
+\item{pixels.per.um}{Defines the number of pixels per micrometer to draw the scale bar}
 
 \item{...}{Parameters passed to geom_point()}
 }

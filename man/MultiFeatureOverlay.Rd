@@ -4,12 +4,12 @@
 \alias{MultiFeatureOverlay}
 \title{Apply FeatureOverlay to multiple samples}
 \usage{
-MultiFeatureOverlay(object, sampleids, spots = NULL, method = "viewer",
-  ncols = NULL, features, type = NULL, min.cutoff = NA,
-  max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 2,
-  pt.alpha = 1, shape.by = NULL, palette = NULL, cols = NULL,
-  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  dark.theme = FALSE, ...)
+MultiFeatureOverlay(object, sampleids, spots = NULL,
+  ncols.features = NULL, ncols.samples = NULL, features, type = NULL,
+  min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
+  pt.size = 2, pt.alpha = 1, shape.by = NULL, palette = NULL,
+  cols = NULL, center.zero = FALSE, channels.use = NULL,
+  verbose = FALSE, dark.theme = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -18,9 +18,14 @@ MultiFeatureOverlay(object, sampleids, spots = NULL, method = "viewer",
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{method}{Display method}
+\item{ncols.features}{Number of columns passed to \code{\link{FeatureOverlay()}}. For example,
+if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay()}}
+plots into a 2x2 grid [default: `length(features)`]. (see \emph{Arrange plots*} for a detailed description)}
 
-\item{ncols}{Number of columns in output image}
+\item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
+if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
+from \code{\link{FeatureOverlay()}} plots into a 2x2 grid [default: `1`].
+(see \emph{Arrange plots*} for a detailed description)}
 
 \item{features}{\itemize{
     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
@@ -70,6 +75,17 @@ the interpretaion of the output plot.}
 \description{
 Apply FeatureOverlay to multiple samples
 }
+\section{Arrange plots}{
+
+
+\code{\link{MultiFeatureverlay()}} will first draw one plot for all `features` in each sample using
+\code{\link{FeatureOverlay()}}. The `ncols.features` argument will determine how each subplot called using
+\code{\link{FeatureOverlay()}} is arranged and will by default put all features in 1 row, i.e.
+`ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
+are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+The output layout matrix would then be `length(samples)*length(features)`
+}
+
 \examples{
 
 # Load images

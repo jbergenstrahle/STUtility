@@ -7,7 +7,7 @@
 DimOverlay(object, dims = 1:2, sample.index = 1, spots = NULL,
   type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
   pt.size = 1, pt.alpha = 1, reduction = NULL, shape.by = NULL,
-  palette = NULL, cols = NULL, grid.ncol = NULL,
+  palette = "MaYl", cols = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, verbose = FALSE,
   dark.theme = FALSE, sample.label = TRUE, ...)
 }
