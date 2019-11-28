@@ -81,7 +81,7 @@ LoadImages.Staffli <- function (
       min.spot.distance <- 200
     } else if (object@platforms[i] == "2k") {
       min.spot.distance <- 141
-    } else if (object@platforms[i] == "Visium") {
+    } else {
       min.spot.distance <- 100
     }
    pixels.per.um[i] <- min.distance/min.spot.distance
