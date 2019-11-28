@@ -168,7 +168,7 @@ ST.DimPlot <- function (
 
   # Prepare data for scalebar
   # --------------------------------------------------------------------
-  pxum <- prep.sb(st.object, data, indices, split.labels, dims, dims.list, show.sb)
+  pxum <- prep.sb(st.object, data, indices, FALSE, dims, dims.list, show.sb)
   # --------------------------------------------------------------------
 
   # blend colors or plot each dimension separately
