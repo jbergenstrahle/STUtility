@@ -178,6 +178,7 @@ SubsetSTData <- function (
     st.object@dims <- st.object@dims[samples]
   }
 
+  st.object@samplenames <- paste0(samples)
   object@tools$Staffli <- st.object
   return(object)
 }
