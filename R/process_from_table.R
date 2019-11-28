@@ -129,7 +129,11 @@ InputFromTable <- function (
         spotFileData[[i]] <- spotsData
       }
     } else {
-      counts[[path]] <- t(st.load.matrix(path))
+      if (transpose) {
+        counts[[path]] <- t(st.load.matrix(path))
+      } else{
+        counts[[path]] <- st.load.matrix(path)
+      }
 
       # Load spotdata
       # ------------------------------------------------
@@ -152,9 +156,7 @@ InputFromTable <- function (
         spotFileData[[i]] <- spotsData
       }
     }
-    if (transpose) {
-      counts[[path]] <- t(counts[[path]])
-    }
+
   }
 
   # ---- Merge counts
