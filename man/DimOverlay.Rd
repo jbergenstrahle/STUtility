@@ -9,7 +9,7 @@ DimOverlay(object, dims = 1:2, sample.index = 1, spots = NULL,
   pt.size = 1, pt.alpha = 1, reduction = NULL, shape.by = NULL,
   palette = "MaYl", cols = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, verbose = FALSE,
-  dark.theme = FALSE, sample.label = TRUE, ...)
+  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE, ...)
 }
 \arguments{
 \item{object}{Seurat object}

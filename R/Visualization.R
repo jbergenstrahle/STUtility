@@ -994,6 +994,7 @@ DimOverlay <- function (
   verbose = FALSE,
   dark.theme = FALSE,
   sample.label = TRUE,
+  show.sb = TRUE,
   ...
 ) {
 
