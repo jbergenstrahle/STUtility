@@ -399,7 +399,9 @@ If you still want to plot overlaid spatial heatmaps for multiple samples at the 
 
 MultiFeatureOverlay(se, features = "Nrgn", 
                     sampleids = 1:2,
-                    pt.size = 0.5, pt.alpha = 0.5,
+                    pt.size = 0.5,
+                    ncols.samples = 2,
+                    pt.alpha = 0.5,
                     cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"),
                     method = "raster",
                     dark.theme = T)
@@ -410,7 +412,8 @@ The `type` parameter can also be set in the `FeatureOverlay()` function to overr
 <br>
 ```{r overlay_multi_raw, fig.height = 6, fig.width = 12, out.width = '100%'}
 
-FeatureOverlay(object = se, features = c("Nrgn", "Cck"), 
+FeatureOverlay(object = se, 
+               features = c("Nrgn", "Cck"), 
                cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"), 
                pt.size = 0.5, 
                pt.alpha = 0.5,
@@ -459,6 +462,7 @@ x = seq(from = -2, to = 2, length.out = 1000)
 poisson_model <- data.frame(log_mean = x, detection_rate = 1 - dpois(0, lambda = 10^x))
 p2 <- ggplot(gene_attr, aes(log_mean, detection_rate)) + 
   geom_point(alpha = 0.3, shape = 16, color = "white") + 
+  
   geom_line(data = poisson_model, color='red') +
   ggtitle("Mean-detection-rate relationship") + DarkTheme()
 
@@ -550,6 +554,7 @@ ST.FeaturePlot(object = se, features = "clusters_ICA", dark.theme = T, cols = to
 ```{r clusters_UMAP, fig.height=6, fig.width=8}
 
 se <- SetIdent(se, value = "clusters_ICA")
+se <- RunUMAP(se, reduction = "ica", dims = keep.dims)
 DimPlot(se, reduction = "umap", cols = tol18rainbow) + DarkTheme()
 
 ```
@@ -574,6 +579,7 @@ fts <- c("Slc18a2", "Prkcd", "Opalin", "Lamp5")
 for (ftr in fts) {
   print(MultiFeatureOverlay(se, 
                     features = ftr, 
+                    ncols.samples = 2,
                     sampleids = 1:2,
                     cols = heatmap.colors,
                     method = "raster", 
@@ -619,7 +625,7 @@ We demonstrate the technique with UMAP, using our ICA dimensions as input:
 <br>
 ```{r UMAP, val=FALSE}
 
-se <- RunUMAP(object = se, dims = keep.dims, verbose = FALSE, n.components = 3, reduction = "ica", reduction.name = "umap.3d")
+se <- RunUMAP(object = se, dims = keep.dims, verbose = FALSE, n.components = 3, reduction = "ica", reduction.name = "umap.3d", reduction.key = "UMAP3D_")
 
 ```
 <br>
@@ -627,7 +633,7 @@ We use the first three dimensions for plotting:
 <br>
 ```{r UMAP_blend, fig.height = 6, fig.width = 12}
 
-ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T, pt.size = 0.5)
+ST.DimPlot(object = se, dims = 1:3, reduction = "umap.3d", blend = T, dark.theme = T, pt.size = 0.5, channels.use = c("blue", "red", "green"))
 
 ```
 
@@ -654,6 +660,7 @@ https://mouse.brain-map.org/gene/show/12209
 ```{r allen_example, fig.width = 13, fig.height = 6}
 
 MultiFeatureOverlay(se, features = "Cck", 
+                    ncols.samples = 2,
                     sampleids = 1:2,
                     cols = c("black", "dark blue", "cyan", "yellow", "red", "dark red"),
                     pt.size = 0.5, 
@@ -707,7 +714,7 @@ Again, we can use the NMF factors as a dimensionality reduction input for cluste
 
 se <- FindNeighbors(object = se, dims = 1:20, verbose = FALSE, reduction = "NMF") %>%
   FindClusters(verbose = FALSE) %>% 
-  RunUMAP(reduction = "NMF", dims = 1:20, n.neighbours = 20, reduction.name = "umap.NMF")
+  RunUMAP(reduction = "NMF", dims = 1:20, n.neighbours = 20, reduction.name = "umap.NMF", reduction.key = "UMAPNMF_")
 
 ```
 

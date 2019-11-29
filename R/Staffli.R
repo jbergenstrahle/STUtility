@@ -183,6 +183,8 @@ SubsetSTData <- function (
   return(object)
 }
 
+# TODO: fix sample names when merging
+
 #' Merge two or more Seurat objects containing Staffli image data
 #'
 #' Merges Seurat objects containing Spatial Transcriptomics data while

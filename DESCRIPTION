@@ -30,6 +30,7 @@ Imports:
     Morpho (>= 2.7),
     Rvcg (>= 0.18),
     viridis (>= 0.5.0),
+    spatstat (>= 1.61)
 Suggests: 
     knitr,
     rmarkdown,
