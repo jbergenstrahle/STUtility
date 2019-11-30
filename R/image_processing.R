@@ -716,7 +716,7 @@ ManualAlignImages.Staffli <- function (
   counter <- NULL
   coords.ls <- NULL
   transformations <-  ifelse(rep(type %in% c("processed", "prossesed.masks"), length(names(object))), object@transformations, lapply(seq_along(names(object)), function(i) diag(c(1, 1, 1))))
-  tr.matrices <- lapply(object@transformations, function(x) diag(c(1, 1, 1)))
+  tr.matrices <- lapply(transformations, function(x) diag(c(1, 1, 1)))
   image.dims <- lapply(object[type], dim)
 
 
