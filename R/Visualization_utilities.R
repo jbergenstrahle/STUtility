@@ -342,11 +342,12 @@ draw_scalebar <- function (
 #'
 #' @param st.object An object of class 'Staffli'
 #' @param data data.frame for plotting
+#' @param data.type String specifying the class of the variable used for splitting
 #' @param indices Integer vector specifying sample indices to include in the plot
 #' @param split.labels Split plots
 #' @param features Features included in data
 #' @param dims List of image dimensions
-#' @param show.sb Reurn NULL if FALSE
+#' @param show.sb Return NULL if FALSE
 #'
 #' @return A data.frame containing positions of a scale bar used for plotting
 #'
@@ -354,6 +355,7 @@ draw_scalebar <- function (
 prep.sb <- function (
   st.object,
   data,
+  data.type,
   indices,
   split.labels,
   features,
@@ -366,9 +368,9 @@ prep.sb <- function (
       if (split.labels) {
         if (length(x = features) > 1) stop(paste0("Only one feature allowed when splitting labels ..."), call. = FALSE)
         if (!data.type %in% c("character", "factor")) stop(paste0("Only categorical variables can be used for splitting ..."), call = FALSE)
-        pxum <- data.frame(pixels.per.um = rep(pixels.per.um[indices], length(unique(data[, features]))), sample = unique(data[, features]))
-        hewidths <- rep(dims[[indices]][1], length(unique(data[, features])))
-        heheights <- rep(dims[[indices]][2], length(unique(data[, features])))
+        pxum <- data.frame(pixels.per.um = rep(pixels.per.um, length(unique(data[, features]))), sample = unique(data[, features]))
+        hewidths <- rep(dims[[1]][1], length(unique(data[, features])))
+        heheights <- rep(dims[[1]][2], length(unique(data[, features])))
       } else {
         pxum <- data.frame(pixels.per.um, sample = paste0(indices))
         hewidths <- lapply(dims, function(x) x[1]) %>% unlist()

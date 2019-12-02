@@ -168,12 +168,12 @@ ST.DimPlot <- function (
 
   # Prepare data for scalebar
   # --------------------------------------------------------------------
-  pxum <- prep.sb(st.object, data, indices, FALSE, dims, dims.list, show.sb)
+  pxum <- prep.sb(st.object, data, data.type, indices, FALSE, dims, dims.list, show.sb)
   # --------------------------------------------------------------------
 
   # blend colors or plot each dimension separately
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, scales::rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors for dimensions ",
@@ -182,27 +182,24 @@ ST.DimPlot <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 3, 2)):ncol(data)]
-    plot <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha,
+    p <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha,
                    palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "),
                    dims.list, split.labels = FALSE, theme = theme, pxum = pxum, sb.size = sb.size, dark.theme, ...)
     if (dark.theme) {
-      plot <- plot + dark_theme()
+      p <- p + dark_theme()
     }
-    return(plot)
+    return(p)
   } else {
-    spot.colors <- NULL
-    if (verbose) cat("Plotting dimensions:",
-                     ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
-
-    # Create plots
     if (plot.type == "spots") {
-      # Normal visualization -------------------------------------------------------------------------------------
+      spot.colors <- NULL
+      if (verbose) cat("Plotting dimensions:",
+                       ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
+
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha,
                        palette, cols, ncol, spot.colors, center.zero, center.tissue,
                        d, dims.list, FALSE, theme = theme, pxum = pxum, sb.size = sb.size, dark.theme, ...)
-
         if (dark.theme) {
           plot <- plot + dark_theme()
         }
@@ -210,19 +207,16 @@ ST.DimPlot <- function (
       })
 
       # Draw plots
-      plot <- plot_grid(plotlist = plots, ncol = grid.ncol)
+      p <- plot_grid(plotlist = plots, ncol = grid.ncol)
       if (dark.theme) {
-        plot <- plot + dark_theme()
+        p <- p + dark_theme()
       }
-
-      return(plot)
-
+      return(p)
     } else if (plot.type == "smooth") {
-      # Smooth visualization -------------------------------------------------------------------------------------
-      stop("Smooth options not yet implemented")
+      stop("Smooth options not yet implemented for dimred output ...")
       plots <- lapply(X = dims, FUN = function(d) {
-        plot <- SmoothPlot(data, image.type, data.type = "numeric", d,
-                           palette, ncol, center.zero, xlim, ylim, ...)
+        plot <- SmoothPlot(st.object, data, image.type, data.type = "numeric", d,
+                           palette, cols, ncol, center.zero, dark.theme, highlight.edges, ...)
         return(plot)
       })
 
@@ -437,11 +431,11 @@ ST.FeaturePlot <- function (
 
   # Prepare data for scalebar
   # --------------------------------------------------------------------
-  pxum <- prep.sb(st.object, data, indices, split.labels, features, dims, show.sb)
+  pxum <- prep.sb(st.object, data, data.type, indices, split.labels, features, dims, show.sb)
   # --------------------------------------------------------------------
 
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, scales::rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors for features ",
@@ -457,40 +451,36 @@ ST.FeaturePlot <- function (
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
-    return(plot)
+    plot
   } else {
     spot.colors <- NULL
     if (verbose) cat("Plotting features:",
                      ifelse(length(features) == 1, features,  paste0(paste(features[1:(length(features) - 1)], collapse = ", "), " and ", features[length(features)])))
+
     # Create plots
     if (plot.type == "spots") {
-      # Normal visualization -------------------------------------------------------------------------------------
       plots <- lapply(X = features, FUN = function(ftr) {
-        plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha,
-                       palette, cols, ncol, spot.colors, center.zero,
-                       center.tissue, ftr, dims, split.labels, theme, pxum, sb.size, dark.theme, ...)
+            plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha,
+                           palette, cols, ncol, spot.colors, center.zero,
+                           center.tissue, ftr, dims, split.labels, theme, pxum, sb.size, dark.theme)#, ...)
 
-        if (dark.theme) {
-          plot <- plot + dark_theme()
-        }
-        return(plot)
-      })
-
-      plot <- plot_grid(plotlist = plots, ncol = grid.ncol)
-
+            if (dark.theme) {
+              plot <- plot + dark_theme()
+            }
+            return(plot)
+          })
+      p <- plot_grid(plotlist = plots, ncol = grid.ncol)
       if (dark.theme) {
-        plot <- plot + dark_theme()
+          p <- p + dark_theme()
       }
-
-      return(plot)
-
+      p
     } else if (plot.type == "smooth") {
-      #stop("Smooth options not yet implemented")
-      if (any(data.type %in% c("factor", "character"))) stop(paste0("Smoothing has not yet been implemented for categorical variables"), call. = FALSE)
-      # Smooth visualization -------------------------------------------------------------------------------------
-      plots <- lapply(X = features, FUN = function(d) {
-        plot <- SmoothPlot(st.object, data, image.type, data.type, d,
-                       palette, cols, ncol, center.zero, dark.theme, highlight.edges, ...)
+      if (any(data.type %in% c("factor", "character"))) {
+        stop(paste0("Smoothing has not yet been implemented for categorical variables"), call. = FALSE)
+      }
+      plots <- lapply(X = features, function(ftr) {
+        plot <- SmoothPlot(st.object, data, image.type, data.type, ftr,
+                           palette, cols, ncol, center.zero, dark.theme, highlight.edges, ...)
         return(plot)
       })
 
@@ -609,7 +599,7 @@ STPlot <- function (
 
   # Stop if split.labels is activated and there are more than 1 samples
   if (any(data.type %in% c("character", "factor")) & split.labels) {
-    if (length(unique(as.character(data[, "sample"]))) > 1) stop(paste0("Splitting of group labels only work for one sample. Please set a single sample index with indices. "), call. = FALSE)
+    if (length(unique(as.character(data[, "sample"]))) > 1) stop(paste0("Splitting of group labels only work for one sample. Please set a single sample index with the 'indices' argument. "), call. = FALSE)
     plot.title <- paste0("Sample ", unique(as.character(data[, "sample"])), ": ", variable)
     new.data <- data.frame()
     # Order by decreasing size

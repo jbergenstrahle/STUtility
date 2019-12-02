@@ -4,12 +4,15 @@
 \alias{prep.sb}
 \title{Prep scalebar}
 \usage{
-prep.sb(st.object, data, indices, split.labels, features, dims, show.sb)
+prep.sb(st.object, data, data.type, indices, split.labels, features, dims,
+  show.sb)
 }
 \arguments{
 \item{st.object}{An object of class 'Staffli'}
 
 \item{data}{data.frame for plotting}
+
+\item{data.type}{String specifying the class of the variable used for splitting}
 
 \item{indices}{Integer vector specifying sample indices to include in the plot}
 
@@ -19,7 +22,7 @@ prep.sb(st.object, data, indices, split.labels, features, dims, show.sb)
 
 \item{dims}{List of image dimensions}
 
-\item{show.sb}{Reurn NULL if FALSE}
+\item{show.sb}{Return NULL if FALSE}
 }
 \value{
 A data.frame containing positions of a scale bar used for plotting
