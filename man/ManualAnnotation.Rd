@@ -9,6 +9,10 @@ ManualAnnotation(object, res = 1500, verbose = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}
+
+\item{res}{Tissue HE image width in pixels}
+
+\item{verbose}{Print messages}
 }
 \description{
 Manual annotation tool via shiny

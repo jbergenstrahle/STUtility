@@ -1,3 +1,6 @@
+#' @include generics.R Staffli.R
+NULL
+
 #' @importFrom shiny debounce observeEvent reactive
 #' @importFrom data.table as.data.table
 #' @importFrom ggplot2
@@ -26,6 +29,8 @@
 #' This function takes a seurat object with stored image locations and opens up the manual selection tool in the default browser
 #'
 #' @param object Seurat object
+#' @param res Tissue HE image width in pixels
+#' @param verbose Print messages
 #'
 #' @export
 #'
@@ -140,7 +145,7 @@ make.plot <- function (
   SpotSize,
   res
 ) {
-  object.use <- colnames(object[, which(st.object[[, "sample", drop = T]] == sampleNr)])
+  object.use <- rownames(subset(object@tools$Staffli@meta.data, sample == sampleNr))
   object <- SubsetSTData(object, spots = object.use)
   st.object <- GetStaffli(object)
   coordinates <- data.frame(x = st.object[[, "pixel_x", drop = T]],
@@ -159,13 +164,14 @@ make.plot <- function (
   c(ymin, xmin) %<-% { c(ymin, xmin) %>% map(~. - 3 * r) }
   c(ymax, xmax) %<-% { c(ymax, xmax) %>% map(~. + 3 * r) }
 
+  image <- as.raster(image)
+
   image <- grid::rasterGrob(
     image,
     width = unit(1, "npc"),
     height = unit(1, "npc"),
     interpolate = TRUE
   )
-
 
   if (!is.null(image)) {
     ymin <- max(ymin, 1)

@@ -298,7 +298,7 @@ MaskImages.Staffli <- function (
       out <- slic(im, nS = object@xdim*1.5, compactness)
       if (add.contrast) out <- out^4
       d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
-        select(-x, -y)
+        dplyr::select(-x, -y)
 
       km <- kmeans(d, 2)
       seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(20) %>% threshold()
