@@ -1137,7 +1137,11 @@ DimOverlay <- function (
 
       return(plot)
     })
-    plot_grid(plotlist = plots, ncol = grid.ncol)
+    p <- plot_grid(plotlist = plots, ncol = grid.ncol)
+    if (dark.theme) {
+      p <- p + DarkTheme()
+    }
+    return(p)
   }
 }
 
@@ -1349,7 +1353,11 @@ FeatureOverlay <- function (
       return(plot)
     })
 
-    if (length(plots) > 1) plot_grid(plotlist = plots, ncol = grid.ncol) else plots[[1]]
+    p <- plot_grid(plotlist = plots, ncol = grid.ncol)
+    if (dark.theme) {
+      p <- p + DarkTheme()
+    }
+    return(p)
   }
 }
 
