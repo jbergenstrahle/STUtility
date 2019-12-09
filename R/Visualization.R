@@ -96,6 +96,7 @@ ST.DimPlot <- function (
   theme = theme_void(),
   sb.size = 2.5,
   show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
   ...
 ) {
 
@@ -171,6 +172,14 @@ ST.DimPlot <- function (
   pxum <- prep.sb(st.object, data, data.type, indices, FALSE, dims, dims.list, show.sb)
   # --------------------------------------------------------------------
 
+  # Set feature scale limits
+  value.scale <- match.arg(value.scale, c("samplewise", "all"))
+  if (value.scale == "all" & all(data.type %in% c("numeric", "integer"))) {
+    limits <- c(min(data[, dims]), max(data[, dims]))
+  } else if (value.scale == "samplewise") {
+    limits <- NULL
+  }
+
   # blend colors or plot each dimension separately
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, scales::rescale)
@@ -199,7 +208,8 @@ ST.DimPlot <- function (
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha,
                        palette, cols, ncol, spot.colors, center.zero, center.tissue,
-                       d, dims.list, FALSE, theme = theme, pxum = pxum, sb.size = sb.size, dark.theme, ...)
+                       d, dims.list, FALSE, theme = theme, pxum = pxum, sb.size = sb.size,
+                       dark.theme, limits, ...)
         if (dark.theme) {
           plot <- plot + dark_theme()
         }
@@ -353,6 +363,7 @@ ST.FeaturePlot <- function (
   verbose = FALSE,
   sb.size = 2.5,
   show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
   ...
 ) {
   # Check to see if Staffli object is present
@@ -434,6 +445,14 @@ ST.FeaturePlot <- function (
   pxum <- prep.sb(st.object, data, data.type, indices, split.labels, features, dims, show.sb)
   # --------------------------------------------------------------------
 
+  # Set feature scale limits
+  value.scale <- match.arg(value.scale, c("samplewise", "all"))
+  if (value.scale == "all" & all(data.type %in% c("numeric", "integer"))) {
+    limits <- c(min(data[, features]), max(data[, features]))
+  } else if (value.scale == "samplewise") {
+    limits <- NULL
+  }
+
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(shape.by), 4, 3))], 2, scales::rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
@@ -462,7 +481,8 @@ ST.FeaturePlot <- function (
       plots <- lapply(X = features, FUN = function(ftr) {
             plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha,
                            palette, cols, ncol, spot.colors, center.zero,
-                           center.tissue, ftr, dims, split.labels, theme, pxum, sb.size, dark.theme)#, ...)
+                           center.tissue, ftr, dims, split.labels, theme, pxum,
+                           sb.size, dark.theme, limits, ...)
 
             if (dark.theme) {
               plot <- plot + dark_theme()
@@ -480,7 +500,8 @@ ST.FeaturePlot <- function (
       }
       plots <- lapply(X = features, function(ftr) {
         plot <- SmoothPlot(st.object, data, image.type, data.type, ftr,
-                           palette, cols, ncol, center.zero, dark.theme, highlight.edges, ...)
+                           palette, cols, ncol, center.zero, dark.theme,
+                           highlight.edges, ...)
         return(plot)
       })
 
@@ -561,6 +582,7 @@ STPlot <- function (
   pxum = NULL,
   sb.size = 2.5,
   dark.theme = FALSE,
+  limits = NULL,
   ...
 ) {
 
@@ -711,14 +733,14 @@ STPlot <- function (
   if (is.null(spot.colors)) {
     if (center.zero & !any(data.type %in% c("character", "factor"))) {
       p <- p +
-        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
+        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
     } else if (any(data.type %in% c("character", "factor"))) {
       p <- p +
         labs(color = variable) +
         scale_color_manual(values = label.colors)
     } else {
       p <- p +
-        scale_color_gradientn(colours = cols)
+        scale_color_gradientn(colours = cols, limits = limits)
     }
   }
 
@@ -985,6 +1007,7 @@ DimOverlay <- function (
   dark.theme = FALSE,
   sample.label = TRUE,
   show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
   ...
 ) {
 
@@ -1080,6 +1103,14 @@ DimOverlay <- function (
     pixels.per.um <- NULL
   }
 
+  # Set feature scale limits
+  value.scale <- match.arg(value.scale, c("samplewise", "all"))
+  if (value.scale == "all" & all(data.type %in% c("numeric", "integer"))) {
+    limits <- c(min(data[, features]), max(data[, features]))
+  } else if (value.scale == "samplewise") {
+    limits <- NULL
+  }
+
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
@@ -1101,7 +1132,8 @@ DimOverlay <- function (
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           ncol = NULL, spot.colors, center.zero, plot.title = d, FALSE, dark.theme, pixels.per.um = pixels.per.um, ...)
+                           ncol = NULL, spot.colors, center.zero, plot.title = d, FALSE, dark.theme, pixels.per.um = pixels.per.um,
+                           limits, ...)
 
       return(plot)
     })
@@ -1190,6 +1222,7 @@ FeatureOverlay <- function (
   dark.theme = FALSE,
   sample.label = TRUE,
   show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
   ...
 ) {
 
@@ -1281,6 +1314,14 @@ FeatureOverlay <- function (
     pixels.per.um <- NULL
   }
 
+  # Set feature scale limits
+  value.scale <- match.arg(value.scale, c("samplewise", "all"))
+  if (value.scale == "all" & all(data.type %in% c("numeric", "integer"))) {
+    limits <- c(min(data[, features]), max(data[, features]))
+  } else if (value.scale == "samplewise") {
+    limits <- NULL
+  }
+
   if (blend) {
     colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
@@ -1302,7 +1343,8 @@ FeatureOverlay <- function (
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           ncol = NULL, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um, ...)
+                           ncol = NULL, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um,
+                           limits, ...)
 
       return(plot)
     })
@@ -1347,6 +1389,7 @@ ST.ImagePlot <- function (
   split.labels = FALSE,
   dark.theme = FALSE,
   pixels.per.um = NULL,
+  limits = NULL,
   ...
 ) {
 
@@ -1369,7 +1412,7 @@ ST.ImagePlot <- function (
       } else {
         label.colors <- gg_color_hue(length(levels(data[, variable])))
       }
-      names(label.colors) <- levels(data[, variable])
+      names(label.colors) <- unique(data[, variable] %>% as.character())
     } else if (class(data[, variable]) == "character") {
       if (!is.null(cols)) {
         stopifnot(length(cols) >= length(unique(data[, variable])))
@@ -1379,7 +1422,7 @@ ST.ImagePlot <- function (
           label.colors <- cols[unique(data[, variable])]
         }
       } else {
-        label.colors <- gg_color_hue(length(levels(data[, variable])))
+        label.colors <- gg_color_hue(length(unique(data[, variable])))
       }
       names(label.colors) <- unique(data[, variable])
     }
@@ -1462,13 +1505,13 @@ ST.ImagePlot <- function (
     # Center colorscale at 0
     if (center.zero & !any(data.type %in% c("character", "factor"))) {
       p <- p +
-        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0)
+        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
     } else if (any(data.type %in% c("character", "factor"))) {
       p <- p +
         scale_color_manual(values = label.colors)
     } else {
       p <- p +
-        scale_color_gradientn(colours = cols)
+        scale_color_gradientn(colours = cols, limits = limits)
     }
 
     if (dark.theme) {
@@ -1568,12 +1611,14 @@ MultiDimOverlay <- function (
 
   # Check that spots are present in all sampleids samples
   Staffli_meta_subset <- Staffli_meta[spots, ]
-  if (length(x = unique(Staffli_meta_subset$sample)) != length(x = sampleids)) stop(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
+  remaining_samples <- which(unique(Staffli_meta_subset$sample) %in% sampleids)
+  if (length(x = remaining_samples) != length(x = sampleids)) warning(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n",
+                                                                             "Subsetting data to include samples ", paste(remaining_samples, collapse = ", "), "... \n"), call. = FALSE)
 
   ncols.dims <- ncols.dims %||% length(x = dims)
   ncols.samples <- ncols.samples %||% 1
 
-  p.list <- lapply(sampleids, function(i) {
+  p.list <- lapply(remaining_samples, function(i) {
     DimOverlay(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
                reduction = reduction, shape.by = shape.by, palette = palette,
@@ -1673,12 +1718,14 @@ MultiFeatureOverlay <- function (
 
   # Check that spots are present in all sampleids samples
   Staffli_meta_subset <- Staffli_meta[spots, ]
-  if (length(x = unique(Staffli_meta_subset$sample)) != length(x = sampleids)) stop(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
+  remaining_samples <- which(unique(Staffli_meta_subset$sample) %in% sampleids)
+  if (length(x = remaining_samples) != length(x = sampleids)) warning(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n",
+                                                                             "Subsetting data to include samples ", paste(remaining_samples, collapse = ", "), "... \n"), call. = FALSE)
 
-  ncols.features <- ncols.features %||% length(x = sampleids)
+  ncols.features <- ncols.features %||% length(x = features)
   ncols.samples <- ncols.samples %||% 1
 
-  p.list <- lapply(sampleids, function(s) {
+  p.list <- lapply(remaining_samples, function(s) {
     FeatureOverlay(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,

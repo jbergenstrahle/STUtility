@@ -903,7 +903,7 @@ ManualAlignImages.Staffli <- function (
 
     # Obtain alignment matrix
     tr <- alignment.matrices[[i]]
-    transformations[[i]] <- tr%*%tr.matrices[[i]]
+    transformations[[i]] <- tr%*%transformations[[i]]
 
     map.rot.backward <- generate.map.rot(tr)
     map.rot.forward <- generate.map.rot(tr, forward = TRUE)

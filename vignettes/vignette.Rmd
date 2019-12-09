@@ -153,7 +153,7 @@ Lets load the provided infoTable
 <br>
 ```{r package_infotable, cache = TRUE}
 
-infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)[c(1, 5, 6, 7), ]
+infoTable <- read.table("~/STUtility/inst/extdata/metaData_mmBrain.csv", sep=";", header=T, stringsAsFactors = F)
 
 ```
 
@@ -184,8 +184,8 @@ se <- InputFromTable(infotable = infoTable,
                       min.gene.spots = 5,
                       min.spot.count = 500, 
                       annotation = ensids, 
-                      platform = "2k", 
-                      pattern.remove = "^mt-")
+                      platform = "2k",
+                      transpose = T)
 
 ```
 

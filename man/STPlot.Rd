@@ -9,7 +9,7 @@ STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
   spot.colors = NULL, center.zero = TRUE, center.tissue = F,
   plot.title = NULL, dims = NULL, split.labels = FALSE,
   theme = theme_void(), pxum = NULL, sb.size = 2.5,
-  dark.theme = FALSE, ...)
+  dark.theme = FALSE, limits = NULL, ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample

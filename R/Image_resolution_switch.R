@@ -19,7 +19,7 @@
 #' @param verbose Print messages
 #'
 #' @importFrom magick image_read image_scale image_info
-#' @importFrom imager as.cimg magick2cimg
+#' @importFrom imager as.cimg magick2cimg imsub
 #' @importFrom grDevices as.raster
 #'
 #' @export
@@ -115,8 +115,8 @@ SwitchResolution <- function (
       tr <- transforms[[i]]
       s <- xdim/old.xdim
       tr <- matrix(c(1, 1, 1, 1, 1, 1, s, s, 1), ncol = 3)*tr
-      map.affine.backward <- generate.map.affine(tr)
-      map.affine.forward <- generate.map.affine(tr, forward = TRUE)
+      map.affine.backward <- generate.map.rot(tr)
+      map.affine.forward <- generate.map.rot(tr, forward = TRUE)
 
       # Warp pixels
       if (verbose) cat(paste0("Warping pixel coordinates for ", i, " ... \n"))
@@ -124,7 +124,7 @@ SwitchResolution <- function (
       warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
 
       if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
-      imat <- imwarp(m, map = map.affine.backward, dir = "backward", interpolation = "cubic")
+      imat <- Warp(m, map.affine.backward) %>% as.cimg()
       if (verbose) cat(paste0("Scaling processed image mask for ", i, " ... \n"))
       imat.msk <- image_read(processed.masks[[i]]) %>% image_scale(paste0(xdim)) %>% magick2cimg()*255
       #inds <- which(imat.msk != 255)

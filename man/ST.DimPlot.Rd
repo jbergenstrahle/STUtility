@@ -11,7 +11,7 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
   dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
   verbose = FALSE, theme = theme_void(), sb.size = 2.5,
-  show.sb = TRUE, ...)
+  show.sb = TRUE, value.scale = c("samplewise", "all"), ...)
 }
 \arguments{
 \item{object}{Seurat object}
