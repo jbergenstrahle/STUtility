@@ -36,8 +36,9 @@ Suggests:
     rmarkdown,
     plotly (>= 4.9.0),
     shiny (>= 1.3.0),
-	ggiraph (>= 0.6.1),
-	shinyjs (>= 1.0)
+	  ggiraph (>= 0.6.1),
+	  shinyjs (>= 1.0),
+	  Giotto (>= 0.1.4)
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 Collate: 
@@ -47,6 +48,7 @@ Collate:
     'Mask_functions.R'
     'QC.R'
     'Rigid_transformation.R'
+    'Spatial_genes.R'
     'generics.R'
     'Staffli.R'
     'Visualization_utilities.R'
