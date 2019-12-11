@@ -43,6 +43,7 @@ VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 Collate: 
     '2D_point_pattern.R'
+    '3D_viusalization.R'
     'HSVencoding.R'
     'Image_resolution_switch.R'
     'Mask_functions.R'

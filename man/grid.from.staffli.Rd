@@ -17,8 +17,6 @@ grid.from.staffli(object, type, limit = 0.3, maxnum = 1000,
 \item{maxnum}{Integer value specifying the maximum number of points}
 
 \item{edges}{Extracts the coordinates of the edges instead}
-
-\item{obejct}{Staffli object}
 }
 \description{
 Creates 2D point patterns for a set of images

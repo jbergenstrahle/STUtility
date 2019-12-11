@@ -27,7 +27,11 @@ scatter_HE <- function (
     bw.image <- get.edges(object, sample.index, type = type)
     xyset = which(bw.image > limit, arr.ind = TRUE)
   } else {
-    bw.image = grayscale(as.cimg(object[type][[sample.index]]))
+    im <- as.cimg(object[type][[sample.index]])
+    bw.image <- im[, , 1, 1] %>% as.cimg()
+    f <- ecdf(bw.image)
+    bw.image.eq <- f(bw.image) %>% as.cimg(dim = dim(bw.image))
+    #bw.image = grayscale(im)
     if (type %in% c("processed.masks", "masked.masks")) {
       xyset = which(bw.image > limit*255, arr.ind = TRUE)
     } else {
@@ -45,7 +49,7 @@ scatter_HE <- function (
 
 #' Creates 2D point patterns for a set of images
 #'
-#' @param obejct Staffli object
+#' @param object Staffli object
 #'
 #' @inheritParams scatter_HE
 

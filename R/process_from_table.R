@@ -263,7 +263,12 @@ InputFromTable <- function (
 
 
   # ---- Add image paths
-  m@tools$Staffli <- CreateStaffliObject(imgs = ifelse(rep("imgs" %in% colnames(infotable), nrow(infotable)), infotable[, "imgs"], NULL),
+  if ("imgs" %in% colnames(infotable)) {
+    imgs <- infotable[, "imgs"]
+  } else {
+    imgs <- NULL
+  }
+  m@tools$Staffli <- CreateStaffliObject(imgs = imgs,
                                            meta.data = meta_data_staffli,
                                            platforms = platforms)
 
