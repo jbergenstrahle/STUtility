@@ -4,7 +4,7 @@
 \alias{interpolate_2D_data}
 \title{Interpolate value across point pattern}
 \usage{
-interpolate_2D_data(data, section.input, nx, ny)
+interpolate_2D_data(data, section.input, nx, ny, xy.range)
 }
 \arguments{
 \item{data}{data.frame object with spot coordinates and a 'value' column with numeric data}
@@ -12,6 +12,8 @@ interpolate_2D_data(data, section.input, nx, ny)
 \item{section.input}{data.frame object with x,y coordinates for a point pattern to interpolate values over}
 
 \item{nx, ny}{Dimensions of grid}
+
+\item{xy.range}{Range of x,y coordinates to interpolate over}
 }
 \value{
 data.frame object with point pattern and interpolated values

@@ -35,15 +35,15 @@ Create3DStack <- function (
   # Switch resolution
   if (st.object@xdim < 1500) {
     object <- SwitchResolution(object, xdim = 2e3, verbose = verbose)
+    st.object <- GetStaffli(object)
   }
-  st.object <- GetStaffli(object)
 
   # Obtain number of cells to interpolate over
   coords <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
     coords <- subset(st.object[[]], sample == s)[, c("warped_x", "warped_y")]
-    dims.raw <- iminfo(st.object)[[s]][2:3] %>% as.numeric()
-    dims.scaled <- scaled.imdims(st.object)[[s]]
+    dims.raw <- iminfo(st.object)[[i]][2:3] %>% as.numeric()
+    dims.scaled <- scaled.imdims(st.object)[[i]]
     sf.xy <- dims.raw[2]/dims.scaled[1]
     coords <- coords/sf.xy
     coords$z <- i
@@ -105,7 +105,7 @@ FeaturePlot3D <- function (
 
   coords <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
-    dims.raw <- as.numeric(st.object@dims[[s]][2:3])
+    dims.raw <- as.numeric(st.object@dims[[i]][2:3])
     dims.scaled <- dim(st.object["raw"][[i]])
     sf.xy <- dims.raw[1]/dims.scaled[2]
     coords <- subset(st.object[[]], sample == s)[, c("warped_x", "warped_y")]/sf.xy
@@ -124,7 +124,7 @@ FeaturePlot3D <- function (
   interpolated.data <- do.call(rbind, lapply(seq_along(data.list), function(i) {
     data <- data.list[[i]]
     section.input <- section.input.list[[i]]
-    interpolated_data <- interpolate_2D_data(data, section.input, nx = nxy[1], ny = nxy[2])
+    interpolated_data <- interpolate_2D_data(data, section.input, nx = nxy[1], ny = nxy[2], xy.range = apply(coords[, 1:2], 2, range))
   }))
 
   range.vals <- range(interpolated.data$val, na.rm = TRUE)
@@ -145,6 +145,9 @@ FeaturePlot3D <- function (
     layout(paper_bgcolor = 'rgb(0, 0, 0)', scene = list(zaxis = list(title = 'z', range = c(-2, max(interpolated.data$z) + 2), showticks = FALSE)))
 }
 
+#' Create a plotly compatible colorscale
+#'
+#' @param cols Vector of colors
 cscale <- function (cols) {
   rgbs <- do.call(cbind, lapply(cols, col2rgb))
   breaks <- seq(0, 1, length.out = length(cols))
@@ -172,8 +175,8 @@ rasterize_scatter <- function (
   r,
   nx
 ) {
-  tab = table(cellFromXY(r, scatter[, 1:2]))
-  r[as.numeric(names(tab))] = tab
+  #tab = table(cellFromXY(r, scatter[, 1:2]))
+  #r[as.numeric(names(tab))] = tab
   pixel.centers = coordinates(r)
   set1 = scatter[, 1:2]
   set2 = pixel.centers[, 1:2]
@@ -194,6 +197,7 @@ rasterize_scatter <- function (
 #' @param data data.frame object with spot coordinates and a 'value' column with numeric data
 #' @param section.input data.frame object with x,y coordinates for a point pattern to interpolate values over
 #' @param nx,ny Dimensions of grid
+#' @param xy.range Range of x,y coordinates to interpolate over
 #'
 #' @return data.frame object with point pattern and interpolated values
 
@@ -201,14 +205,15 @@ interpolate_2D_data <- function (
   data,
   section.input,
   nx,
-  ny
+  ny,
+  xy.range
 ){
   x1 = as.numeric(data[, "warped_x", drop = T])
   y1 = as.numeric(data[, "warped_y", drop = T])
   w1 = as.numeric(data[, "value"])
 
   # Run the interpolation
-  s1 =  akima::interp(x = x1, y = y1, z = w1, nx = nx, ny = ny)
+  s1 =  akima::interp(x = x1, y = y1, z = w1, nx = nx, ny = ny, xo = seq(xy.range[1, 1], xy.range[2, 1], length = nx), yo = seq(xy.range[1, 2], xy.range[2, 2], length = ny))
   mat.1 = s1$z
   mat.1 <- mat.1[, ncol(mat.1):1]
   col = as.numeric(mat.1)
