@@ -29,13 +29,14 @@ scatter_HE <- function (
   } else {
     im <- as.cimg(object[type][[sample.index]])
     bw.image <- im[, , 1, 1] %>% as.cimg()
-    f <- ecdf(bw.image)
-    bw.image.eq <- f(bw.image) %>% as.cimg(dim = dim(bw.image))
+    #f <- ecdf(bw.image)
+    #bw.image.eq <- f(bw.image) %>% as.cimg(dim = dim(bw.image))
     #bw.image = grayscale(im)
     if (type %in% c("processed.masks", "masked.masks")) {
       xyset = which(bw.image > limit*255, arr.ind = TRUE)
     } else {
-      xyset = which(bw.image < limit*255, arr.ind = TRUE)
+      seg <- imagerExtra::ThresholdAdaptive(bw.image, k = 0.1)
+      xyset = which(!seg, arr.ind = TRUE)
     }
   }
   set.seed(1)

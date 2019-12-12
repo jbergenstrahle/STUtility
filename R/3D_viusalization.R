@@ -89,7 +89,9 @@ FeaturePlot3D <- function (
   object,
   features,
   slot = 'data',
-  cols = NULL
+  pt.size = 0.8,
+  cols = NULL,
+  add.margins = 2
 ) {
 
   # Check to see if Staffli object is present
@@ -139,10 +141,10 @@ FeaturePlot3D <- function (
           marker = list(color = ~val,
                         showscale = T,
                         colorscale = cs,
-                        size = 1.2,
+                        size = pt.size,
                         opacity = 0.6)) %>%
     add_markers() %>%
-    layout(paper_bgcolor = 'rgb(0, 0, 0)', scene = list(zaxis = list(title = 'z', range = c(-2, max(interpolated.data$z) + 2), showticks = FALSE)))
+    layout(paper_bgcolor = 'rgb(0, 0, 0)', scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
 }
 
 #' Create a plotly compatible colorscale

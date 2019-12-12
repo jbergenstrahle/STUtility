@@ -4,7 +4,8 @@
 \alias{FeaturePlot3D}
 \title{Plots the values of a feature in 3D}
 \usage{
-FeaturePlot3D(object, features, slot = "data", cols = NULL)
+FeaturePlot3D(object, features, slot = "data", pt.size = 0.8,
+  cols = NULL, add.margins = 2)
 }
 \arguments{
 \item{object}{Seurat object}
