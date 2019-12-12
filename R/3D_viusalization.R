@@ -105,7 +105,10 @@ FeaturePlot3D <- function (
 
   coords <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
-    coords <- subset(st.object[[]], sample == s)[, c("warped_x", "warped_y")]
+    dims.raw <- as.numeric(st.object@dims[[s]][2:3])
+    dims.scaled <- dim(high.res.images[[s]])
+    sf.xy <- dims.raw[1]/dims.scaled[2]
+    coords <- subset(st.object[[]], sample == s)[, c("warped_x", "warped_y")]/sf.xy
     coords$z <- i
     return(coords)
   }))
@@ -139,7 +142,7 @@ FeaturePlot3D <- function (
                         size = 1.2,
                         opacity = 0.6)) %>%
     add_markers() %>%
-    layout(paper_bgcolor = 'rgb(0, 0, 0)', scene = list(zaxis = list(title = 'z', range = c(-3, 3), showticks = FALSE)))
+    layout(paper_bgcolor = 'rgb(0, 0, 0)', scene = list(zaxis = list(title = 'z', range = c(-2, max(interpolated.data$z) + 2), showticks = FALSE)))
 }
 
 cscale <- function (cols) {

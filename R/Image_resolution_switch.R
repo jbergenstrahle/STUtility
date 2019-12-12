@@ -119,7 +119,7 @@ SwitchResolution <- function (
 
       # Warp pixels
       if (verbose) cat(paste0("Warping pixel coordinates for sample ", i, " ... \n"))
-      warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.affine.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y")), round, digits = 1)
+      warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.affine.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
       warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
 
       if (verbose) cat(paste0("Warping image for ", i, " ... \n"))

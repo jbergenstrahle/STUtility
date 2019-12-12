@@ -135,6 +135,10 @@ ManualAnnotation <- function (
 #' @param SpotSize geom_point size
 #' @param res resolution of the image
 #'
+#' @importFrom zeallot %<-%
+#' @importFrom magick image_read image_scale image_info geometry_size_pixels
+#' @importFrom ggplot2 ggplot aes scale_x_continuous scale_y_continuous theme element_rect element_blank theme_minimal
+#'
 #' @keywords internal
 
 make.plot <- function (
@@ -161,6 +165,10 @@ make.plot <- function (
 
   c(ymin, ymax) %<-% range(coordinates$y)
   c(xmin, xmax) %<-% range(coordinates$x)
+
+  xmin <- ymin <- min(c(xmin, ymin))
+  xmax <- ymax <- max(c(xmax, ymax))
+
   c(ymin, xmin) %<-% { c(ymin, xmin) %>% map(~. - 3 * r) }
   c(ymax, xmax) %<-% { c(ymax, xmax) %>% map(~. + 3 * r) }
 
