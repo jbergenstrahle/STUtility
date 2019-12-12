@@ -45,7 +45,7 @@ Create3DStack <- function (
     dims.raw <- iminfo(st.object)[[s]][2:3] %>% as.numeric()
     dims.scaled <- scaled.imdims(st.object)[[s]]
     sf.xy <- dims.raw[2]/dims.scaled[1]
-    #coords <- coords/sf.xy
+    coords <- coords/sf.xy
     coords$z <- i
     return(coords)
   }))
@@ -106,7 +106,7 @@ FeaturePlot3D <- function (
   coords <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
     dims.raw <- as.numeric(st.object@dims[[s]][2:3])
-    dims.scaled <- dim(high.res.images[[s]])
+    dims.scaled <- dim(st.object["raw"][[i]])
     sf.xy <- dims.raw[1]/dims.scaled[2]
     coords <- subset(st.object[[]], sample == s)[, c("warped_x", "warped_y")]/sf.xy
     coords$z <- i
