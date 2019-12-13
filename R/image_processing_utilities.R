@@ -1,7 +1,6 @@
 #' @include generics.R Staffli.R
 NULL
 
-#' @rdname improc.utils
 #' @method get.edges Staffli
 #'
 #' @return  A list of data.frames with edge coordinates

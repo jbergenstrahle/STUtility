@@ -46,7 +46,7 @@ parse.spot.file = function(path, delim = "\t", ...) {
 
 InputFromTable <- function (
   infotable,
-  transpose = FALSE,
+  transpose = TRUE,
   topN = 0,
   min.gene.count = 0,
   min.gene.spots = 0,
