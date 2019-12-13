@@ -46,7 +46,7 @@ parse.spot.file = function(path, delim = "\t", ...) {
 
 InputFromTable <- function (
   infotable,
-  transpose = TRUE,
+  transpose = FALSE,
   topN = 0,
   min.gene.count = 0,
   min.gene.spots = 0,
@@ -263,7 +263,12 @@ InputFromTable <- function (
 
 
   # ---- Add image paths
-  m@tools$Staffli <- CreateStaffliObject(imgs = ifelse(rep("imgs" %in% colnames(infotable), nrow(infotable)), infotable[, "imgs"], NULL),
+  if ("imgs" %in% colnames(infotable)) {
+    imgs <- infotable[, "imgs"]
+  } else {
+    imgs <- NULL
+  }
+  m@tools$Staffli <- CreateStaffliObject(imgs = imgs,
                                            meta.data = meta_data_staffli,
                                            platforms = platforms)
 

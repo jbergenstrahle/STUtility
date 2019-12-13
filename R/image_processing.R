@@ -298,7 +298,7 @@ MaskImages.Staffli <- function (
       out <- slic(im, nS = object@xdim*1.5, compactness)
       if (add.contrast) out <- out^4
       d <- sRGBtoLab(out) %>% as.data.frame(wide = "c") %>%
-        select(-x, -y)
+        dplyr::select(-x, -y)
 
       km <- kmeans(d, 2)
       seg <- as.cimg(km$cluster - 1, dim = c(dim(im)[1:2], 1, 1)) %>% medianblur(20) %>% threshold()
@@ -716,7 +716,7 @@ ManualAlignImages.Staffli <- function (
   counter <- NULL
   coords.ls <- NULL
   transformations <-  ifelse(rep(type %in% c("processed", "prossesed.masks"), length(names(object))), object@transformations, lapply(seq_along(names(object)), function(i) diag(c(1, 1, 1))))
-  tr.matrices <- lapply(object@transformations, function(x) diag(c(1, 1, 1)))
+  tr.matrices <- lapply(transformations, function(x) diag(c(1, 1, 1)))
   image.dims <- lapply(object[type], dim)
 
 
@@ -903,7 +903,7 @@ ManualAlignImages.Staffli <- function (
 
     # Obtain alignment matrix
     tr <- alignment.matrices[[i]]
-    transformations[[i]] <- tr%*%tr.matrices[[i]]
+    transformations[[i]] <- tr%*%transformations[[i]]
 
     map.rot.backward <- generate.map.rot(tr)
     map.rot.forward <- generate.map.rot(tr, forward = TRUE)

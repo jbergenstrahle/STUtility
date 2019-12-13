@@ -9,7 +9,8 @@ FeatureOverlay(object, features, sample.index = 1, spots = NULL,
   blend = FALSE, pt.size = 2, pt.alpha = 1, shape.by = NULL,
   palette = NULL, cols = NULL, grid.ncol = NULL,
   center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE, ...)
+  split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE,
+  show.sb = TRUE, value.scale = c("samplewise", "all"), ...)
 }
 \arguments{
 \item{object}{Seurat object}

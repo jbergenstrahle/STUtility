@@ -178,9 +178,12 @@ SubsetSTData <- function (
     st.object@dims <- st.object@dims[samples]
   }
 
+  st.object@samplenames <- paste0(samples)
   object@tools$Staffli <- st.object
   return(object)
 }
+
+# TODO: fix sample names when merging
 
 #' Merge two or more Seurat objects containing Staffli image data
 #'

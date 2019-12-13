@@ -11,7 +11,8 @@ ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
   dark.theme = FALSE, highlight.edges = TRUE, ncol = NULL,
   grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
   center.tissue = FALSE, theme = theme_void(), verbose = FALSE,
-  sb.size = 2.5, ...)
+  sb.size = 2.5, show.sb = TRUE, value.scale = c("samplewise",
+  "all"), ...)
 }
 \arguments{
 \item{object}{Seurat object}

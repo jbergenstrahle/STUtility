@@ -4,7 +4,7 @@
 \alias{HSVFeaturePlot}
 \title{HSV encoded plots}
 \usage{
-HSVFeaturePlot(object, features, plot.type = "spots",
+HSVFeaturePlot(object, features, ncol = NULL, plot.type = "spots",
   split.hsv = FALSE, indices = NULL, spots = NULL, min.cutoff = NA,
   max.cutoff = NA, slot = "data", pt.size = 1, pt.alpha = 1,
   shape.by = NULL, sigma = 2, highlight.edges = FALSE, cols = NULL,
@@ -18,6 +18,9 @@ HSVFeaturePlot(object, features, plot.type = "spots",
     \item An \code{Assay} feature (e.g. a gene name - "MS4A1")
     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 }}
+
+\item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
+in just in one row or one column.}
 
 \item{plot.type}{Select one of 'spots' or 'smooth' [default: 'spots']}
 

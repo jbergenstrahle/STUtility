@@ -1,3 +1,6 @@
+#' @include generics.R Staffli.R
+NULL
+
 #' @importFrom shiny debounce observeEvent reactive
 #' @importFrom data.table as.data.table
 #' @importFrom ggplot2
@@ -26,6 +29,8 @@
 #' This function takes a seurat object with stored image locations and opens up the manual selection tool in the default browser
 #'
 #' @param object Seurat object
+#' @param res Tissue HE image width in pixels
+#' @param verbose Print messages
 #'
 #' @export
 #'
@@ -130,6 +135,10 @@ ManualAnnotation <- function (
 #' @param SpotSize geom_point size
 #' @param res resolution of the image
 #'
+#' @importFrom zeallot %<-%
+#' @importFrom magick image_read image_scale image_info geometry_size_pixels
+#' @importFrom ggplot2 ggplot aes scale_x_continuous scale_y_continuous theme element_rect element_blank theme_minimal
+#'
 #' @keywords internal
 
 make.plot <- function (
@@ -140,7 +149,7 @@ make.plot <- function (
   SpotSize,
   res
 ) {
-  object.use <- colnames(object[, which(st.object[[, "sample", drop = T]] == sampleNr)])
+  object.use <- rownames(subset(object@tools$Staffli@meta.data, sample == sampleNr))
   object <- SubsetSTData(object, spots = object.use)
   st.object <- GetStaffli(object)
   coordinates <- data.frame(x = st.object[[, "pixel_x", drop = T]],
@@ -156,8 +165,14 @@ make.plot <- function (
 
   c(ymin, ymax) %<-% range(coordinates$y)
   c(xmin, xmax) %<-% range(coordinates$x)
+
+  xmin <- ymin <- min(c(xmin, ymin))
+  xmax <- ymax <- max(c(xmax, ymax))
+
   c(ymin, xmin) %<-% { c(ymin, xmin) %>% map(~. - 3 * r) }
   c(ymax, xmax) %<-% { c(ymax, xmax) %>% map(~. + 3 * r) }
+
+  image <- as.raster(image)
 
   image <- grid::rasterGrob(
     image,
@@ -165,7 +180,6 @@ make.plot <- function (
     height = unit(1, "npc"),
     interpolate = TRUE
   )
-
 
   if (!is.null(image)) {
     ymin <- max(ymin, 1)

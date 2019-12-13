@@ -307,11 +307,16 @@ draw_scalebar <- function (
   sb.size = 2.5,
   dark.theme = FALSE
 ) {
+
+  if (sb.size == 0) {
+    return(p)
+  }
   end.width <- sb.size/25
   mid.width <- sb.size/50
   sb.color = ifelse(dark.theme, "white", "black")
+
   if (!is.null(pxum)) {
-    p + geom_segment(data = pxum, aes(x = x, xend = xend, y = y, yend = y, group = sample), color = sb.color) +
+    p <- p + geom_segment(data = pxum, aes(x = x, xend = xend, y = y, yend = y, group = sample), color = sb.color) +
       geom_segment(data = pxum, aes(x = x, xend = x, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width, group = sample), color = sb.color) +
       geom_segment(data = pxum, aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
       geom_segment(data = pxum, aes(x = x + (2*(xend - x))/5, xend = x + (2*(xend - x))/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width, group = sample), color = sb.color) +
@@ -320,7 +325,7 @@ draw_scalebar <- function (
       geom_segment(data = pxum, aes(x = xend, xend = xend, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width, group = sample), color = sb.color) +
       geom_text(data = pxum, aes(x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), group = sample), size = sb.size, color = sb.color)
   } else {
-    p + geom_segment(aes(x = x, xend = xend, y = y, yend = y), color = sb.color) +
+    p <- p + geom_segment(aes(x = x, xend = xend, y = y, yend = y), color = sb.color) +
       geom_segment(aes(x = x, xend = x, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width), color = sb.color) +
       geom_segment(aes(x = x + (xend - x)/5, xend = x + (xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
       geom_segment(aes(x = x + 2*(xend - x)/5, xend = x + 2*(xend - x)/5, y = y - (xend - x)*mid.width, yend = y + (xend - x)*mid.width), color = sb.color) +
@@ -329,4 +334,58 @@ draw_scalebar <- function (
       geom_segment(aes(x = xend, xend = xend, y = y - (xend - x)*end.width, yend = y + (xend - x)*end.width), color = sb.color) +
       annotate(geom = "text", x = x + (xend - x)/2, y = y + (xend - x)/3, label = paste0("500 ", "\u03bcm"), size = sb.size, color = sb.color)
   }
+  return(p)
+}
+
+
+#' Prep scalebar
+#'
+#' @param st.object An object of class 'Staffli'
+#' @param data data.frame for plotting
+#' @param data.type String specifying the class of the variable used for splitting
+#' @param indices Integer vector specifying sample indices to include in the plot
+#' @param split.labels Split plots
+#' @param features Features included in data
+#' @param dims List of image dimensions
+#' @param show.sb Return NULL if FALSE
+#'
+#' @return A data.frame containing positions of a scale bar used for plotting
+#'
+
+prep.sb <- function (
+  st.object,
+  data,
+  data.type,
+  indices,
+  split.labels,
+  features,
+  dims,
+  show.sb
+) {
+  if (show.sb) {
+    if (length(x = st.object@pixels.per.um) > 0) {
+      pixels.per.um <- st.object@pixels.per.um[indices]
+      if (split.labels) {
+        if (length(x = features) > 1) stop(paste0("Only one feature allowed when splitting labels ..."), call. = FALSE)
+        if (!data.type %in% c("character", "factor")) stop(paste0("Only categorical variables can be used for splitting ..."), call = FALSE)
+        pxum <- data.frame(pixels.per.um = rep(pixels.per.um, length(unique(data[, features]))), sample = unique(data[, features]))
+        hewidths <- rep(dims[[1]][1], length(unique(data[, features])))
+        heheights <- rep(dims[[1]][2], length(unique(data[, features])))
+      } else {
+        pxum <- data.frame(pixels.per.um, sample = paste0(indices))
+        hewidths <- lapply(dims, function(x) x[1]) %>% unlist()
+        heheights <- lapply(dims, function(x) x[2]) %>% unlist()
+      }
+      pxum$sb500 <- pxum$pixels.per.um*500
+      pxum$hewidth <-  hewidths
+      pxum$x <- 7*pxum$hewidth/9
+      pxum$xend <- 7*pxum$hewidth/9 + pxum$sb500
+      pxum$y <- heheights - heheights/8
+    } else {
+      pxum <- NULL
+    }
+  } else {
+    pxum <- NULL
+  }
+  return(pxum)
 }

@@ -30,22 +30,26 @@ Imports:
     Morpho (>= 2.7),
     Rvcg (>= 0.18),
     viridis (>= 0.5.0),
+    spatstat (>= 1.61)
 Suggests: 
     knitr,
     rmarkdown,
     plotly (>= 4.9.0),
     shiny (>= 1.3.0),
-	ggiraph (>= 0.6.1),
-	shinyjs (>= 1.0)
+	  ggiraph (>= 0.6.1),
+	  shinyjs (>= 1.0),
+	  Giotto (>= 0.1.4)
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 Collate: 
     '2D_point_pattern.R'
+    '3D_viusalization.R'
     'HSVencoding.R'
     'Image_resolution_switch.R'
     'Mask_functions.R'
     'QC.R'
     'Rigid_transformation.R'
+    'Spatial_genes.R'
     'generics.R'
     'Staffli.R'
     'Visualization_utilities.R'

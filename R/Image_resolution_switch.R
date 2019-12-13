@@ -19,7 +19,7 @@
 #' @param verbose Print messages
 #'
 #' @importFrom magick image_read image_scale image_info
-#' @importFrom imager as.cimg magick2cimg
+#' @importFrom imager as.cimg magick2cimg imsub
 #' @importFrom grDevices as.raster
 #'
 #' @export
@@ -44,7 +44,6 @@ SwitchResolution <- function (
 
   # Check if masked images are available
   if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-
   st.object <- GetStaffli(object)
 
   if (all(!c("masked", "processed") %in% rasterlists(st.object))) stop("No image transformations have been executed. Aborting ...", call. = FALSE)
@@ -57,7 +56,7 @@ SwitchResolution <- function (
   high.res.images <- setNames(lapply(seq_along(names(st.object)), function(i) {
     x <- st.object@imgs[i]
     im <- image_read(path = x) %>% image_scale(paste0(xdim))
-    if (verbose) cat(paste0("Loaded image ", i, " at ", paste0(image_info(im)$width), "x", image_info(im)$height), "resolution ... \n")
+    if (verbose) cat(paste0("Loaded sample ", i, " image at ", paste0(image_info(im)$width), "x", image_info(im)$height), "resolution ... \n")
     as.raster(im)
   }), nm = names(st.object))
 
@@ -82,7 +81,7 @@ SwitchResolution <- function (
       }
     }
 
-    if (verbose) cat(paste0("Scaled mask ", i, " to ", paste0(ncol(msk)), "x", nrow(msk)), "resolution ... \n")
+    if (verbose) cat(paste0("Scaled sample ", i, " image mask to ", paste0(ncol(msk)), "x", nrow(msk)), "resolution ... \n")
     return(msk)
   }), nm = names(st.object))
 
@@ -93,7 +92,7 @@ SwitchResolution <- function (
     msked.im <- im*msk
     msked.im <- as.raster(msked.im)
     msked.im[msked.im == "#000000"] <- "#FFFFFF"
-    if (verbose) cat(paste0("Finished masking image ", i, "... \n"))
+    if (verbose) cat(paste0("Finished masking sample ", i, " image ... \n"))
     return(msked.im)
   }), nm = names(st.object))
 
@@ -119,13 +118,13 @@ SwitchResolution <- function (
       map.affine.forward <- generate.map.affine(tr, forward = TRUE)
 
       # Warp pixels
-      if (verbose) cat(paste0("Warping pixel coordinates for ", i, " ... \n"))
+      if (verbose) cat(paste0("Warping pixel coordinates for sample ", i, " ... \n"))
       warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.affine.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
       warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
 
       if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
-      imat <- imwarp(m, map = map.affine.backward, dir = "backward", interpolation = "cubic")
-      if (verbose) cat(paste0("Scaling processed image mask for ", i, " ... \n"))
+      imat <- Warp(m, map.affine.backward) %>% as.cimg()
+      if (verbose) cat(paste0("Scaling processed mask for sample ", i, " image ... \n"))
       imat.msk <- image_read(processed.masks[[i]]) %>% image_scale(paste0(xdim)) %>% magick2cimg()*255
       #inds <- which(imat.msk != 255)
 
@@ -147,7 +146,7 @@ SwitchResolution <- function (
       imat.masked <- imat.masked + (!threshold(imat.msk, thr = 1))*255
       imat.masked[imat.masked > 255] <- 255
 
-      if (verbose) cat(paste0(" Image ", i, " processing complete. \n\n"))
+      if (verbose) cat(paste0(" Sample ", i, " image processing complete. \n\n"))
       processed.images[[i]] <- imat.masked %>% as.raster()
       processed.masks[[i]] <- imat.msk %>% as.raster()
     }

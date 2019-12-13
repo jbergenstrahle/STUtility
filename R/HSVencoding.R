@@ -58,6 +58,7 @@
 HSVFeaturePlot <- function (
   object,
   features,
+  ncol = NULL,
   plot.type = 'spots',
   split.hsv = FALSE,
   indices = NULL,
@@ -184,9 +185,10 @@ HSVFeaturePlot <- function (
     # Plot combined HSV
     if (!split.hsv) {
       plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
-                     palette = NULL, cols = NULL, rev.cols = F, ncol, spot.colors = data$cols,
+                     palette = NULL, cols = NULL, ncol, spot.colors = data$cols,
                      center.zero = F, center.tissue = F, plot.title = "",
-                     dims, FALSE, theme = theme, ...)
+                     dims, FALSE, theme = theme, dark.theme = dark.theme,
+                     pxum = NULL, sb.size = 2.5, ...)
       if (dark.theme) {
         plot <- plot + dark_theme()
       }
@@ -197,9 +199,10 @@ HSVFeaturePlot <- function (
     } else {
       plots <- lapply(full.data.split, function (data) {
         plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
-               palette = NULL, cols = NULL, rev.cols = F, ncol, spot.colors = data$cols,
+               palette = NULL, cols = NULL, ncol, spot.colors = data$cols,
                center.zero = F, center.tissue = F, plot.title = "",
-               dims, FALSE, theme = theme, ...)
+               dims, FALSE, theme = theme, dark.theme = dark.theme,
+               pxum = NULL, sb.size = 2.5, ...)
         if (dark.theme) {
           plot <- plot + dark_theme()
         }
