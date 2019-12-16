@@ -13,7 +13,7 @@ R/prep_files.R
 R/3D_alignment.R
 R/MultiCCA.R
 vignettes/MultiCCA_vignette.Rmd
-R/NMF_global_functions.R
+#R/NMF_global_functions.R
 R/NMF_tests.R
 saved/*
 inst/rmarkdown
