@@ -1,7 +1,9 @@
 #' @include generics.R Staffli.R
 NULL
 
-#' @rdname improc.utils
+#' Finds edges of a mask and returns a set of x,y coordinates
+#' aligned along the edges
+#'
 #' @method get.edges Staffli
 #'
 #' @return  A list of data.frames with edge coordinates
@@ -36,7 +38,9 @@ get.edges.Staffli <- function (
   return(grad.sq)
 }
 
-#' @rdname improc.utils
+#' Finds edges of a mask and returns a set of x,y coordinates
+#' aligned along the edges
+#'
 #' @method get.edges Seurat
 #'
 #' @return  A list of data.frames with edge coordinates

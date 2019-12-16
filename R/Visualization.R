@@ -174,7 +174,7 @@ ST.DimPlot <- function (
 
   # Set feature scale limits
   value.scale <- match.arg(value.scale, c("samplewise", "all"))
-  if (value.scale == "all" & all(data.type %in% c("numeric", "integer"))) {
+  if (value.scale == "all") {
     limits <- c(min(data[, dims]), max(data[, dims]))
   } else if (value.scale == "samplewise") {
     limits <- NULL

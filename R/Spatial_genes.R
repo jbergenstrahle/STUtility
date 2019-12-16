@@ -24,8 +24,11 @@ GetSpatNet <- function (
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object... \n", call. = FALSE)
   st.object <- object@tools$Staffli
 
+  # Check if images are loaded
+  if (!all(c("pixel_x", "pixel_y") %in% colnames(st.object[[]]))) stop("He images need to be loaded before running this function ... \n")
+
   # spatial information
-  xys = st.object@meta.data[, c("x", "y", "sample")]
+  xys = setNames(st.object@meta.data[, c("pixel_x", "pixel_y", "sample")], c("x", "y", "sample"))
 
   # Split x, y, s
   xys.list <- split(xys, xys$sample)
@@ -41,8 +44,11 @@ GetSpatNet <- function (
     spotnames <- rownames(xys)
     names(spotnames) <- c(1:nrow(xys)) %>% paste0()
 
+    # Get spot distances
+    sdist <- st.object@pixels.per.um[i]
+
     nNeighbours <- nNeighbours %||% ifelse(platforms[i] == "Visium", 6, 4)
-    maxdist <- maxdist %||% ifelse(platforms[i] == "1k", 2, 1.5)
+    maxdist <- maxdist %||% ifelse(platforms[i] == "1k", 200*sdist, 150*sdist)
 
     knn_spatial <- dbscan::kNN(x = xys[, c("x", "y")] %>% as.matrix(), k = nNeighbours)
     knn_spatial.norm <- data.frame(from = rep(1:nrow(knn_spatial$id), nNeighbours),
@@ -340,6 +346,77 @@ SpatialGenes <- function (
     spatial_python_df = data.frame(genes = genes, scores = scores, stringsAsFactors = FALSE)
   })
 }
+
+
+#' Orders spatially correlated genes
+#'
+#' This function can be used to find genes with spatial structure in ST data
+#' by using lag vectors.
+#'
+#' \itemize{
+#'    \item{Builds a connection network from the array x,y coordinates for each sample. For a 'Visium' array, this would typically be 6 neighbours
+#'    because of the hexagonal structure of spots.}
+#'    \item{Combine connection networks from multiple samples}
+#'    \item{Compute the lag vector for each feature}
+#'    \item{Compute the correlation between the lag vector and the original vector}
+#' }
+#'
+#' @param object Seurat object
+#' @param assay Name of assay the function is being run on
+#' @param slot Slot to use as input [default: 'scale.data']
+#' @param features Features to rank
+#' @param max.dist Maximum allowed distance to define neighbouring spots [default: 1.5]
+#'
+#' @return data.frame with gene names and correlation scores
+#'
+#' @importFrom Matrix bdiag
+#'
+CorSpatialGenes <- function (
+  object,
+  assay = NULL,
+  slot = 'scale.data',
+  features = NULL,
+  nNeighbours = NULL,
+  maxdist = NULL
+) {
+
+  # Check if adespatial is installed
+  if (!require(adespatial)) stop("R package adespatial is required to run this function ... \n")
+  if (!require(spdep)) stop("R package spdep is required to run this function ... \n")
+
+  # Collect Staffli object
+  if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
+  st.object <- GetStaffli(object)
+  xy <- st.object@meta.data[, c("x", "y", "sample")]
+
+  # Obtain data
+  features <- features %||% VariableFeatures(object)
+  assay <- assay %||% DefaultAssay(object)
+  data.use <- GetAssayData(object, slot = slot, assay = assay)
+
+  # Create a combined network for the samples
+  CN <- do.call(rbind, GetSpatNet(object = object, nNeighbours = nNeighbours, maxdist = maxdist))
+  resCN <- as.matrix(data.frame(reshape2::dcast(CN, formula = from ~ to, value.var = "distance", fill = 0), row.names = 1))
+  empty.CN <- matrix(0, nrow = ncol(data.use), ncol = ncol(data.use), dimnames = list(colnames(data.use), colnames(data.use)))
+  empty.CN[rownames(resCN), gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))] <- resCN
+  listw <- mat2listw(empty.CN)
+  fun <- function (x) lag.listw(listw, x, TRUE)
+
+  # Calculate the lag matrix from the network
+  tablag <- apply(t(data.use), 2, fun)
+
+  # Compute correlations between the original data and the lag mtrix
+  sp.cor <- unlist(lapply(1:nrow(data.use), function(i) {
+    cor(data.use[i, ], tablag[, i])
+  }))
+
+  res <- data.frame(gene = rownames(data.use), cor = sp.cor)
+  res <- res[order(sp.cor, decreasing = T), ]
+  rownames(res) <- res$gene
+  return(res)
+}
+
+
 
 
 #' kmeans_binarize

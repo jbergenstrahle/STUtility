@@ -91,7 +91,9 @@ FeaturePlot3D <- function (
   slot = 'data',
   pt.size = 0.8,
   cols = NULL,
-  add.margins = 2
+  add.margins = 2,
+  do.layout = TRUE,
+  scene = "scene1"
 ) {
 
   # Check to see if Staffli object is present
@@ -136,15 +138,22 @@ FeaturePlot3D <- function (
     cs <- "Jet"
   }
 
-  plot_ly(na.omit(interpolated.data),
+  p <- plot_ly(na.omit(interpolated.data),
+          scene = scene,
           x = ~2e3-x, y = ~y, z = ~z,
           marker = list(color = ~val,
                         showscale = T,
                         colorscale = cs,
                         size = pt.size,
                         opacity = 0.6)) %>%
-    add_markers() %>%
-    layout(paper_bgcolor = 'rgb(0, 0, 0)', scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
+    add_markers()
+  if (do.layout) {
+    p <- p %>%
+      layout(paper_bgcolor = 'rgb(0, 0, 0)', scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
+    return(p)
+  } else {
+    return(p)
+  }
 }
 
 #' Create a plotly compatible colorscale
