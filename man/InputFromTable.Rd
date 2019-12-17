@@ -5,7 +5,7 @@
 \title{Create S4 object from info table.
 This function is a wrapper to create a complete S4 object with all the samples and metadata}
 \usage{
-InputFromTable(infotable, transpose = FALSE, topN = 0,
+InputFromTable(infotable, transpose = TRUE, topN = 0,
   min.gene.count = 0, min.gene.spots = 0, min.spot.feature.count = 0,
   min.spot.count = 0, annotation = NULL, id.column = NULL,
   replace.column = NULL, platform = "Visium",

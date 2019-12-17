@@ -69,6 +69,9 @@ If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradien
 \code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
 the interpretaion of the output plot.}
 
+\item{channels.use}{Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
+color names specified [default: c("red", "green", "blue)]}
+
 \item{center.tissue}{Adjust coordinates so that the center of the tissue is in the middle of the array along the y-axis. This can be useful if your
 samples have been placed in very different parts of the capture area and you want to center the plots in the middle. This is however unnecessary if
 you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\link{WarpImages}} and \code{\link{ManualAlignImages}})}

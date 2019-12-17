@@ -32,6 +32,8 @@ NULL
 #' @param shape.by You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
 #' and different shapes on spots
 #' @param grid.ncol Number of columns for display when combining plots. This option will only have an effect on the sample level structure.
+#' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
+#' color names specified [default: c("red", "green", "blue)]
 #' @param verbose Print messages
 #'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
@@ -292,6 +294,8 @@ ST.DimPlot <- function (
 #' @param shape.by You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
 #' and different shapes on spots
 #' @param grid.ncol Number of columns for display when combining plots. This option will only have an effect on the sample level structure.
+#' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
+#' color names specified [default: c("red", "green", "blue)]
 #' @param verbose Print messages
 #'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}

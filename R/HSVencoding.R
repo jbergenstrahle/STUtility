@@ -55,7 +55,7 @@
 #' @return A ggplot object
 #' @export
 
-HSVFeaturePlot <- function (
+HSVPlot <- function (
   object,
   features,
   ncol = NULL,
