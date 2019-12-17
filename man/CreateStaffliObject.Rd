@@ -6,6 +6,9 @@
 \usage{
 CreateStaffliObject(imgs = NULL, meta.data, xdim = 400,
   platforms = NULL)
+
+CreateStaffliObject(imgs = NULL, meta.data, xdim = 400,
+  platforms = NULL)
 }
 \arguments{
 \item{imgs}{Character vector specifying paths to images in jpg or png format.}
@@ -17,7 +20,19 @@ which maps spots to a certain image.}
 \item{xdim}{Specifies the width of the scaled images in pixels [default: 400 pixels]}
 
 \item{platform}{Specify the platform used to generate the ST data [options: 'Visium', '2k', '1k']}
+
+\item{imgs}{Character vector specifying paths to images in jpg or png format.}
+
+\item{meta.data}{Spot-level metadata to add to the Staffli object. Should be a data.frame with
+required fields 'x' and 'y' which specifies the ST array coorindates and a column calles 'sample'
+which maps spots to a certain image.}
+
+\item{xdim}{Specifies the width of the scaled images in pixels [default: 400 pixels]}
+
+\item{platform}{Specify the platform used to generate the ST data [options: 'Visium', '2k', '1k']}
 }
 \description{
+Create a Staffli object from set of images and associated spot coordinates.
+
 Create a Staffli object from set of images and associated spot coordinates.
 }

@@ -1,4 +1,5 @@
-library(swne)
+#' @include generics.R STaffli.R
+NULL
 
 #' Plot spatial heatmap of NMF factors
 #'

@@ -25,7 +25,7 @@ GetSpatNet <- function (
   st.object <- object@tools$Staffli
 
   # Check if images are loaded
-  if (!all(c("pixel_x", "pixel_y") %in% colnames(st.object[[]]))) stop("He images need to be loaded before running this function ... \n")
+  if (length(x = st.object@rasterlists) == 0) stop("He images need to be loaded before running this function ... \n")
 
   # spatial information
   xys = setNames(st.object@meta.data[, c("pixel_x", "pixel_y", "sample")], c("x", "y", "sample"))
@@ -371,6 +371,8 @@ SpatialGenes <- function (
 #'
 #' @importFrom Matrix bdiag
 #'
+#' @export
+#'
 CorSpatialGenes <- function (
   object,
   assay = NULL,
@@ -393,12 +395,15 @@ CorSpatialGenes <- function (
   features <- features %||% VariableFeatures(object)
   assay <- assay %||% DefaultAssay(object)
   data.use <- GetAssayData(object, slot = slot, assay = assay)
+  data.use <- data.use[features, ]
 
   # Create a combined network for the samples
   CN <- do.call(rbind, GetSpatNet(object = object, nNeighbours = nNeighbours, maxdist = maxdist))
   resCN <- as.matrix(data.frame(reshape2::dcast(CN, formula = from ~ to, value.var = "distance", fill = 0), row.names = 1))
   empty.CN <- matrix(0, nrow = ncol(data.use), ncol = ncol(data.use), dimnames = list(colnames(data.use), colnames(data.use)))
-  empty.CN[rownames(resCN), gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))] <- resCN
+  colnames(resCN) <- gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))
+  colnames(resCN) <- gsub(pattern = "^X", replacement = "", x = colnames(resCN))
+  empty.CN[rownames(resCN), colnames(resCN)] <- resCN
   listw <- mat2listw(empty.CN)
   fun <- function (x) lag.listw(listw, x, TRUE)
 

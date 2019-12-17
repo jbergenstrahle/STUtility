@@ -6,6 +6,9 @@
 \usage{
 MergeSTData(x = NULL, y = NULL, add.spot.ids = NULL,
   merge.data = TRUE, idents = NULL, project = "SeuratProject", ...)
+
+MergeSTData(x = NULL, y = NULL, add.spot.ids = NULL,
+  merge.data = TRUE, idents = NULL, project = "SeuratProject", ...)
 }
 \arguments{
 \item{x}{Seurat object}
@@ -21,8 +24,27 @@ This is recommended if the same normalization approach was applied to all object
 \item{project}{Sets the project name for the Seurat object.}
 
 \item{...}{Arguments passed to other methods}
+
+\item{x}{Seurat object}
+
+\item{y}{Seurat object (or list of multiple Seurat obejctsa)}
+
+\item{add.spot.ids}{A character vector of length(x = c(x, y)). Appends the corresponding
+values to the start of each objects' spot names.}
+
+\item{merge.data}{Merge the data slots instead of just merging the counts (which requires renormalization).
+This is recommended if the same normalization approach was applied to all objects.}
+
+\item{project}{Sets the project name for the Seurat object.}
+
+\item{...}{Arguments passed to other methods}
 }
 \description{
+Merges Seurat objects containing Spatial Transcriptomics data while
+making sure that the images and spot coordinates are correctly structures.
+If you use the default \code{\link{merge}} function you will not be able
+to use any of the STUtility visualization methods on the output object.
+
 Merges Seurat objects containing Spatial Transcriptomics data while
 making sure that the images and spot coordinates are correctly structures.
 If you use the default \code{\link{merge}} function you will not be able
