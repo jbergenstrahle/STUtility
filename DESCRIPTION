@@ -22,11 +22,12 @@ Encoding: UTF-8
 LazyData: true
 Depends:
     Seurat (>= 3.0.0),
-	  SingleCellExperiment (>= 1.2.0),
-	  ggplot2 (>= 3.2.0)
+	SingleCellExperiment (>= 1.2.0),
+	ggplot2 (>= 3.2.0)
 Imports:
     akima (>= 0.6),
     imager,
+	raster (>= 3.0),
     magick (>= 2.0),
     Morpho (>= 2.7),
     Rvcg (>= 0.18),
