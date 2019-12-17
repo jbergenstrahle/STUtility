@@ -4,10 +4,10 @@
 \alias{DimPlot3D}
 \title{Plots the values of a feature in 3D}
 \usage{
-DimPlot3D(object, dims = 1, reduction = NULL, mode = c("cloud",
-  "spots"), zcoords = NULL, slot = "data", min.cutoff = NA,
-  max.cutoff = NA, blend = FALSE, pt.size = NULL, pt.alpha = 1,
-  cols = NULL, add.margins = 0, channels.use = NULL,
+DimPlot3D(object, spots = NULL, dims = 1, reduction = NULL,
+  mode = c("cloud", "spots"), zcoords = NULL, slot = "data",
+  min.cutoff = NA, max.cutoff = NA, blend = FALSE, pt.size = NULL,
+  pt.alpha = 1, cols = NULL, add.margins = 0, channels.use = NULL,
   scene = "scene1", return.data = FALSE, dark.theme = FALSE,
   verbose = FALSE)
 }
@@ -46,6 +46,8 @@ color names specified [default: c("red", "green", "blue)]}
 instead of plotting}
 
 \item{dark.theme}{Draws the plot with a dark theme}
+
+\item{e.anterior}{<- spots Subset spots to plot}
 }
 \description{
 Plots the values of a feature in 3D

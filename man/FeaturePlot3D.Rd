@@ -4,14 +4,17 @@
 \alias{FeaturePlot3D}
 \title{Plots the values of a feature in 3D}
 \usage{
-FeaturePlot3D(object, features, mode = c("cloud", "spots"),
-  zcoords = NULL, slot = "data", min.cutoff = NA, max.cutoff = NA,
-  blend = FALSE, pt.size = NULL, pt.alpha = 1, cols = NULL,
-  add.margins = 0, channels.use = NULL, scene = "scene1",
-  return.data = FALSE, dark.theme = FALSE, verbose = FALSE)
+FeaturePlot3D(object, spots = NULL, features, mode = c("cloud",
+  "spots"), zcoords = NULL, slot = "data", min.cutoff = NA,
+  max.cutoff = NA, blend = FALSE, pt.size = NULL, pt.alpha = 1,
+  cols = NULL, add.margins = 0, channels.use = NULL,
+  scene = "scene1", return.data = FALSE, dark.theme = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}
+
+\item{spots}{Subset spots to plot}
 
 \item{features}{Features to plot}
 

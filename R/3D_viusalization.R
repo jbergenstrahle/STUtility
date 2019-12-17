@@ -80,6 +80,7 @@ Create3DStack <- function (
 #' Plots the values of a feature in 3D
 #'
 #' @param object Seurat object
+#' @param e.anterior <- spots Subset spots to plot
 #' @param dims Dimensions to plot
 #' @param reduction Reduction object to pull data from
 #' @param slot Which slot to pull the data from? [default: 'data']
@@ -106,6 +107,7 @@ Create3DStack <- function (
 
 DimPlot3D <- function (
   object,
+  spots = NULL,
   dims = 1,
   reduction = NULL,
   mode = c("cloud", "spots"),
@@ -148,9 +150,12 @@ DimPlot3D <- function (
     default.reductions[reduc.use]
   }
 
+  if (!is.null(spots) & mode == "cloud") stop("Subsetting of spots only works if mode is set to 'spots' ... \n", call. = FALSE)
+  spots <- spots %||% colnames(object)
+
   # prepare data
   signs <- sign(dims); dims <- abs(dims)
-  spots <- spots %||% colnames(x = object)
+  #spots <- spots %||% colnames(x = object)
   data <- Embeddings(object = object[[reduction]])[spots, dims, drop = FALSE]
   if (verbose) cat(paste0("Selected ", length(spots), " spots"))
   data <- as.data.frame(x = t(t(data)*signs))
@@ -165,6 +170,7 @@ DimPlot3D <- function (
     coords$z <- i
     return(coords)
   }))
+  coords <- coords[spots, ]
 
   # Use zcoords to convert z axis
   def_z <- unique(coords$z)
@@ -307,6 +313,7 @@ DimPlot3D <- function (
 #' Plots the values of a feature in 3D
 #'
 #' @param object Seurat object
+#' @param spots Subset spots to plot
 #' @param features Features to plot
 #' @param slot Which slot to pull the data from? [default: 'data']
 #' @param zcoords Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:#sections]
@@ -332,6 +339,7 @@ DimPlot3D <- function (
 
 FeaturePlot3D <- function (
   object,
+  spots = NULL,
   features,
   mode = c("cloud", "spots"),
   zcoords = NULL,
@@ -367,7 +375,9 @@ FeaturePlot3D <- function (
   }
 
   # Get value
-  values <- FetchData(object = object, vars = features, slot = slot)[, , drop = T]
+  if (!is.null(spots) & mode == "cloud") stop("Subsetting of spots only works if mode is set to 'spots' ... \n", call. = FALSE)
+  spots <- spots %||% colnames(object)
+  values <- FetchData(object = object, vars = features, slot = slot)[spots, , drop = T]
 
   coords <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
@@ -378,6 +388,7 @@ FeaturePlot3D <- function (
     coords$z <- i
     return(coords)
   }))
+  coords <- coords[spots, ]
 
   # Use zcoords to convert z axis
   def_z <- unique(coords$z)
