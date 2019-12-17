@@ -62,6 +62,9 @@ If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradien
 \code{scale_color_gradientn}. If center.zero is set to FALSE, the colorscale will simply map the values in equally spaced intervals which could skew
 the interpretaion of the output plot.}
 
+\item{channels.use}{Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
+color names specified [default: c("red", "green", "blue)]}
+
 \item{verbose}{Print messages}
 
 \item{split.labels}{Only works if the features are specified by character vectors.
