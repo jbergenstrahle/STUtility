@@ -6,9 +6,6 @@
 \usage{
 SubsetSTData(object, expression, spots = NULL, features = NULL,
   idents = NULL, ...)
-
-SubsetSTData(object, expression, spots = NULL, features = NULL,
-  idents = NULL, ...)
 }
 \arguments{
 \item{expression}{Logical expression indicating features/variables to keep}
@@ -20,24 +17,8 @@ SubsetSTData(object, expression, spots = NULL, features = NULL,
 \item{idents}{A vector of identity classes to keep}
 
 \item{...}{Extra parameters passed to WhichCells, such as slot, invert, or downsample}
-
-\item{spots}{A vector of spots to keep}
-
-\item{features}{A vector of features to keep}
-
-\item{expression}{Logical expression indicating features/variables to keep}
-
-\item{idents}{A vector of identity classes to keep}
-
-\item{...}{Extra parameters passed to WhichCells, such as slot, invert, or downsample}
 }
 \description{
-Subsets a Seurat object containing Spatial Transcriptomics data while
-making sure that the images and the spot coordinates are subsetted correctly.
-If you use the default \code{\link{subset}} function there is a risk that images
-are kept in the output Seurat object which will make the STUtility functions
-crash.
-
 Subsets a Seurat object containing Spatial Transcriptomics data while
 making sure that the images and the spot coordinates are subsetted correctly.
 If you use the default \code{\link{subset}} function there is a risk that images

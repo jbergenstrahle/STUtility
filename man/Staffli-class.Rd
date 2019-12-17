@@ -9,40 +9,10 @@
 The Staffli object is a representation of images for Spatial Transcriptomics experiments
 that contains lists of scaled images in raster format and coordinates for the corresponding
 spots that can be used to map expression data onto the images.
-
-The Staffli object is a representation of images for Spatial Transcriptomics experiments
-that contains lists of scaled images in raster format and coordinates for the corresponding
-spots that can be used to map expression data onto the images.
 }
 \section{Slots}{
 
 \describe{
-\item{\code{imgs}}{A character vector of paths to the raw HE images.}
-
-\item{\code{rasterlists}}{A list of lists containing images in 'raster' format}
-
-\item{\code{transformations}}{A list of 3x3 transformation matrices used to transform (x,y)-coordinates
-of an aligned image to a reference image.}
-
-\item{\code{meta.data}}{Contains meta-information about each spot, starting with regular (x,y)-coordinates
-found in the headers of gene-count matrices obtained with the ST method. The meta.data
-can also contain (adj_x, adj_y)-coordinates which are defined in the same grid but adjusted using the
-ST spot detector and (pixel_x, pixel_y)-coordinates which are defined in the coordinate system of the
-original image. Finally, a "sample" column is used to group the spots by image (capture area).}
-
-\item{\code{xdim}}{The width of the scaled images in pixels.}
-
-\item{\code{limits}}{Specifies the limits of the array (e.g. limits = c(100, 100) means that the array
-is a 100 spots wide and a 100 spots high)}
-
-\item{\code{dims}}{List of numerical vectors specifying the dimensions of the original images.}
-
-\item{\code{platform}}{Specify the platform used to generate the ST data [options: 'Visium', '2k', '1k']}
-
-\item{\code{samplenames}}{Character specifying the samplenames.}
-
-\item{\code{version}}{Package version.}
-
 \item{\code{imgs}}{A character vector of paths to the raw HE images.}
 
 \item{\code{rasterlists}}{A list of lists containing images in 'raster' format}

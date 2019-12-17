@@ -1,4 +1,4 @@
-#' @include generics.R STaffli.R
+#' @include generics.R Staffli.R
 NULL
 
 #' Plot spatial heatmap of NMF factors
