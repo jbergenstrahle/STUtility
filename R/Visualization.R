@@ -1108,11 +1108,15 @@ DimOverlay <- function (
   }
 
   # Set feature scale limits
-  value.scale <- match.arg(value.scale, c("samplewise", "all"))
-  if (value.scale == "all") {
-    limits <- c(min(data[, features]), max(data[, features]))
-  } else if (value.scale == "samplewise") {
-    limits <- NULL
+  if (is.list(value.scale) & length(value.scale) == length(dims)) {
+    limits <- setNames(value.scale, dims)
+  } else {
+    value.scale <- match.arg(value.scale, c("samplewise", "all"))
+    if (value.scale == "all") {
+      limits <- c(min(data[, dims]), max(data[, dims]))
+    } else if (value.scale == "samplewise") {
+      limits <- NULL
+    }
   }
 
   if (blend) {
@@ -1125,7 +1129,8 @@ DimOverlay <- function (
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE, dark.theme, pixels.per.um = pixels.per.um, ...)
+                         plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE,
+                         dark.theme, pixels.per.um = pixels.per.um, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1137,7 +1142,7 @@ DimOverlay <- function (
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
                            ncol = NULL, spot.colors, center.zero, plot.title = d, FALSE, dark.theme, pixels.per.um = pixels.per.um,
-                           limits, ...)
+                           limits[[d]], ...)
 
       return(plot)
     })
@@ -1323,11 +1328,15 @@ FeatureOverlay <- function (
   }
 
   # Set feature scale limits
-  value.scale <- match.arg(value.scale, c("samplewise", "all"))
-  if (value.scale == "all" & all(data.type %in% c("numeric", "integer"))) {
-    limits <- c(min(data[, features]), max(data[, features]))
-  } else if (value.scale == "samplewise") {
-    limits <- NULL
+  if (is.list(value.scale) & length(value.scale) == length(features)) {
+    limits <- setNames(value.scale, features)
+  } else {
+    value.scale <- match.arg(value.scale, c("samplewise", "all"))
+    if (value.scale == "all") {
+      limits <- c(min(data[, features]), max(data[, features]))
+    } else if (value.scale == "samplewise") {
+      limits <- NULL
+    }
   }
 
   if (blend) {
@@ -1340,7 +1349,8 @@ FeatureOverlay <- function (
     data <- data[, (ncol(data) - 2):ncol(data)]
     plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "), split.labels, dark.theme, pixels.per.um = pixels.per.um, ...)
+                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
+                         split.labels, dark.theme, pixels.per.um = pixels.per.um, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1352,7 +1362,7 @@ FeatureOverlay <- function (
     plots <- lapply(X = features, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
                            ncol = NULL, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um,
-                           limits, ...)
+                           limits[[d]], ...)
 
       return(plot)
     })
@@ -1608,6 +1618,7 @@ MultiDimOverlay <- function (
   channels.use = NULL,
   verbose = FALSE,
   dark.theme = FALSE,
+  value.scale = c("samplewise", "all"),
   ...
 ) {
 
@@ -1630,12 +1641,33 @@ MultiDimOverlay <- function (
   ncols.dims <- ncols.dims %||% length(x = dims)
   ncols.samples <- ncols.samples %||% 1
 
+  # Set scale if provided
+  if (is.numeric(value.scale) & length(value.scale) == 2) {
+    value.scale.list <- rep(list(value.scale), length(dims))
+  } else {
+    value.scale <- match.arg(value.scale, c("samplewise", "all"))
+    if (value.scale == "all") {
+      reduction <- reduction %||% {
+        default.reductions <- c('umap', 'tsne', 'pca', 'ica')
+        object.reductions <- FilterObjects(object = object, classes.keep = 'DimReduc')
+        reduc.use <- min(which(x = default.reductions %in% object.reductions))
+        default.reductions[reduc.use]
+      }
+      signs <- sign(dims); dims <- abs(dims)
+      data <- Embeddings(object = object[[reduction]])[spots, dims, drop = FALSE]
+      data <- as.data.frame(x = t(t(data)*signs))
+      value.scale.list <- lapply(data, range)
+    } else {
+      value.scale.list <- "samplewise"
+    }
+  }
   p.list <- lapply(remaining_samples, function(i) {
     DimOverlay(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
                reduction = reduction, shape.by = shape.by, palette = palette,
                cols = cols, grid.ncol = ncols.dims,
-               center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme, ... = ...)
+               center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,
+               value.scale = value.scale.list, ... = ...)
   })
   cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
 }
@@ -1715,6 +1747,7 @@ MultiFeatureOverlay <- function (
   channels.use = NULL,
   verbose = FALSE,
   dark.theme = FALSE,
+  value.scale = c("samplewise", "all"),
   ...
 ) {
 
@@ -1737,13 +1770,27 @@ MultiFeatureOverlay <- function (
   ncols.features <- ncols.features %||% length(x = features)
   ncols.samples <- ncols.samples %||% 1
 
+  # Set scale if provided
+  if (is.numeric(value.scale) & length(value.scale) == 2) {
+    value.scale.list <- rep(list(value.scale), length(features))
+  } else {
+    value.scale <- match.arg(value.scale, c("samplewise", "all"))
+    if (value.scale == "all") {
+      data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
+      value.scale.list <- lapply(data, range)
+    } else {
+      value.scale.list <- "samplewise"
+    }
+  }
+
   p.list <- lapply(remaining_samples, function(s) {
     FeatureOverlay(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
                    palette = palette, cols = cols,
                    grid.ncol = ncols.features, center.zero = center.zero,
-                   channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,... = ...)
+                   channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,
+                   value.scale = value.scale.list, ... = ...)
   })
 
   cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)

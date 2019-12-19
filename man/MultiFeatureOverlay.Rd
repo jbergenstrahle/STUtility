@@ -9,7 +9,8 @@ MultiFeatureOverlay(object, sampleids, spots = NULL,
   min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
   pt.size = 2, pt.alpha = 1, shape.by = NULL, palette = NULL,
   cols = NULL, center.zero = FALSE, channels.use = NULL,
-  verbose = FALSE, dark.theme = FALSE, ...)
+  verbose = FALSE, dark.theme = FALSE, value.scale = c("samplewise",
+  "all"), ...)
 }
 \arguments{
 \item{object}{Seurat object}

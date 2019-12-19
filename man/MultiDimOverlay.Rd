@@ -9,7 +9,8 @@ MultiDimOverlay(object, sampleids, spots = NULL, ncols.dims = NULL,
   min.cutoff = NA, max.cutoff = NA, blend = FALSE, pt.size = 1,
   pt.alpha = 1, reduction = NULL, shape.by = NULL,
   palette = "MaYl", cols = NULL, center.zero = FALSE,
-  channels.use = NULL, verbose = FALSE, dark.theme = FALSE, ...)
+  channels.use = NULL, verbose = FALSE, dark.theme = FALSE,
+  value.scale = c("samplewise", "all"), ...)
 }
 \arguments{
 \item{object}{Seurat object}
