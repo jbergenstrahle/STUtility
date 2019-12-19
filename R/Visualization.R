@@ -1637,7 +1637,7 @@ MultiDimOverlay <- function (
                cols = cols, grid.ncol = ncols.dims,
                center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme, ... = ...)
   })
-  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples))
+  cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
 }
 
 
@@ -1746,6 +1746,6 @@ MultiFeatureOverlay <- function (
                    channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,... = ...)
   })
 
-  plot(cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples))
+  cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
 }
 
