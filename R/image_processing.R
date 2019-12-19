@@ -269,8 +269,8 @@ MaskImages.Staffli <- function (
 
     if (!is.null(custom.msk.fkn)) {
       if (class(custom.msk.fkn) != "function") stop(paste0("custom.msk.fkn is not a function"), call. = FALSE)
-      seg <- custom.msk.fkn(im, ...)
-      if (dim(seg)[4] == 3) seg <- seg[, , , 1] %>% as.cimg()
+      seg <- custom.msk.fkn(im)#, ...)
+      if (dim(seg)[4] == 3) seg <- seg[, , , 1] %>% as.pixset()
       if (!"pixset" %in% class(seg)) stop(paste0("output from custom.msk.fkn is not a 'pxset' object"), call. = FALSE)
     } else {
       if (thresholding) im <- threshold(im)
@@ -699,6 +699,9 @@ ManualAlignImages.Staffli <- function (
   maxnum = 1e3
 ) {
 
+  # Check if ultiple samples are available
+  if (length(x = object@samplenames) == 1) stop("Only one sample present in the Seurat object. At least 2 samples are required for alignment ... \n", call. = FALSE)
+
   # Check if images have been masked
   if (!"masked" %in% rasterlists(object)) stop(paste0("You have to mask images before running manual alignment "), call. = FALSE)
 
@@ -877,6 +880,10 @@ ManualAlignImages.Staffli <- function (
 
   # Returned transformation matrices
   alignment.matrices <- runApp(list(ui = ui, server = server))
+  alignment.matrices <- lapply(alignment.matrices, function(tr) {
+    tr[2, 3] <- -tr[2, 3]
+    return(tr)
+  })
   if (verbose) cat(paste("Finished image alignment. \n\n"))
   processed.ids <- which(unlist(lapply(alignment.matrices, function(tr) {!all(tr == diag(c(1, 1, 1)))})))
 
@@ -905,8 +912,8 @@ ManualAlignImages.Staffli <- function (
     tr <- alignment.matrices[[i]]
     transformations[[i]] <- tr%*%transformations[[i]]
 
-    map.rot.backward <- generate.map.rot(tr)
-    map.rot.forward <- generate.map.rot(tr, forward = TRUE)
+    map.rot.backward <- generate.map.affine(tr)
+    map.rot.forward <- generate.map.affine(tr, forward = TRUE)
 
     # Obtain scale factors
     dims.raw <- as.numeric(object@dims[[i]][2:3])

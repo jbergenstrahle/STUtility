@@ -96,7 +96,10 @@ NMFRidgePlot <- function (
 #' @param nfeatures.print Number of genes to print for each factor
 #' @param reduction.name dimensional reduction name,  pca by default
 #' @param reduction.key dimensional reduction key, specifies the string before
-#' the number for the dimension names. factor by default
+#' @param n.cores Number of threds to use in computation
+#' @param order.by.spatcor Order factors by spatial correlation
+#'
+#' @export
 #'
 RunNMF <- function (
   object,
@@ -108,6 +111,7 @@ RunNMF <- function (
   reduction.name = "NMF",
   reduction.key = "factor_",
   n.cores = 7,
+  order.by.spcor = FALSE,
   ...
 ) {
   assay <- assay %||% DefaultAssay(object = object)
@@ -120,20 +124,22 @@ RunNMF <- function (
   cell.embeddings <- t(nmf.results$H)
 
   # Order factors based on spatial correlation
-  st.object <- GetStaffli(object)
-  m.list <- lapply(unique(st.object[[, "sample", drop = T]]), function(s) {
-    resCN <- adespatial::chooseCN(xy = xy, ask = FALSE, type = 6, plot.nb = FALSE, edit.nb = FALSE, result.type = "listw", k = 6)
-    m <- listw2mat(resCN)
-  })
-  nb <- Matrix::bdiag(m.list) %>% as.matrix()
-  listw <- mat2listw(nb)
-  fun <- function (x) lag.listw(listw, x, TRUE)
-  tablag <- apply(cell.embeddings, 2, fun)
-  sp.cor <- unlist(lapply(1:ncol(cell.embeddings), function(i) {
-    cor(cell.embeddings[, i], tablag[, i])
-  }))
-  cell.embeddings <- cell.embeddings[, order(sp.cor, decreasing = TRUE)]
-  feature.loadings <- feature.loadings[, order(sp.cor, decreasing = TRUE)]
+  if (order.by.spcor) {
+    st.object <- GetStaffli(object)
+    m.list <- lapply(unique(st.object[[, "sample", drop = T]]), function(s) {
+      resCN <- adespatial::chooseCN(xy = xy, ask = FALSE, type = 6, plot.nb = FALSE, edit.nb = FALSE, result.type = "listw", k = 6)
+      m <- listw2mat(resCN)
+    })
+    nb <- Matrix::bdiag(m.list) %>% as.matrix()
+    listw <- mat2listw(nb)
+    fun <- function (x) lag.listw(listw, x, TRUE)
+    tablag <- apply(cell.embeddings, 2, fun)
+    sp.cor <- unlist(lapply(1:ncol(cell.embeddings), function(i) {
+      cor(cell.embeddings[, i], tablag[, i])
+    }))
+    cell.embeddings <- cell.embeddings[, order(sp.cor, decreasing = TRUE)]
+    feature.loadings <- feature.loadings[, order(sp.cor, decreasing = TRUE)]
+  }
 
   rownames(x = feature.loadings) <- var.genes
   colnames(x = feature.loadings) <- paste0(reduction.key, 1:nfactors)

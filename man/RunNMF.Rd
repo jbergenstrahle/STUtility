@@ -6,7 +6,8 @@
 \usage{
 RunNMF(object, assay = NULL, features = NULL, nfactors = 20,
   ndims.print = 1:5, nfeatures.print = 30, reduction.name = "NMF",
-  reduction.key = "factor_", n.cores = 7, ...)
+  reduction.key = "factor_", n.cores = 7, order.by.spcor = FALSE,
+  ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -21,10 +22,13 @@ RunNMF(object, assay = NULL, features = NULL, nfactors = 20,
 
 \item{reduction.name}{dimensional reduction name,  pca by default}
 
-\item{reduction.key}{dimensional reduction key, specifies the string before
-the number for the dimension names. factor by default}
+\item{reduction.key}{dimensional reduction key, specifies the string before}
+
+\item{n.cores}{Number of threds to use in computation}
 
 \item{nfactors.print}{factorss to print genes for}
+
+\item{order.by.spatcor}{Order factors by spatial correlation}
 }
 \description{
 Run Non-negative Matrix Factorization

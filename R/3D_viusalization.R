@@ -753,6 +753,8 @@ cscale <- function (cols) {
 #' @param r A 'raster' object
 #' @param nx Number of cells to interpolate over across the x axis
 #'
+#' @importFrom raster coordinates
+#'
 #' @return data.frame object with point pattern and associated grid.cell number
 
 rasterize_scatter <- function (
@@ -760,8 +762,6 @@ rasterize_scatter <- function (
   r,
   nx
 ) {
-  #tab = table(cellFromXY(r, scatter[, 1:2]))
-  #r[as.numeric(names(tab))] = tab
   pixel.centers = coordinates(r)
   set1 = scatter[, 1:2]
   set2 = pixel.centers[, 1:2]

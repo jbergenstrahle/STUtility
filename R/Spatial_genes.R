@@ -9,6 +9,8 @@
 #' 'Visium' and '2k' platforms and 2 for the '1k' platform.
 #' @param minK Minimum nearest neigbhours if maxdist is not provided [default: 0]
 #'
+#' @importFrom dplyr group_by mutate ungroup
+#'
 #' @export
 #' @examples
 #' spatial.networks <- GetSpatNet(se)
@@ -48,7 +50,7 @@ GetSpatNet <- function (
     sdist <- st.object@pixels.per.um[i]
 
     nNeighbours <- nNeighbours %||% ifelse(platforms[i] == "Visium", 6, 4)
-    maxdist <- maxdist %||% ifelse(platforms[i] == "1k", 200*sdist, 150*sdist)
+    maxdist <- maxdist %||% ifelse(platforms[i] == "1k", 270*sdist, 150*sdist)
 
     knn_spatial <- dbscan::kNN(x = xys[, c("x", "y")] %>% as.matrix(), k = nNeighbours)
     knn_spatial.norm <- data.frame(from = rep(1:nrow(knn_spatial$id), nNeighbours),
@@ -389,12 +391,12 @@ CorSpatialGenes <- function (
   # Collect Staffli object
   if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
   st.object <- GetStaffli(object)
-  xy <- st.object@meta.data[, c("x", "y", "sample")]
 
   # Obtain data
   features <- features %||% VariableFeatures(object)
   assay <- assay %||% DefaultAssay(object)
   data.use <- GetAssayData(object, slot = slot, assay = assay)
+  if (length(data.use) == 0) stop(paste0(slot, " is empty in assay ", assay, ". Please normalise the data first or chose another slot  ... \n"), call. = FALSE)
   data.use <- data.use[features, ]
 
   # Create a combined network for the samples

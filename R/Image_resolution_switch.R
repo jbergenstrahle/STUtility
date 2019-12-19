@@ -76,7 +76,7 @@ SwitchResolution <- function (
         msk <- msk[-nrow(msk), ]
       }
     } else if (diff < 0) {
-      for (i in 1:abs(diff)) {
+      for (j in 1:abs(diff)) {
         msk <- rbind(as.matrix(msk), rep("#000000ff", ncol(msk))) %>% as.raster()
       }
     }

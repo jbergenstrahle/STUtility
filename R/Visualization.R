@@ -1109,7 +1109,7 @@ DimOverlay <- function (
 
   # Set feature scale limits
   value.scale <- match.arg(value.scale, c("samplewise", "all"))
-  if (value.scale == "all" & all(data.type %in% c("numeric", "integer"))) {
+  if (value.scale == "all") {
     limits <- c(min(data[, features]), max(data[, features]))
   } else if (value.scale == "samplewise") {
     limits <- NULL
@@ -1623,7 +1623,7 @@ MultiDimOverlay <- function (
 
   # Check that spots are present in all sampleids samples
   Staffli_meta_subset <- Staffli_meta[spots, ]
-  remaining_samples <- which(unique(Staffli_meta_subset$sample) %in% sampleids)
+  remaining_samples <- unique(Staffli_meta_subset$sample)[which(unique(Staffli_meta_subset$sample) %in% sampleids)]
   if (length(x = remaining_samples) != length(x = sampleids)) warning(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n",
                                                                              "Subsetting data to include samples ", paste(remaining_samples, collapse = ", "), "... \n"), call. = FALSE)
 
@@ -1730,7 +1730,7 @@ MultiFeatureOverlay <- function (
 
   # Check that spots are present in all sampleids samples
   Staffli_meta_subset <- Staffli_meta[spots, ]
-  remaining_samples <- which(unique(Staffli_meta_subset$sample) %in% sampleids)
+  remaining_samples <- unique(Staffli_meta_subset$sample)[which(unique(Staffli_meta_subset$sample) %in% sampleids)]
   if (length(x = remaining_samples) != length(x = sampleids)) warning(paste0("The selected spots are not present in all samples ", paste(sampleids, collapse = ", "), " ... \n",
                                                                              "Subsetting data to include samples ", paste(remaining_samples, collapse = ", "), "... \n"), call. = FALSE)
 
