@@ -218,6 +218,8 @@ rnmf <- function (
 #' @param features.return Number of features to return per factor
 #' @param features.use Select features to use for summary
 #'
+#' @export
+#'
 SummarizeAssocFeatures <- function (
   object,
   features.return = 10,

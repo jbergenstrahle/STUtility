@@ -105,6 +105,8 @@ CreateStaffliObject <- function (
   return(object)
 }
 
+# TODO: Fix samples when subsetting
+
 #' Subset a Seurat object containing Staffli image data
 #'
 #' Subsets a Seurat object containing Spatial Transcriptomics data while

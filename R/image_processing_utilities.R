@@ -56,7 +56,7 @@ get.edges.Seurat <- function (
   type = "masked.masks"
 ) {
   st.object <- GetStaffli(object)
-  edges <- get.edges(st.object)
+  edges <- get.edges(st.object, index = index, verbose = verbose, type = type)
   return(edges)
 }
 

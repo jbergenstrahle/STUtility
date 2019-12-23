@@ -103,11 +103,12 @@ SwitchResolution <- function (
     processed.images <- masked
     processed.masks <- st.object["processed.masks"]
     for (i in seq_along(transforms)) {
+      s <- unique(st.object@meta.data$sample)[i]
       # Obtain scale factors
       dims.raw <- as.numeric(st.object@dims[[i]][2:3])
       dims.scaled <- dim(high.res.images[[i]])
       sf.xy <- dims.raw[1]/dims.scaled[2]
-      pixel_xy <- subset(st.object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
+      pixel_xy <- subset(st.object[[]], sample == s)[, c("pixel_x", "pixel_y")]/sf.xy
 
       # Define warp functions
       m <- masked[[i]] %>% as.cimg()

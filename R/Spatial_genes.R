@@ -402,6 +402,7 @@ CorSpatialGenes <- function (
   # Create a combined network for the samples
   CN <- do.call(rbind, GetSpatNet(object = object, nNeighbours = nNeighbours, maxdist = maxdist))
   resCN <- as.matrix(data.frame(reshape2::dcast(CN, formula = from ~ to, value.var = "distance", fill = 0), row.names = 1))
+  resCN[resCN > 0] <- 1
   empty.CN <- matrix(0, nrow = ncol(data.use), ncol = ncol(data.use), dimnames = list(colnames(data.use), colnames(data.use)))
   colnames(resCN) <- gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))
   colnames(resCN) <- gsub(pattern = "^X", replacement = "", x = colnames(resCN))
@@ -409,10 +410,15 @@ CorSpatialGenes <- function (
   listw <- mat2listw(empty.CN)
   fun <- function (x) lag.listw(listw, x, TRUE)
 
+  # 1 neighbour test
+  # i <- 1
+  # r <- lapply(1:ncol(resCN), function(i) {
+  #   rowSums(t(apply(abs(data.use[, which(resCN[, i] > 0)] - data.use[, i]), 1, function(x) ifelse(x == min(x), 1, 0)))*data.use[, which(resCN[, i] > 0)])
+  # })
+
   # Calculate the lag matrix from the network
   tablag <- apply(t(data.use), 2, fun)
 
-  # Compute correlations between the original data and the lag mtrix
   sp.cor <- unlist(lapply(1:nrow(data.use), function(i) {
     cor(data.use[i, ], tablag[, i])
   }))
