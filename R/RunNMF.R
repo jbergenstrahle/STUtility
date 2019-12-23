@@ -42,64 +42,6 @@ FactorGeneLoadingPlot <- function (
 }
 
 
-#' Plot density distribution of factor values
-#'
-#' @param object Seurat object
-#' @param factors Specify factors to display (default 1-5)
-#' @param top.n.features Number of features to include in bar plot
-#'
-NMFRidgePlot <- function (
-  object,
-  factors = 1:5,
-  top.n.features = 10
-) {
-  factors <- paste0("factor_", factors)
-  data <- setNames(data.frame(object[[]], object@reductions[["NMF"]]@cell.embeddings[, factors]), nm = c(colnames(object[[]]), factors))
-  datam <- reshape2::melt(data, measure.vars = factors)
-
-  bw_theme <- theme(plot.background = element_rect(fill = "black", color = "black"),
-                    panel.grid = element_blank(),
-                    axis.text = element_text(colour = "white"),
-                    strip.background = element_blank(),
-                    rect = element_rect(fill = "black"),
-                    panel.background = element_rect(fill = "black", color = "black"),
-                    legend.text = element_text(color = "white"),
-                    legend.title = element_text(color = "white"))
-
-  p1 <- ggplot(datam, aes(value, ids, fill = factor(..quantile..))) +
-    stat_density_ridges(
-      geom = "density_ridges_gradient", calc_ecdf = TRUE,
-      quantiles = 4, quantile_lines = TRUE
-    ) +
-    facet_wrap(~variable, scales = "free_x", ncol = 1) +
-    viridis::scale_fill_viridis(option = "E", discrete = TRUE, name = "Quartiles") +
-    labs(fill = "value") +
-    bw_theme
-
-  feature.loadings <- test@reductions[["NMF"]]@feature.loadings[, factors]
-  genes <- rownames(feature.loadings)
-  gg <- do.call(rbind, lapply(factors, function(f) {
-    x <- feature.loadings[, f]
-    genes.rank <- order(x, decreasing = T)[1:top.n.features]
-    data.frame(gene = genes[genes.rank], value = x[genes.rank], variable = f)
-  })) %>% arrange(variable, value) %>% mutate(order = row_number())
-
-  p2 <- ggplot(gg, aes(x = order, y = value)) +
-    geom_bar(stat = "identity", color = "black", alpha = .7) +
-    coord_flip() +
-    labs(x = "") +
-    facet_wrap(~variable, scales = "free", ncol = 1) +
-    theme_minimal() +
-    scale_x_continuous(
-      breaks = gg$order,
-      labels = gg$gene,
-      expand = c(0,0)
-    ) +
-    bw_theme
-
-  cowplot::plot_grid(p1, p2)
-}
-
 #' Run Non-negative Matrix Factorization
 #'
 #' @param object Seurat object
