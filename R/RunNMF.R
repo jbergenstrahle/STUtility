@@ -1,32 +1,46 @@
 #' @include generics.R Staffli.R
 NULL
 
-#' Plot spatial heatmap of NMF factors
+
+#' Plot a bar chart with gene loadings
+#'
+#' This function takes a `Seurat`object as input with a 'NMF' reduction slot
+#' and plots a bar chart of gene weights (loadings) for the top most driving genes.
 #'
 #' @param object Seurat object
-#' @param factors Specify factors to plot (integer vector)
+#' @param factor Factor to plot gene loadings for [default: 1]
+#' @param topn Top genes to show [default: 20]
+#' @param dark.theme Use a dark theme for the plot
 #'
-NMFPlot <- function (
+#' @export
+#'
+FactorGeneLoadingPlot <- function (
   object,
-  factors = 1:5
+  factor = 1,
+  topn = 20,
+  dark.theme = FALSE
 ) {
-  p.list <- lapply(paste0("factor_", factors), function(f) {
-    data <- setNames(data.frame(object[[]], object@reductions[["NMF"]]@cell.embeddings[, f]), nm = c(colnames(object[[]]), f))
-    ggplot(data, aes_string("ads_x", "36 - ads_y", color = f)) +
-      geom_point(size = 0.3) +
-      scale_x_continuous(limits = c(0, 33)) +
-      scale_y_continuous(limits = c(0, 35)) +
-      scale_color_gradientn(colours = c("black", "dark blue", "cyan", "yellow", "red", "dark red")) +
-      facet_wrap(~ids, ncol = 3) +
-      theme_void() +
-      labs(title = f) +
-      theme(plot.background = element_rect(fill = "black"),
-            legend.text = element_text(colour = "white"),
-            legend.title = element_text(colour = "white"),
-            strip.text = element_text(colour = "white"))
-  })
-  cowplot::plot_grid(plotlist = p.list, ncol = 1)
+
+  # Check if NMF has been computed
+  if (!"NMF" %in% names(object@reductions)) stop("NMF has not been computed ... \n", call. = FALSE)
+
+  ftr <- paste0("factor_", factor)
+  nmf <- object@reductions$NMF@feature.loadings[, ftr]
+  gene <- names(nmf)
+  df <- data.frame(gene, val = nmf, stringsAsFactors = F)
+  df <- df[order(df$val, decreasing = T), ]
+  df <- df[1:topn, ]
+  df$gene <- factor(df$gene, levels = df$gene)
+  p <- ggplot(df[1:topn, ], aes(reorder(gene, val), val)) +
+    geom_bar(stat = "identity", fill = ifelse(dark.theme, "dark gray", "lightgray"), color = ifelse(dark.theme, "lightgray", "black"), width = 0.7) +
+    coord_flip() +
+    labs(x = "gene", y = "value")
+
+  if (dark.theme) p <- p + DarkTheme() else p <- p + theme_minimal()
+
+  return(p)
 }
+
 
 #' Plot density distribution of factor values
 #'

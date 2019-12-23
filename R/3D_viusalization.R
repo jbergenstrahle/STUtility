@@ -76,6 +76,7 @@ Create3DStack <- function (
   return(object)
 }
 
+# TODO: fix cutoff thresholds
 
 #' Plots the values of a feature in 3D
 #'

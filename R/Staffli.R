@@ -521,7 +521,7 @@ setMethod (
       # Check that type is OK
       choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
       if (!is.null(type)) {
-        if (!type %in% names(st.object@rasterlists) | !type %in% choices) stop(paste0("type '", type, "' not present in Seurat object"), call. = FALSE)
+        if (!type %in% names(object@rasterlists) | !type %in% choices) stop(paste0("type '", type, "' not present in Seurat object"), call. = FALSE)
       }
 
       type <- type %||% {
