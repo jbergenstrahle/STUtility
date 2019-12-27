@@ -10,7 +10,7 @@ MergeSTData(x = NULL, y = NULL, add.spot.ids = NULL,
 \arguments{
 \item{x}{Seurat object}
 
-\item{y}{Seurat object (or list of multiple Seurat obejctsa)}
+\item{y}{Seurat object (or list of multiple Seurat obejcts)}
 
 \item{add.spot.ids}{A character vector of length(x = c(x, y)). Appends the corresponding
 values to the start of each objects' spot names.}

@@ -143,7 +143,7 @@ SubsetSTData <- function (
     expression <- deparse(expr = substitute(expr = expression))
     object <- subset(object, subset = expression, features = features, cells = spots, idents = idents, ...)
   } else {
-    object <- subset(object, features = features, cells = spots, idents = idents, ...)
+    object <- subset(object, features = features, cells = spots, idents = idents)#, ...)
   }
 
   # Check spots of new object
@@ -155,7 +155,7 @@ SubsetSTData <- function (
   samples <- unique(st.meta_data[, "sample"]) %>% as.numeric()
 
   convert_s <- 1:length(unique(samples))
-  names(convert_s) <- samples
+  names(convert_s) <- paste0(samples)
   st.object@meta.data$sample <- paste0(convert_s[st.object@meta.data$sample])
   new_samples <- 1:length(unique(samples))
 
@@ -172,7 +172,7 @@ SubsetSTData <- function (
   }
   if (length(st.object@scatter.data) > 0) {
     st.object@scatter.data <- subset(st.object@scatter.data, z %in% samples)
-    st.object@scatter.data$z <- convert_s[st.object@scatter.data$z]
+    st.object@scatter.data$z <- convert_s[paste0(st.object@scatter.data$z)]
   }
   if (length(st.object@transformations) > 0) {
     st.object@transformations <- setNames(st.object@transformations[samples], nm = new_samples)
@@ -184,12 +184,13 @@ SubsetSTData <- function (
     st.object@dims <- setNames(st.object@dims[samples], nm = new_samples)
   }
 
+  st.object@platforms <- st.object@platforms[samples]
+  st.object@pixels.per.um <- st.object@pixels.per.um[samples]
   st.object@samplenames <- paste0(new_samples)
   object@tools$Staffli <- st.object
   return(object)
 }
 
-# TODO: fix sample names when merging
 
 #' Merge two or more Seurat objects containing Staffli image data
 #'
@@ -199,7 +200,7 @@ SubsetSTData <- function (
 #' to use any of the STUtility visualization methods on the output object.
 #'
 #' @param x Seurat object
-#' @param y Seurat object (or list of multiple Seurat obejctsa)
+#' @param y Seurat object (or list of multiple Seurat obejcts)
 #' @param add.spot.ids A character vector of length(x = c(x, y)). Appends the corresponding
 #' values to the start of each objects' spot names.
 #' @param merge.data 	Merge the data slots instead of just merging the counts (which requires renormalization).
@@ -219,6 +220,14 @@ MergeSTData <- function (
   project = "SeuratProject",
   ...
 ) {
+
+  if (class(x) != "Seurat") stop("x is not a Seurat object ...", call. = FALSE)
+
+  if (class(y) == "Seurat") {
+    y <- list(y)
+  } else if (class(y) != "list") {
+    stop("y is neither a Seurat object or a list ...", call. = FALSE)
+  }
 
   # Check that a Staffli object is present
   if (!"Staffli" %in% names(x@tools)) {
@@ -259,7 +268,7 @@ MergeSTData <- function (
 
   # Merge meta data
   unique.cols <- Reduce(intersect, lapply(st.objects, function(x) colnames(x[[]])))
-  st.meta_data <- dplyr::bind_rows(lapply(st.object, `[[`), )
+  st.meta_data <- dplyr::bind_rows(lapply(st.objects, `[[`))
   st.meta_data <- st.meta_data[, unique.cols]
   rownames(st.meta_data) <- colnames(object)
 
@@ -281,7 +290,7 @@ MergeSTData <- function (
   for (i in seq_along(st.objects)) {
     obj <- st.objects[[i]]
     unique.samples <- unique(obj[[, "sample", drop = TRUE]])
-    convert.samples <-seq_along(unique.samples) + n
+    convert.samples <- seq_along(unique.samples) + n
     names(convert.samples) <- unique.samples
     samples <- c(samples, convert.samples[obj[[, "sample", drop = TRUE]]])
     n <- convert.samples[length(convert.samples)]
@@ -328,12 +337,25 @@ MergeSTData <- function (
   # Merge platforms
   platforms <- unlist(lapply(st.objects, function(x) x@platforms))
 
+  # Merge scatter.data
+  if (all(unlist(lapply(st.objects, function(x) length(x@scatter.data) > 0)))) {
+    n <- length(unique(st.objects[[1]]@meta.data$sample))
+    all_scatter.data <- st.objects[[1]]@scatter.data
+    for (x in st.objects[2:length(st.objects)]) {
+      scatter.data <- x@scatter.data
+      scatter.data$z <- scatter.data$z + n
+      all_scatter.data <- rbind(all_scatter.data, scatter.data)
+      n <- n + length(unique(scatter.data$z))
+    }
+  }
+
   # Create Staffli object
   m <- CreateStaffliObject(imgs = imgs, meta.data = st.meta_data, xdim = xdim, platforms = platforms)
   m@rasterlists <- rasterlists
   m@transformations <- transformations
   m@limits <- limits
   m@dims <- dims
+  m@scatter.data <- all_scatter.data
 
   object@tools$Staffli <- m
   return(object)

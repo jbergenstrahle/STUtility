@@ -68,7 +68,7 @@ Create3DStack <- function (
   r[] = 0
 
   # Obtain grid cells
-  if (verbose) cat("Assigning nuclei position to grid cells ... \n")
+  if (verbose) cat("Assigning nuclei positions to grid cells ... \n")
   section.input <- rasterize_scatter(scatters, r, nx)
 
   st.object@scatter.data <- section.input
