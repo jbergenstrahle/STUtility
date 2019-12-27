@@ -105,7 +105,6 @@ CreateStaffliObject <- function (
   return(object)
 }
 
-# TODO: Fix samples when subsetting
 
 #' Subset a Seurat object containing Staffli image data
 #'
@@ -150,11 +149,15 @@ SubsetSTData <- function (
   # Check spots of new object
   kept.spots <- colnames(object)
 
-
   # Subset Staffli object
   st.meta_data <- st.object[[kept.spots, ]]
   st.object@meta.data <- st.meta_data
   samples <- unique(st.meta_data[, "sample"]) %>% as.numeric()
+
+  convert_s <- 1:length(unique(samples))
+  names(convert_s) <- samples
+  st.object@meta.data$sample <- paste0(convert_s[st.object@meta.data$sample])
+  new_samples <- 1:length(unique(samples))
 
   # Subset each slot in Staffli object
   if (length(st.object@imgs) > 0) {
@@ -163,24 +166,25 @@ SubsetSTData <- function (
   if (length(st.object@rasterlists) > 0) {
     rl <- st.object@rasterlists
     rl <- lapply(rl, function(ls) {
-      ls[samples]
+      setNames(ls[samples], nm = new_samples)
     })
     st.object@rasterlists <- rl
   }
   if (length(st.object@scatter.data) > 0) {
-    st.object@scatter.data <- st.object@scatter.data[samples]
+    st.object@scatter.data <- subset(st.object@scatter.data, z %in% samples)
+    st.object@scatter.data$z <- convert_s[st.object@scatter.data$z]
   }
   if (length(st.object@transformations) > 0) {
-    st.object@transformations <- st.object@transformations[samples]
+    st.object@transformations <- setNames(st.object@transformations[samples], nm = new_samples)
   }
   if (length(st.object@limits) > 0) {
-    st.object@limits <- st.object@limits[samples]
+    st.object@limits <- setNames(st.object@limits[samples], nm = new_samples)
   }
   if (length(st.object@dims) > 0) {
-    st.object@dims <- st.object@dims[samples]
+    st.object@dims <- setNames(st.object@dims[samples], nm = new_samples)
   }
 
-  st.object@samplenames <- paste0(samples)
+  st.object@samplenames <- paste0(new_samples)
   object@tools$Staffli <- st.object
   return(object)
 }

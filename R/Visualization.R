@@ -1148,7 +1148,7 @@ DimOverlay <- function (
     })
     p <- plot_grid(plotlist = plots, ncol = grid.ncol)
     if (dark.theme) {
-      p <- p + DarkTheme()
+      p <- p + dark_theme()
     }
     return(p)
   }
@@ -1369,7 +1369,7 @@ FeatureOverlay <- function (
 
     p <- plot_grid(plotlist = plots, ncol = grid.ncol)
     if (dark.theme) {
-      p <- p + DarkTheme()
+      p <- p + dark_theme()
     }
     return(p)
   }
@@ -1669,7 +1669,9 @@ MultiDimOverlay <- function (
                center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,
                value.scale = value.scale.list, ... = ...)
   })
-  cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
+  p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
+  if (dark.theme) p <- p + dark_theme()
+  return(p)
 }
 
 
@@ -1793,6 +1795,8 @@ MultiFeatureOverlay <- function (
                    value.scale = value.scale.list, ... = ...)
   })
 
-  cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
+  p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
+  if (dark.theme) p <- p + dark_theme()
+  return(p)
 }
 
