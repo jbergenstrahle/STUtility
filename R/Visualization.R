@@ -602,7 +602,7 @@ STPlot <- function (
         if (is.null(names(cols))) {
           label.colors <- cols[1:length(unique(data[, variable]))]
         } else {
-          label.colors <- cols[unique(data[, variable])]
+          label.colors <- cols[levels(data[, variable])]
         }
       } else {
         label.colors <- gg_color_hue(length(levels(data[, variable])))

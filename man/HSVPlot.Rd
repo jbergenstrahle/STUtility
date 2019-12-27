@@ -50,13 +50,16 @@ See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package f
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
-\item{dark.theme}{Switches color of scalebar to 'white'}
+\item{dark.theme}{Use a dark theme for plotting}
 
 \item{grid.ncol}{Number of columns for display when combining plots}
 
 \item{verbose}{Print messages}
 
-\item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
+\item{theme}{Add a custom theme to the output ggplot object}
+
+\item{scale.res}{Integer value setting the resolution of the output raster image. E.g. scale.res = 2 will double the
+resolution of the output but will also take longer to render. Only active if plot.type is set to 'smooth'.}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }

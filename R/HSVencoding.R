@@ -39,6 +39,10 @@
 #' See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.
 #' @param highlight.edges Highlights the edges of the tissue. Only active if \code{plot.type = 'smooth'} and if the images have been masked.
 #' @param grid.ncol Number of columns for display when combining plots
+#' @param dark.theme Use a dark theme for plotting
+#' @param theme Add a custom theme to the output ggplot object
+#' @param scale.res Integer value setting the resolution of the output raster image. E.g. scale.res = 2 will double the
+#' resolution of the output but will also take longer to render. Only active if plot.type is set to 'smooth'.
 #' @param verbose Print messages
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
 #'
@@ -144,9 +148,15 @@ HSVPlot <- function (
     if (verbose) cat("Converting values to HSV ... \n")
     for (i in 1:length(features)) {
       ftr <- features[i]
-      s <- data.frame(h = hue_breaks[i],
-                      s = 1,
-                      v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+      if (dark.theme) {
+        s <- data.frame(h = hue_breaks[i],
+                        s = 1,
+                        v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+      } else {
+        s <- data.frame(h = hue_breaks[i],
+                        s = scales::rescale(data[, ftr, drop = T] %>% as.numeric()),
+                        v = 1) %>% as.matrix()
+      }
       d[, , i] <- s
     }
 
@@ -154,8 +164,9 @@ HSVPlot <- function (
     if (verbose) cat("Selecting HSV colors for each spot ... \n")
     if (!split.hsv) {
       red.cols <- apply(d, 1, function (x) {
-        max.val <- which.max(x[3, ])
-        hsv(h = x[1, ][which.max(x[3, ])], s = 1, v = max(x[3, ]))
+        ind <- ifelse(dark.theme, 3, 2)
+        max.val <- which.max(x[ind, ])
+        hsv(h = x[1, ][which.max(x[ind, ])], s = ifelse(dark.theme, 1, max(x[ind, ])), v = ifelse(dark.theme,  max(x[ind, ]), 1))
       })
       data$cols <- red.cols
     } else {
@@ -213,7 +224,7 @@ HSVPlot <- function (
       ncols <- grid.ncol %||% ceiling(sqrt(length(x = features)))
       nrows <- ceiling(length(x = features)/ncols)
       plot <- cowplot::plot_grid(plotlist = plots, ncol = ncols, nrow = nrows)
-      plot <- plot + dark_theme()
+      if (dark.theme) plot <- plot + dark_theme()
       suppressWarnings({print(plot)})
     }
   } else if (plot.type == 'smooth') {
@@ -276,7 +287,7 @@ HSVPlot <- function (
           n <- n + 1
         }
         ftr.rst <- apply(ar[, , ], c(1, 2), function(x) {
-          hsv(h = hue_breaks[which.max(x)], s = 1, v = max(x))
+          hsv(h = hue_breaks[which.max(x)], s = ifelse(dark.theme, 1, max(x)), v = ifelse(dark.theme, max(x), 1))
         }) %>% t() %>% as.raster() %>% as.cimg()
         if (length(edges.list) > 0) {
           ftr.rst <- ftr.rst + edges.list[[j]]
@@ -290,7 +301,7 @@ HSVPlot <- function (
         feature.rsts <- list()
         for (i in seq_along(features)) {
           ftr.rst <- apply(feature.list[[i]][[j]], 3, function(x) {
-            hsv(h = hue_breaks[i], s = 1, v = x)
+            hsv(h = hue_breaks[i], s = ifelse(dark.theme, 1, max(x)), v = ifelse(dark.theme, max(x), 1))
           }) %>% matrix(nrow = dims[2]*scale.res, ncol = dims[1]*scale.res) %>% t() %>% as.raster() %>% as.cimg()
           if (length(edges.list) > 0) {
             ftr.rst <- ftr.rst + edges.list[[j]]
