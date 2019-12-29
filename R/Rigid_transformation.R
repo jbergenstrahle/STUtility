@@ -102,8 +102,8 @@ rotate <- function (
   center.cur
 ) {
   alpha <- 2*pi*(angle/360)
-  center.cur <- c(center.cur, 0)
-  points(center.cur[1], center.cur[2], col = "red")
+  #center.cur <- c(center.cur, 0)
+  #points(center.cur[1], center.cur[2], col = "red")
   tr <- rigid.transl(-center.cur[1], -center.cur[2])
   tr <- rigid.transf(center.cur[1], center.cur[2], alpha)%*%tr
   return(tr)
@@ -160,7 +160,7 @@ rigid.transf <- function (
   k = 0,
   alpha = 0
 ) {
-  tr <- matrix(c(cos(alpha), sin(alpha), 0, -sin(alpha), cos(alpha), 0, h, k, 1), nrow = 3)
+  tr <- matrix(c(cos(alpha), -sin(alpha), 0, sin(alpha), cos(alpha), 0, h, k, 1), nrow = 3)
   return(tr)
 }
 

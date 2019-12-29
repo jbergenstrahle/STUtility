@@ -675,8 +675,6 @@ AlignImages.Seurat <- function (
 }
 
 
-# TODO: fix rotations
-
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Align Images (manual)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
@@ -826,9 +824,9 @@ ManualAlignImages.Staffli <- function (
 
       d <- round((sqrt(xylimit[1]^2 + xylimit[2]^2) - xylimit[2])/2)
 
-      plot(fixed.scatter[, 1], xylimit[2] - fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(-d, xylimit[2] + d), xaxt = 'n', yaxt = 'n', ann = FALSE)
-      points(scatter.t[, 1], xylimit[2] - scatter.t[, 2], col = "gray")
-      points(coords.t[, 1], xylimit[2] - coords.t[, 2], col = "red", cex = pt_size())
+      plot(fixed.scatter[, 1], fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(d + xylimit[2], -d), xaxt = 'n', yaxt = 'n', ann = FALSE)
+      points(scatter.t[, 1], scatter.t[, 2], col = "gray")
+      points(coords.t[, 1], coords.t[, 2], col = "red", cex = pt_size())
 
     }, height = 800, width = 800)
 
@@ -883,7 +881,7 @@ ManualAlignImages.Staffli <- function (
   # Returned transformation matrices
   alignment.matrices <- runApp(list(ui = ui, server = server))
   alignment.matrices <- lapply(alignment.matrices, function(tr) {
-    tr[2, 3] <- -tr[2, 3]
+    tr <- solve(tr)
     return(tr)
   })
   if (verbose) cat(paste("Finished image alignment. \n\n"))
@@ -920,16 +918,18 @@ ManualAlignImages.Staffli <- function (
     # Obtain scale factors
     dims.raw <- as.numeric(object@dims[[i]][2:3])
     dims.scaled <- scaled.imdims(object)[[i]]
-    sf.xy <- dims.raw[1]/dims.scaled[1]
+    sf.xy <- dims.raw[1]/dims.scaled[2]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
 
     # Warp pixels
     if (verbose) cat(paste0("Warping pixel coordinates for ", i, " ... \n"))
     warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.rot.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
+    #warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.rot.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y")), round, digits = 1)
     warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
 
     if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
     processed.images[[i]] <- Warp(m, map.rot.backward)
+
     msk <- masks[[i]]
     if (verbose) cat(paste0("Warping image mask for ", i, " ... \n"))
     processed.masks[[i]] <- Warp(msk, map.rot.backward, mask = T)
