@@ -88,6 +88,21 @@ LoadImages.Staffli <- function (
   }
   names(pixels.per.um) <- object@samplenames
 
+  if (convert.pixel.coords) {
+    for (i in seq_along(object@imgs)) {
+      ds <- dim(imgs[[i]])
+      imds <- dims[[i]][2:3] %>% as.numeric()
+      if (object@platforms[i] %in% c("Visium", "2k")) {
+        sub_xy <- rep(pixels.per.um[i]*50, 2)
+        print(sub_xy)
+      } else {
+        sub_xy <- rep(pixels.per.um[i]*100, 2)
+        print(sub_xy)
+      }
+      object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- t(t(object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]]) - sub_xy)
+    }
+  }
+
   object@dims <- setNames(dims, nm = object@samplenames)
   object@rasterlists$raw <- setNames(imgs, nm = object@samplenames)
   object@xdim <- xdim
