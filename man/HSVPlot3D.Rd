@@ -7,8 +7,9 @@
 HSVPlot3D(object, features, mode = c("cloud", "spots"), zcoords = NULL,
   spots = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
   blend = FALSE, pt.size = NULL, pt.alpha = 1, cols = NULL,
-  add.margins = 0, channels.use = NULL, scene = "scene1",
-  return.data = FALSE, dark.theme = FALSE, verbose = FALSE)
+  add.alpha = FALSE, add.margins = 0, channels.use = NULL,
+  scene = "scene1", return.data = FALSE, dark.theme = FALSE,
+  verbose = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -36,7 +37,12 @@ See 'Blending values' below for a more thourough description.}
 
 \item{pt.alpha}{Sets the opacity of the points}
 
-\item{cols}{Character vector of color names with equal length to the number of features}
+\item{cols}{Character vector of colors with equal length to the number of features. These colors will override
+the selection of HSV colors and can therefore not be encoded in the same way. Instead of tuning the saturation/value
+parameters we can add an alpha channel, making spots with values close to zero completely transparent. This has to
+be activated by setting `add.alpha = TRUE`.}
+
+\item{add.alpha}{Adds opacity to colors.}
 
 \item{add.margins}{Add margins along z axis to push sections closer to each other}
 

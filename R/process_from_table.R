@@ -124,7 +124,7 @@ InputFromTable <- function (
         warning(paste0("Extracting spot coordinates from gene count matrix headers. It is highly recommended to use spotfiles."), call. = FALSE)
 
         # Check if headers can be extracted
-        spotsData <- GetCoords(colnames(counts[[path]]))
+        spotsData <- GetCoords(colnames(counts[[path]]), delim = "x|_")
         if (ncol(spotsData) != 2) stop("Headers are not valid. You have to provide spotfiles or make sure that headers contains (x, y) coordinates", call. = FALSE)
         spotFileData[[i]] <- spotsData
       }
@@ -151,7 +151,7 @@ InputFromTable <- function (
         spotFileData[[i]] <- spotsData #Save pixel coords etc
       } else {
         # Obtain x/y coordinates from headers
-        spotsData <- GetCoords(colnames(counts[[path]]))
+        spotsData <- GetCoords(colnames(counts[[path]]), delim = "x|_")
         if (ncol(spotsData) != 2) stop("No spotfiles provided and the headers are invalid. Please make sure that the count matrices are correct.")
         spotFileData[[i]] <- spotsData
       }

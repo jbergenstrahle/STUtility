@@ -548,7 +548,11 @@ FeaturePlot3D <- function (
 #' See 'Blending values' below for a more thourough description.
 #' @param pt.size Sets the size of points in the 3D plot
 #' @param pt.alpha Sets the opacity of the points
-#' @param cols Character vector of color names with equal length to the number of features
+#' @param cols Character vector of colors with equal length to the number of features. These colors will override
+#' the selection of HSV colors and can therefore not be encoded in the same way. Instead of tuning the saturation/value
+#' parameters we can add an alpha channel, making spots with values close to zero completely transparent. This has to
+#' be activated by setting `add.alpha = TRUE`.
+#' @param add.alpha Adds opacity to colors.
 #' @param add.margins Add margins along z axis to push sections closer to each other
 #' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 #' color names specified [default: c("red", "green", "blue)]
@@ -575,6 +579,7 @@ HSVPlot3D <- function (
   pt.size = NULL,
   pt.alpha = 1,
   cols = NULL,
+  add.alpha = FALSE,
   add.margins = 0,
   channels.use = NULL,
   scene = "scene1",
@@ -605,6 +610,7 @@ HSVPlot3D <- function (
 
   # Check to see if Staffli object is present
   if (mode == "cloud") {
+    if (verbose) cat("Plotting features in 'cloud' mode ... \n")
     if (!length(x = st.object@scatter.data) > 0) stop("3D stack is missing. Run Create3DStack() first ... \n", call. = FALSE)
     scatter.data <- st.object@scatter.data
   }
@@ -622,6 +628,7 @@ HSVPlot3D <- function (
   # Use zcoords to convert z axis
   def_z <- unique(coords$z)
   if (!is.null(zcoords)) {
+    if (verbose) cat("Converting z values using provided 'zcoords' ... \n")
     if (length(x = def_z) != length(x = zcoords)) stop(paste0("zcoords (length = ", length(zcoords), ") has to be the same length as the number of samples ", length(def_z), " in the data"), call. = FALSE)
     coords$z <- zcoords[coords$z]
     if (mode == "cloud") scatter.data$z <- zcoords[scatter.data$z]
@@ -640,18 +647,25 @@ HSVPlot3D <- function (
   xmax <- lapply(st.object@dims, function(d) {d[2] %>% as.numeric()}) %>% unlist() %>% max()
 
   # Generate HSV encoded colors
-  if (verbose) cat(paste0("Defining Hue for ", length(x = features), " features ... \n"))
-  hue_breaks <- seq(0, 1, length.out = length(x = features) + 1)[1:length(x = features)]
-  hsv.matrix <- t(matrix(c(hue_breaks, rep(1, length(hue_breaks )), rep(1, length(hue_breaks))), ncol = 3))
-  rownames(hsv.matrix) <- c("h", "s", "v")
-  ann.cols <- apply(hsv.matrix, 2, function(x) hsv(x[1], x[2], x[3]))
-
-  # Define HSV conversion function
-  hsv.func <- ifelse(dark.theme,
-                     function(x) hsv(h = x[1, ][which.max(x[3, ])], s = 1, v = max(x[3, ])),
-                     function(x) hsv(h = x[1, ][which.max(x[3, ])], v = 1, s = max(x[3, ])))
+  if (is.null(cols)) {
+    if (verbose) cat(paste0("Defining hue colors for ", length(x = features), " features ... \n"))
+    hue_breaks <- seq(0, 1, length.out = length(x = features) + 1)[1:length(x = features)]
+    hsv.matrix <- t(matrix(c(hue_breaks, rep(1, length(hue_breaks )), rep(1, length(hue_breaks))), ncol = 3))
+    rownames(hsv.matrix) <- c("h", "s", "v")
+    ann.cols <- apply(hsv.matrix, 2, function(x) hsv(x[1], x[2], x[3]))
+    # Define HSV conversion function
+    hsv.func <- ifelse(dark.theme,
+                       function(x) hsv(h = x[1, ][which.max(x[3, ])], s = 1, v = max(x[3, ])),
+                       function(x) hsv(h = x[1, ][which.max(x[3, ])], v = 1, s = max(x[3, ])))
+  } else {
+    if (length(x = features) != length(x = cols)) stop("Length of features and cols must match ...", call. = FALSE)
+    warning("Using user defined colors with opacity. HSV scale will not be used ...", call. = FALSE)
+    ann.cols <- cols
+  }
 
   if (mode == "cloud") {
+    if (verbose) cat("Interpolating data across 2D point patterns ... \n")
+    if (!is.null(cols) & !add.alpha) warning("add.alpha should be set to TRUE when using custom colors ... \n", call. = FALSE)
     interpolated.data <- do.call(rbind, lapply(seq_along(data.list), function(i) {
       data <- data.list[[i]]
       section.input <- section.input.list[[i]]
@@ -668,20 +682,38 @@ HSVPlot3D <- function (
       A[is.na(A)] <- 0
 
       # Create hsv matrix and select highest v
-      d <- array(dim = c(nrow(A), 3, length(x = features)))
-      if (verbose) cat("Converting values to HSV ... \n")
-      for (i in 1:length(features)) {
-        ftr <- features[i]
-        s <- data.frame(h = hue_breaks[i],
-                        s = 1,
-                        v = scales::rescale(A[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
-        d[, , i] <- s
+      if (is.null(cols)) {
+        if (verbose) cat("Converting values to HSV ... \n")
+        d <- array(dim = c(nrow(A), 3, length(x = features)))
+        for (i in 1:length(features)) {
+          ftr <- features[i]
+          s <- data.frame(h = hue_breaks[i],
+                          s = 1,
+                          v = scales::rescale(A[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+          d[, , i] <- s
+        }
+        red.cols <- unlist(apply(d, 1, function (x) {
+          hsvc <- hsv.func(x)
+          if (add.alpha)  hsvc <- scales::alpha(colour = hsvc, alpha = max(x[3, ]))
+          return(hsvc)
+        }))
+      } else {
+        if (verbose) cat("Using provided colors ... \n")
+        d <- array(dim = c(nrow(A), 1, length(x = features)))
+        for (i in 1:length(features)) {
+          ftr <- features[i]
+          s <- data.frame(v = scales::rescale(A[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+          d[, , i] <- s
+        }
+        red.cols <- unlist(apply(d, 1, function (x) {
+          alpha_col <- cols[which.max(x[1, ])]
+          if (add.alpha) {
+            alpha_col <- scales::alpha(colour = alpha_col, alpha = max(x[1, ]))
+          }
+          return(alpha_col)
+        }))
       }
-      red.cols <- unlist(apply(d, 1, function (x) {
-        hsvc <- hsv.func(x)
-        if (add.alpha)  hsvc <- scales::alpha(colour = hsvc, alpha = max(x[3, ]))
-        return(hsvc)
-      }))
+
       return(setNames(data.frame(A[, 1:3], red.cols, stringsAsFactors = F), nm = c("x", "y", "z", "spot.colors")))
     }))
 
@@ -699,20 +731,40 @@ HSVPlot3D <- function (
     return(p)
   } else {
     data <- setNames(data, nm = c("x", "y", "z", features))
-    d <- array(dim = c(nrow(data), 3, length(x = features)))
-    if (verbose) cat("Converting values to HSV ... \n")
-    for (i in 1:length(features)) {
-      ftr <- features[i]
-      s <- data.frame(h = hue_breaks[i],
-                      s = 1,
-                      v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
-      d[, , i] <- s
+
+    if (is.null(cols)) {
+      d <- array(dim = c(nrow(data), 3, length(x = features)))
+      if (verbose) cat("Converting values to HSV ... \n")
+      for (i in 1:length(features)) {
+        ftr <- features[i]
+        s <- data.frame(h = hue_breaks[i],
+                        s = 1,
+                        v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+        d[, , i] <- s
+      }
+
+      red.cols <- unlist(apply(d, 1, function (x) {
+        hsvc <- hsv.func(x)
+        if (add.alpha)  hsvc <- scales::alpha(colour = hsvc, alpha = max(x[3, ]))
+        return(hsvc)
+      }))
+    } else {
+      if (verbose) cat("Using provided colors ... \n")
+      d <- array(dim = c(nrow(data), 1, length(x = features)))
+      for (i in 1:length(features)) {
+        ftr <- features[i]
+        s <- data.frame(v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+        d[, , i] <- s
+      }
+      red.cols <- unlist(apply(d, 1, function (x) {
+        alpha_col <- cols[which.max(x[1, ])]
+        if (add.alpha) {
+          alpha_col <- scales::alpha(colour = alpha_col, alpha = max(x[1, ]))
+        }
+        return(alpha_col)
+      }))
     }
 
-    red.cols <- unlist(apply(d, 1, function (x) {
-      max.val <- which.max(x[3, ])
-      hsv.func(x)
-    }))
     data$spot.colors <- red.cols
 
     p <- plot_ly(data,
