@@ -63,10 +63,14 @@ LoadImages.Staffli <- function (
 
     # Convert pixel coords if specified
     if (convert.pixel.coords) {
-      print("converting coords")
+      if (verbose) cat("converting coords")
       limits <- object@limits[[i]]
       im.limits <- dims[[i]][2:3] %>% as.numeric()
-      object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- t(t(object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]])*(im.limits/limits))
+      xy <- object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]]
+      spot_intx <- im.limits[1]/(limits[1] - 1)
+      spot_inty <- im.limits[2]/(limits[2] - 1)
+      xy <- t(t(xy - 1)*c(spot_intx, spot_inty))
+      object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- xy
     }
   }
 
@@ -87,21 +91,6 @@ LoadImages.Staffli <- function (
    pixels.per.um[i] <- min.distance/min.spot.distance
   }
   names(pixels.per.um) <- object@samplenames
-
-  if (convert.pixel.coords) {
-    for (i in seq_along(object@imgs)) {
-      ds <- dim(imgs[[i]])
-      imds <- dims[[i]][2:3] %>% as.numeric()
-      if (object@platforms[i] %in% c("Visium", "2k")) {
-        sub_xy <- rep(pixels.per.um[i]*50, 2)
-        print(sub_xy)
-      } else {
-        sub_xy <- rep(pixels.per.um[i]*100, 2)
-        print(sub_xy)
-      }
-      object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- t(t(object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]]) - sub_xy)
-    }
-  }
 
   object@dims <- setNames(dims, nm = object@samplenames)
   object@rasterlists$raw <- setNames(imgs, nm = object@samplenames)

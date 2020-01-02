@@ -548,7 +548,7 @@ FeaturePlot3D <- function (
 #' See 'Blending values' below for a more thourough description.
 #' @param pt.size Sets the size of points in the 3D plot
 #' @param pt.alpha Sets the opacity of the points
-#' @param cols Colors used to create a colorscale
+#' @param cols Character vector of color names with equal length to the number of features
 #' @param add.margins Add margins along z axis to push sections closer to each other
 #' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 #' color names specified [default: c("red", "green", "blue)]
@@ -646,7 +646,7 @@ HSVPlot3D <- function (
   rownames(hsv.matrix) <- c("h", "s", "v")
   ann.cols <- apply(hsv.matrix, 2, function(x) hsv(x[1], x[2], x[3]))
 
-  # Defione HSV function
+  # Define HSV conversion function
   hsv.func <- ifelse(dark.theme,
                      function(x) hsv(h = x[1, ][which.max(x[3, ])], s = 1, v = max(x[3, ])),
                      function(x) hsv(h = x[1, ][which.max(x[3, ])], v = 1, s = max(x[3, ])))
@@ -678,8 +678,9 @@ HSVPlot3D <- function (
         d[, , i] <- s
       }
       red.cols <- unlist(apply(d, 1, function (x) {
-        max.val <- which.max(x[3, ])
-        hsv.func(x)
+        hsvc <- hsv.func(x)
+        if (add.alpha)  hsvc <- scales::alpha(colour = hsvc, alpha = max(x[3, ]))
+        return(hsvc)
       }))
       return(setNames(data.frame(A[, 1:3], red.cols, stringsAsFactors = F), nm = c("x", "y", "z", "spot.colors")))
     }))

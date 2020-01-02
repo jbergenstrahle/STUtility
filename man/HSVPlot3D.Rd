@@ -36,7 +36,7 @@ See 'Blending values' below for a more thourough description.}
 
 \item{pt.alpha}{Sets the opacity of the points}
 
-\item{cols}{Colors used to create a colorscale}
+\item{cols}{Character vector of color names with equal length to the number of features}
 
 \item{add.margins}{Add margins along z axis to push sections closer to each other}
 
