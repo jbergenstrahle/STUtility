@@ -184,6 +184,9 @@ DimPlot3D <- function (
   # Add values
   data <- cbind(coords, data)
 
+  # Scale values
+  data <- feature.scaler(data = data, features = dims, min.cutoff = min.cutoff, max.cutoff = max.cutoff)
+
   # Split data
   if (mode == "cloud") {
     data.list <- split(data, data$z)
@@ -400,7 +403,10 @@ FeaturePlot3D <- function (
   }
 
   # Add values
-  data <- cbind(coords, value = values)
+  data <- setNames(data.frame(coords, values), c(colnames(coords), features))
+
+  # Scale values
+  data <- feature.scaler(data = data, features = features, min.cutoff = min.cutoff, max.cutoff = max.cutoff)
 
   # Split data
   if (mode == "cloud") {
@@ -487,9 +493,11 @@ FeaturePlot3D <- function (
       # Run interpolation
       interpolated.data <- do.call(rbind, lapply(seq_along(data.list), function(i) {
         data <- data.list[[i]]
+        data <- setNames(data, c("warped_x", "warped_y", "z", "value"))
         section.input <- section.input.list[[i]]
         interpolated_data <- interpolate_2D_data(data, section.input, nx = nxy[1], ny = nxy[2], xy.range = apply(coords[, 1:2], 2, range))
       }))
+      interpolated.data <- setNames(interpolated.data, c("x", "y", "z", "val"))
 
       if (return.data) return(interpolated.data)
 
@@ -507,9 +515,9 @@ FeaturePlot3D <- function (
       names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
       return(p)
     } else {
-      data <- setNames(data, c("x", "y", "z", "value"))
+      colnames(data) <- c("x", "y", "z", "value")
 
-      if (return.data) return(interpolated.data)
+      if (return.data) return(data)
 
       p <- plot_ly(data,
                    scene = scene,
@@ -551,7 +559,7 @@ FeaturePlot3D <- function (
 #' @param cols Character vector of colors with equal length to the number of features. These colors will override
 #' the selection of HSV colors and can therefore not be encoded in the same way. Instead of tuning the saturation/value
 #' parameters we can add an alpha channel, making spots with values close to zero completely transparent. This has to
-#' be activated by setting `add.alpha = TRUE`.
+#' be activated by setting `add.alpha = TRUE`
 #' @param add.alpha Adds opacity to colors.
 #' @param add.margins Add margins along z axis to push sections closer to each other
 #' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
@@ -602,6 +610,9 @@ HSVPlot3D <- function (
   spots <- spots %||% colnames(x = object)
   data <- FetchData(object = object, vars = features, cells = spots, slot = slot)
   data.type <- unique(sapply(data, class))
+
+  # Scale values
+  data <- feature.scaler(data = data, features = features, min.cutoff = min.cutoff, max.cutoff = max.cutoff)
 
   # Stop if feature classes are not numeric/integer
   if (!all(data.type %in% c("numeric", "integer"))) {
@@ -722,10 +733,9 @@ HSVPlot3D <- function (
                  x = ~xmax - x, y = ~y, z = ~z,
                  marker = list(color = interpolated.data$spot.colors,
                                showscale = FALSE,
-                               size = pt.size,
-                               opacity = pt.alpha)) %>%
+                               size = pt.size)) %>%
       add_markers() %>%
-      layout(title = paste(features, collapse = "; "), paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
+      layout(title = paste(features, collapse = "; "), paper_bgcolor = ifelse(dark.theme, "rgb(0, 0, 0)", "#FFF"),
              scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
     names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
     return(p)
@@ -766,17 +776,16 @@ HSVPlot3D <- function (
     }
 
     data$spot.colors <- red.cols
-
     p <- plot_ly(data,
                  scene = scene,
                  x = ~xmax - x, y = ~y, z = ~z,
                  marker = list(color = data$spot.colors,
                                showscale = FALSE,
-                               size = pt.size,
-                               opacity = pt.alpha)) %>%
-      add_markers() %>%
-      layout(title = paste(features, collapse = "; "), paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-             scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE)))
+                               size = pt.size)) %>%
+      layout(title = paste(features, collapse = "; "), paper_bgcolor = ifelse(dark.theme, "rgb(0, 0, 0)", "#FFF"),
+             scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE))) %>%
+      add_markers()
+
     names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
     return(p)
   }

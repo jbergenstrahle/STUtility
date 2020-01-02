@@ -4,7 +4,7 @@
 \alias{feature.scaler}
 \title{Function used to scale numerical features}
 \usage{
-feature.scaler(data, features, min.cutoff, max.cutoff, spots)
+feature.scaler(data, features, min.cutoff, max.cutoff)
 }
 \arguments{
 \item{data}{data.frame containing x, y coordinates and columns with numerical features}

@@ -73,8 +73,7 @@ feature.scaler <- function (
   data,
   features,
   min.cutoff,
-  max.cutoff,
-  spots
+  max.cutoff
 ) {
   min.cutoff <- setNames(mapply(
     FUN = function(cutoff, feature) {
@@ -115,7 +114,7 @@ feature.scaler <- function (
                                data.feature[data.feature < min.use] <- min.use
                                data.feature[data.feature > max.use] <- max.use
                                return(data.feature)
-                             })
+                             }) %>% as.data.frame()
   return(data)
 }
 

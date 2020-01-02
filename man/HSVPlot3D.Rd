@@ -40,7 +40,7 @@ See 'Blending values' below for a more thourough description.}
 \item{cols}{Character vector of colors with equal length to the number of features. These colors will override
 the selection of HSV colors and can therefore not be encoded in the same way. Instead of tuning the saturation/value
 parameters we can add an alpha channel, making spots with values close to zero completely transparent. This has to
-be activated by setting `add.alpha = TRUE`.}
+be activated by setting `add.alpha = TRUE`}
 
 \item{add.alpha}{Adds opacity to colors.}
 

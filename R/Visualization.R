@@ -149,7 +149,7 @@ ST.DimPlot <- function (
   c(data, image.type) %<-% obtain.array.coords(st.object, data, image.type, spots)
 
   # Scale data values
-  data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
+  data <- feature.scaler(data, dims, min.cutoff, max.cutoff)
 
   # Subset by index
   if (!is.null(indices)) {
@@ -423,7 +423,7 @@ ST.FeaturePlot <- function (
   }
 
   if (all(data.type %in% c("numeric", "integer"))) {
-    data <- feature.scaler(data, features = features, min.cutoff, max.cutoff, spots)
+    data <- feature.scaler(data, features = features, min.cutoff, max.cutoff)
   }
 
   # Subset by index
@@ -1097,7 +1097,7 @@ DimOverlay <- function (
     stop(paste0(paste(px.ids, collapse = " and "), " coordinates are not present in meta data."), call. = FALSE)
   }
 
-  data <- feature.scaler(data, dims, min.cutoff, max.cutoff, spots)
+  data <- feature.scaler(data, dims, min.cutoff, max.cutoff)
   data[, "sample"] <- sample.index
 
   # Set scalebar input
@@ -1314,7 +1314,7 @@ FeatureOverlay <- function (
   }
 
   if (all(data.type %in% c("numeric", "integer"))) {
-    data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
+    data <- feature.scaler(data, features, min.cutoff, max.cutoff)
   }
 
   # Add index column
