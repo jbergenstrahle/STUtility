@@ -50,6 +50,7 @@ Collate:
     'Image_resolution_switch.R'
     'Mask_functions.R'
     'QC.R'
+    'RegionNeighbours.R'
     'Rigid_transformation.R'
     'generics.R'
     'Staffli.R'

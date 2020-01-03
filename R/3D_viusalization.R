@@ -21,6 +21,7 @@
 Create3DStack <- function (
   object,
   limit = 0.4,
+  maxnum = 5e4,
   nx = 200,
   verbose = TRUE
 ) {

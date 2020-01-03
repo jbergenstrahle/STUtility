@@ -4,12 +4,16 @@
 \alias{Create3DStack}
 \title{Create 3D stack}
 \usage{
-Create3DStack(object, limit = 0.4, nx = 200, verbose = TRUE)
+Create3DStack(object, limit = 0.4, maxnum = 50000, nx = 200,
+  verbose = TRUE)
 }
 \arguments{
 \item{object}{Seurat object}
 
 \item{limit}{Cut-off threshold for segmentation of points. Has to be a value between 0-1.}
+
+\item{maxnum}{Maximum number of points to store for each section [default: 5e5]. If you are analyzing many samples
+you will have to decrease tsis number, oterwise tere will too many points to draw.}
 
 \item{nx}{Number of cells to interpolate over across the x axis}
 

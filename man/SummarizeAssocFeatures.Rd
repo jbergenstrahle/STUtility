@@ -2,18 +2,20 @@
 % Please edit documentation in R/RunNMF.R
 \name{SummarizeAssocFeatures}
 \alias{SummarizeAssocFeatures}
-\title{Summarize features associated with certain factors}
+\title{Summarize features associated with cselected factors}
 \usage{
-SummarizeAssocFeatures(object, features.return = 10,
+SummarizeAssocFeatures(object, dims = NULL, features.return = 10,
   features.use = NULL)
 }
 \arguments{
 \item{object}{Seurat object}
 
+\item{dims}{Factors to use}
+
 \item{features.return}{Number of features to return per factor}
 
-\item{features.use}{Select features to use for summary}
+\item{features.use}{Select features (genes) to subset the data on}
 }
 \description{
-Summarize features associated with certain factors
+Extracts the top driving features per factor and returns
 }
