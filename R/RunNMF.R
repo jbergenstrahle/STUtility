@@ -168,16 +168,20 @@ rnmf <- function (
 
 
 
-#' Summarize features associated with certain factors
+#' Summarize features associated with cselected factors
+#'
+#' Extracts the top driving features per factor and returns
 #'
 #' @param object Seurat object
+#' @param dims Factors to use
 #' @param features.return Number of features to return per factor
-#' @param features.use Select features to use for summary
+#' @param features.use Select features (genes) to subset the data on
 #'
 #' @export
 #'
 SummarizeAssocFeatures <- function (
   object,
+  dims = NULL,
   features.return = 10,
   features.use = NULL
 ) {
@@ -187,6 +191,9 @@ SummarizeAssocFeatures <- function (
   feature.factor.assoc <- object@reductions[["NMF"]]@feature.loadings
   if (!is.null(features.use)) {
     feature.factor.assoc <- feature.factor.assoc[features.use, ]
+  }
+  if (!is.null(dims)) {
+    feature.factor.assoc <- feature.factor.assoc[, dims]
   }
   factor.features.df <- do.call("rbind", lapply(1:ncol(feature.factor.assoc),
                                                 function(i) {

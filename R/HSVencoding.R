@@ -27,13 +27,16 @@
 #' }
 #' @param plot.type Select one of 'spots' or 'smooth' [default: 'spots']
 #' @param split.hsv Should the HSV colored features be split into separate plots? [default: FALSE]
+#' @param rescale Rescale each feature column separately from 0 to 1 range. If set to FALSE, all feature columns
+#' will be scaled together from 0 to 1 and preserve the relative differencies
 #' @param indices Numeric vector specifying sample indices to include in plot. Default is to show all samples.
 #' @param spots Vector of spots to plot (default is all spots)
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 #' @param slot Which slot to pull expression data from?
 #' @param pt.size Adjust point size for plotting
-#' @param pt.alpha Adjust opacity of spots
+#' @param pt.alpha Adjust opacity of spots.
+#' @param add.alpha Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter
 #' @param shape.by If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot
 #' @param sigma Smoothing bandwidth; only active if \code{plot.type = 'smooth'}. A single positive number, a numeric vector of length 2, or a function that selects the bandwidth automatically [default: 2].
 #' See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.
@@ -65,6 +68,7 @@ HSVPlot <- function (
   ncol = NULL,
   plot.type = 'spots',
   split.hsv = FALSE,
+  rescale = TRUE,
   indices = NULL,
   spots = NULL,
   min.cutoff = NA,
@@ -72,6 +76,7 @@ HSVPlot <- function (
   slot = "data",
   pt.size = 1,
   pt.alpha = 1,
+  add.alpha = FALSE,
   shape.by = NULL,
   sigma = 2,
   highlight.edges = FALSE,
@@ -122,8 +127,7 @@ HSVPlot <- function (
          call. = FALSE)
   }
 
-  data <- feature.scaler(data, features, min.cutoff, max.cutoff, spots)
-
+  data <- feature.scaler(data, features, min.cutoff, max.cutoff)
 
   # Subset by index
   if (!is.null(indices)) {
@@ -133,50 +137,103 @@ HSVPlot <- function (
     indices <- unique(data[, "sample"]) %>% as.numeric()
   }
 
-  # Generate HSV encoded colors
-  if (verbose) cat(paste0("Defining Hue for ", length(x = features), " features ... \n"))
-  hue_breaks <- seq(0, 1, length.out = length(x = features) + 1)[1:length(x = features)]
-  hsv.matrix <- t(matrix(c(hue_breaks, rep(1, length(hue_breaks )), rep(1, length(hue_breaks))), ncol = 3))
-  rownames(hsv.matrix) <- c("h", "s", "v")
-  ann.cols <- apply(hsv.matrix, 2, function(x) hsv(x[1], x[2], x[3]))
+  if (is.null(cols)) {
+    # Generate HSV encoded colors
+    if (verbose) cat(paste0("Defining Hue for ", length(x = features), " features ... \n"))
+    hue_breaks <- seq(0, 1, length.out = length(x = features) + 1)[1:length(x = features)]
+    hsv.matrix <- t(matrix(c(hue_breaks, rep(1, length(hue_breaks )), rep(1, length(hue_breaks))), ncol = 3))
+    rownames(hsv.matrix) <- c("h", "s", "v")
+    ann.cols <- apply(hsv.matrix, 2, function(x) hsv(x[1], x[2], x[3]))
+  } else {
+    if (length(x = features) != length(x = cols)) stop("Length of features and cols must match ...", call. = FALSE)
+    warning("Using user defined colors with opacity. HSV scale will not be used ...", call. = FALSE)
+    ann.cols <- cols
+    names(cols) <- features
+  }
 
+  # Rescale data 0 to 1
+  if (rescale) {
+    data[, features] <- apply(data[, features], 2, scales::rescale)
+  } else {
+    data[, features] <- setNames(data.frame(scales::rescale(data[, features] %>% as.matrix() %>% as.numeric()) %>% matrix(ncol = length(x = features))), nm = features)
+  }
+
+  # Disable pt.alpha if add.alpha is provided
+  if (add.alpha) pt.alpha <- NA
 
   # Plot HSV encoded feature data
   if (plot.type == 'spots') {
     # Select highest V
-    d <- array(dim = c(nrow(data), 3, length(x = features)))
-    if (verbose) cat("Converting values to HSV ... \n")
-    for (i in 1:length(features)) {
-      ftr <- features[i]
-      if (dark.theme) {
-        s <- data.frame(h = hue_breaks[i],
-                        s = 1,
-                        v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
-      } else {
-        s <- data.frame(h = hue_breaks[i],
-                        s = scales::rescale(data[, ftr, drop = T] %>% as.numeric()),
-                        v = 1) %>% as.matrix()
+    if (is.null(cols)) {
+      d <- array(dim = c(nrow(data), 3, length(x = features)))
+      if (verbose) cat("Converting values to HSV ... \n")
+      for (i in 1:length(features)) {
+        ftr <- features[i]
+        if (dark.theme) {
+          s <- data.frame(h = hue_breaks[i],
+                          s = 1,
+                          v = data[, ftr, drop = T] %>% as.numeric()) %>% as.matrix()
+        } else {
+          s <- data.frame(h = hue_breaks[i],
+                          s = data[, ftr, drop = T] %>% as.numeric(),
+                          v = 1) %>% as.matrix()
+        }
+        d[, , i] <- s
       }
-      d[, , i] <- s
+    } else {
+      d <- array(dim = c(nrow(data), 1, length(x = features)))
+      if (verbose) cat("Using provided colors ... \n")
+      for (i in 1:length(features)) {
+        ftr <- features[i]
+        s <- data.frame(v = data[, ftr, drop = T] %>% as.numeric()) %>% as.matrix()
+        d[, , i] <- s
+      }
     }
 
     #red.cols <- data.frame()
     if (verbose) cat("Selecting HSV colors for each spot ... \n")
     if (!split.hsv) {
-      red.cols <- apply(d, 1, function (x) {
-        ind <- ifelse(dark.theme, 3, 2)
-        max.val <- which.max(x[ind, ])
-        hsv(h = x[1, ][which.max(x[ind, ])], s = ifelse(dark.theme, 1, max(x[ind, ])), v = ifelse(dark.theme,  max(x[ind, ]), 1))
-      })
+      if (is.null(cols)) {
+        red.cols <- apply(d, 1, function (x) {
+          ind <- ifelse(dark.theme, 3, 2)
+          max.val <- which.max(x[ind, ])
+          hsvc <- hsv(h = x[1, ][which.max(x[ind, ])], s = ifelse(dark.theme, 1, max(x[ind, ])), v = ifelse(dark.theme,  max(x[ind, ]), 1))
+          if (add.alpha) hsvc <- scales::alpha(hsvc, max(x[ind, ]))
+          return(hsvc)
+        })
+      } else {
+        red.cols <- unlist(apply(d, 1, function (x) {
+          alpha_col <- cols[which.max(x[1, ])]
+          if (add.alpha) {
+            alpha_col <- scales::alpha(colour = alpha_col, alpha = max(x[1, ]))
+          }
+          return(alpha_col)
+        }))
+      }
       data$cols <- red.cols
     } else {
-      full.data <- matrix(ncol = ncol(data), nrow = 0)
-      for (i in 1:dim(d)[3]) {
-        full.data <- rbind(full.data, cbind(data, setNames(data.frame(d[, , i]), nm = c("h", "s", "v")), variable = features[i]))
+      if (is.null(cols)) {
+        full.data <- matrix(ncol = ncol(data), nrow = 0)
+        for (i in 1:dim(d)[3]) {
+          full.data <- rbind(full.data, cbind(data, setNames(data.frame(d[, , i]), nm = c("h", "s", "v")), variable = features[i]))
+        }
+        red.cols <- apply(full.data, 1, function (x) {
+          hsvc <- hsv(h = x["h"], s = x["s"], v = x["v"])
+          if (add.alpha) hsvc <- scales::alpha(hsvc, x["v"])
+          return(hsvc)
+        })
+      } else {
+        full.data <- matrix(ncol = ncol(data), nrow = 0)
+        for (i in 1:dim(d)[3]) {
+          full.data <- rbind(full.data, cbind(data, setNames(data.frame(d[, , i]), nm = c("v")), variable = features[i]))
+        }
+        red.cols <- apply(full.data, 1, function (x) {
+          hsvc <- cols[x["variable"]]
+          if (add.alpha) hsvc <- scales::alpha(hsvc, x["v"])
+          return(hsvc)
+        })
       }
-      red.cols <- apply(full.data, 1, function (x) {
-        hsv(h = x["h"], s = x["s"], v = x["v"])
-      })
+
       full.data$cols <- red.cols
       full.data.split <- split(full.data, full.data$variable)
     }
@@ -244,7 +301,6 @@ HSVPlot <- function (
           data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/((extents[1]/scale.res)*scale.res/dims[2])
         }
 
-        data_subset[, ftr] <- scales::rescale(data_subset[, ftr], to = c(0, val.limits[2]))
         ow <- owin(xrange = c(0, dims[2]*scale.res), yrange = c(0, dims[1]*scale.res))
         p <- ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, ftr])
         suppressWarnings({s <- Smooth(p, sigma*scale.res, dimyx = dims*scale.res)})
@@ -287,10 +343,17 @@ HSVPlot <- function (
           n <- n + 1
         }
         ftr.rst <- apply(ar[, , ], c(1, 2), function(x) {
-          hsv(h = hue_breaks[which.max(x)], s = ifelse(dark.theme, 1, max(x)), v = ifelse(dark.theme, max(x), 1))
-        }) %>% t() %>% as.raster() %>% as.cimg()
+          if (is.null(cols)) {
+            hsvc <- hsv(h = hue_breaks[which.max(x)], s = ifelse(dark.theme, 1, max(x)), v = ifelse(dark.theme, max(x), 1))
+          } else {
+            hsvc <- cols[which.max(x)]
+          }
+          if (add.alpha) hsvc <- scales::alpha(hsvc, max(x))
+          return(hsvc)
+        }) %>% t() %>% as.raster() #%>% as.cimg()
+
         if (length(edges.list) > 0) {
-          ftr.rst <- ftr.rst + edges.list[[j]]
+          ftr.rst[t((edges.list[[j]] > 0)[, , , 1])] <- "#FFFFFF"
         }
         rsts[[j]] <- ftr.rst %>% as.raster()
       }
@@ -300,11 +363,17 @@ HSVPlot <- function (
       for (j in 1:length(unique(data[, "sample"]))) {
         feature.rsts <- list()
         for (i in seq_along(features)) {
-          ftr.rst <- apply(feature.list[[i]][[j]], 3, function(x) {
-            hsv(h = hue_breaks[i], s = ifelse(dark.theme, 1, max(x)), v = ifelse(dark.theme, max(x), 1))
-          }) %>% matrix(nrow = dims[2]*scale.res, ncol = dims[1]*scale.res) %>% t() %>% as.raster() %>% as.cimg()
+          ftr.rst <- sapply(feature.list[[i]][[j]], function(x) {
+            if (is.null(cols)) {
+              hsvc <- hsv(h = hue_breaks[i], s = ifelse(dark.theme, 1, x), v = ifelse(dark.theme, x, 1))
+            } else {
+              hsvc <- cols[i]
+            }
+            if (add.alpha) hsvc <- scales::alpha(hsvc, x)
+            return(hsvc)
+          }) %>% matrix(nrow = dims[2]*scale.res, ncol = dims[1]*scale.res) %>% t() %>% as.raster() #%>% as.cimg()
           if (length(edges.list) > 0) {
-            ftr.rst <- ftr.rst + edges.list[[j]]
+            ftr.rst[t((edges.list[[j]] > 0)[, , , 1])] <- "#FFFFFF"
           }
           feature.rsts[[i]] <-  ftr.rst %>% as.raster()
         }

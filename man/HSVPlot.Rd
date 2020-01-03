@@ -5,11 +5,12 @@
 \title{HSV encoded plots}
 \usage{
 HSVPlot(object, features, ncol = NULL, plot.type = "spots",
-  split.hsv = FALSE, indices = NULL, spots = NULL, min.cutoff = NA,
-  max.cutoff = NA, slot = "data", pt.size = 1, pt.alpha = 1,
-  shape.by = NULL, sigma = 2, highlight.edges = FALSE, cols = NULL,
-  dark.theme = TRUE, grid.ncol = NULL, verbose = FALSE,
-  theme = theme_void(), scale.res = 1, ...)
+  split.hsv = FALSE, rescale = TRUE, indices = NULL, spots = NULL,
+  min.cutoff = NA, max.cutoff = NA, slot = "data", pt.size = 1,
+  pt.alpha = 1, add.alpha = FALSE, shape.by = NULL, sigma = 2,
+  highlight.edges = FALSE, cols = NULL, dark.theme = TRUE,
+  grid.ncol = NULL, verbose = FALSE, theme = theme_void(),
+  scale.res = 1, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -26,6 +27,9 @@ in just in one row or one column.}
 
 \item{split.hsv}{Should the HSV colored features be split into separate plots? [default: FALSE]}
 
+\item{rescale}{Rescale each feature column separately from 0 to 1 range. If set to FALSE, all feature columns
+will be scaled together from 0 to 1 and preserve the relative differencies}
+
 \item{indices}{Numeric vector specifying sample indices to include in plot. Default is to show all samples.}
 
 \item{spots}{Vector of spots to plot (default is all spots)}
@@ -37,7 +41,9 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 
 \item{pt.size}{Adjust point size for plotting}
 
-\item{pt.alpha}{Adjust opacity of spots}
+\item{pt.alpha}{Adjust opacity of spots.}
+
+\item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
 
 \item{shape.by}{If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot}
 

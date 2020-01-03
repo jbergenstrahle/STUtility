@@ -5,6 +5,8 @@
 #'
 #' @param object Seurat object
 #' @param limit Cut-off threshold for segmentation of points. Has to be a value between 0-1.
+#' @param maxnum Maximum number of points to store for each section [default: 5e5]. If you are analyzing many samples
+#' you will have to decrease tsis number, oterwise tere will too many points to draw.
 #' @param verbose Print messages
 #'
 #' @inheritParams rasterize_scatter
@@ -54,7 +56,7 @@ Create3DStack <- function (
   if (verbose) cat("Running approximative segmentation of nuclei ... \n")
   scatters <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
-    scatter <- scatter_HE(st.object, type = "processed", sample.index = s, maxnum = 5e4, limit = limit, edges = FALSE)
+    scatter <- scatter_HE(st.object, type = "processed", sample.index = s, maxnum = maxnum, limit = limit, edges = FALSE)
     scatter$z <- i
     return(scatter)
   }))
@@ -730,10 +732,13 @@ HSVPlot3D <- function (
 
     p <- plot_ly(interpolated.data,
                  scene = scene,
-                 x = ~xmax - x, y = ~y, z = ~z,
+                 x = ~xmax - x,
+                 y = ~y,
+                 z = ~z,
                  marker = list(color = interpolated.data$spot.colors,
                                showscale = FALSE,
-                               size = pt.size)) %>%
+                               size = pt.size,
+                               opacity = pt.alpha)) %>%
       add_markers() %>%
       layout(title = paste(features, collapse = "; "), paper_bgcolor = ifelse(dark.theme, "rgb(0, 0, 0)", "#FFF"),
              scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
@@ -781,7 +786,8 @@ HSVPlot3D <- function (
                  x = ~xmax - x, y = ~y, z = ~z,
                  marker = list(color = data$spot.colors,
                                showscale = FALSE,
-                               size = pt.size)) %>%
+                               size = pt.size,
+                               opacity = pt.alpha)) %>%
       layout(title = paste(features, collapse = "; "), paper_bgcolor = ifelse(dark.theme, "rgb(0, 0, 0)", "#FFF"),
              scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE))) %>%
       add_markers()
