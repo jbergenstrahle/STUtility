@@ -8,8 +8,8 @@ HSVPlot3D(object, features, mode = c("cloud", "spots"), zcoords = NULL,
   spots = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
   blend = FALSE, pt.size = NULL, pt.alpha = 1, cols = NULL,
   add.alpha = FALSE, add.margins = 0, channels.use = NULL,
-  scene = "scene1", return.data = FALSE, dark.theme = FALSE,
-  verbose = FALSE)
+  scene = "scene1", return.data = FALSE, dark.theme = TRUE,
+  rescale = TRUE, verbose = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}

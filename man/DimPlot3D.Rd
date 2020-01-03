@@ -14,6 +14,8 @@ DimPlot3D(object, spots = NULL, dims = 1, reduction = NULL,
 \arguments{
 \item{object}{Seurat object}
 
+\item{spots}{Subset spots to plot}
+
 \item{dims}{Dimensions to plot}
 
 \item{reduction}{Reduction object to pull data from}
@@ -46,8 +48,6 @@ color names specified [default: c("red", "green", "blue)]}
 instead of plotting}
 
 \item{dark.theme}{Draws the plot with a dark theme}
-
-\item{e.anterior}{<- spots Subset spots to plot}
 }
 \description{
 Plots the values of a feature in 3D

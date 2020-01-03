@@ -84,7 +84,7 @@ Create3DStack <- function (
 #' Plots the values of a feature in 3D
 #'
 #' @param object Seurat object
-#' @param e.anterior <- spots Subset spots to plot
+#' @param spots Subset spots to plot
 #' @param dims Dimensions to plot
 #' @param reduction Reduction object to pull data from
 #' @param slot Which slot to pull the data from? [default: 'data']
@@ -228,7 +228,9 @@ DimPlot3D <- function (
           return(setNames(data.frame(A[, 1:3], spot.colors), nm = c("x", "y", "z", "spot.colors")))
         }))
 
-        p <- plot_ly(interpolated.data,
+        if (return.data) return(na.omit(interpolated.data))
+
+        p <- plot_ly(na.omit(interpolated.data),
                      scene = scene,
                      x = ~xmax - x, y = ~y, z = ~z,
                      marker = list(color = interpolated.data$spot.colors,
@@ -246,6 +248,8 @@ DimPlot3D <- function (
         colored.data[is.na(colored.data)] <- 0
         spot.colors <- ColorBlender(colored.data, channels.use)
         data$spot.colors <- spot.colors
+
+        if (return.data) return(data)
 
         p <- plot_ly(data,
                      scene = scene,
@@ -279,7 +283,7 @@ DimPlot3D <- function (
         interpolated_data <- interpolate_2D_data(data, section.input, nx = nxy[1], ny = nxy[2], xy.range = apply(coords[, 1:2], 2, range))
       }))
 
-      if (return.data) return(interpolated.data)
+      if (return.data) return(na.omit(interpolated.data))
 
       p <- plot_ly(na.omit(interpolated.data),
                    scene = scene,
@@ -297,7 +301,7 @@ DimPlot3D <- function (
     } else {
       data <- setNames(data, c("x", "y", "z", "value"))
 
-      if (return.data) return(interpolated.data)
+      if (return.data) return(data)
 
       p <- plot_ly(data,
                    scene = scene,
@@ -595,7 +599,8 @@ HSVPlot3D <- function (
   channels.use = NULL,
   scene = "scene1",
   return.data = FALSE,
-  dark.theme = FALSE,
+  dark.theme = TRUE,
+  rescale = TRUE,
   verbose = FALSE
 ) {
 
@@ -616,6 +621,13 @@ HSVPlot3D <- function (
 
   # Scale values
   data <- feature.scaler(data = data, features = features, min.cutoff = min.cutoff, max.cutoff = max.cutoff)
+
+  # Rescale data 0 to 1
+  if (rescale) {
+    data[, features] <- apply(data[, features], 2, scales::rescale)
+  } else {
+    data[, features] <- setNames(data.frame(scales::rescale(data[, features] %>% as.matrix() %>% as.numeric()) %>% matrix(ncol = length(x = features))), nm = features)
+  }
 
   # Stop if feature classes are not numeric/integer
   if (!all(data.type %in% c("numeric", "integer"))) {
@@ -703,7 +715,7 @@ HSVPlot3D <- function (
           ftr <- features[i]
           s <- data.frame(h = hue_breaks[i],
                           s = 1,
-                          v = scales::rescale(A[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+                          v = A[, ftr, drop = T] %>% as.numeric()) %>% as.matrix()
           d[, , i] <- s
         }
         red.cols <- unlist(apply(d, 1, function (x) {
@@ -716,7 +728,7 @@ HSVPlot3D <- function (
         d <- array(dim = c(nrow(A), 1, length(x = features)))
         for (i in 1:length(features)) {
           ftr <- features[i]
-          s <- data.frame(v = scales::rescale(A[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+          s <- data.frame(v = A[, ftr, drop = T] %>% as.numeric()) %>% as.matrix()
           d[, , i] <- s
         }
         red.cols <- unlist(apply(d, 1, function (x) {
@@ -730,6 +742,8 @@ HSVPlot3D <- function (
 
       return(setNames(data.frame(A[, 1:3], red.cols, stringsAsFactors = F), nm = c("x", "y", "z", "spot.colors")))
     }))
+
+    if (return.data) return(na.omit(interpolated.data))
 
     p <- plot_ly(interpolated.data,
                  scene = scene,
@@ -755,7 +769,7 @@ HSVPlot3D <- function (
         ftr <- features[i]
         s <- data.frame(h = hue_breaks[i],
                         s = 1,
-                        v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+                        v = data[, ftr, drop = T] %>% as.numeric()) %>% as.matrix()
         d[, , i] <- s
       }
 
@@ -769,7 +783,7 @@ HSVPlot3D <- function (
       d <- array(dim = c(nrow(data), 1, length(x = features)))
       for (i in 1:length(features)) {
         ftr <- features[i]
-        s <- data.frame(v = scales::rescale(data[, ftr, drop = T] %>% as.numeric())) %>% as.matrix()
+        s <- data.frame(v = data[, ftr, drop = T] %>% as.numeric()) %>% as.matrix()
         d[, , i] <- s
       }
       red.cols <- unlist(apply(d, 1, function (x) {
@@ -782,6 +796,9 @@ HSVPlot3D <- function (
     }
 
     data$spot.colors <- red.cols
+
+    if (return.data) return(na.omit(data))
+
     p <- plot_ly(data,
                  scene = scene,
                  x = ~xmax - x, y = ~y, z = ~z,
