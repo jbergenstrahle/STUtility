@@ -38,8 +38,8 @@ RegionNeighbours <- function (
     return(spnet)
   }))
 
-  spatnet$label_from <- Idents(se)[spatnet$from] %>% as.character()
-  spatnet$label_to <- Idents(se)[spatnet$to] %>% as.character()
+  spatnet$label_from <- Idents(object)[spatnet$from] %>% as.character()
+  spatnet$label_to <- Idents(object)[spatnet$to] %>% as.character()
   spatnet <- subset(spatnet, label_from == paste0(id))
   if (verbose) cat(paste0("Found ", nrow(spatnet), " neighbours for id ", id, " ... \n"))
 

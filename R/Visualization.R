@@ -303,7 +303,6 @@ ST.DimPlot <- function (
 #' @inheritParams STPlot
 #' @inheritParams SmoothPlot
 #' @importFrom cowplot plot_grid
-#' @importFrom scales rescale
 #' @importFrom ggplot2 ggplot theme theme_void
 #' @importFrom zeallot %<-%
 #'
@@ -958,7 +957,6 @@ SmoothPlot <- function (
 #' @inheritParams ST.ImagePlot
 #' @inheritParams ST.DimPlot
 #' @importFrom cowplot plot_grid
-#' @importFrom scales rescale
 #'
 #' @return A ggplot object
 #'
@@ -1120,7 +1118,7 @@ DimOverlay <- function (
   }
 
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, scales::rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors from dimensions ", paste(paste(dims, channels.use, sep = ":"), collapse = ", ")))
@@ -1178,7 +1176,6 @@ DimOverlay <- function (
 #' @inheritParams ST.ImagePlot
 #' @inheritParams ST.FeaturePlot
 #' @importFrom cowplot plot_grid
-#' @importFrom scales rescale
 #'
 #' @return A ggplot object
 #'
@@ -1340,7 +1337,7 @@ FeatureOverlay <- function (
   }
 
   if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, rescale)
+    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, scales::rescale)
     channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
     if (verbose) cat(paste0("Blending colors from features ", paste(paste(features, channels.use, sep = ":"), collapse = ", ")))
