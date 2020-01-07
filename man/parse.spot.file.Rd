@@ -4,7 +4,7 @@
 \alias{parse.spot.file}
 \title{load count files}
 \usage{
-parse.spot.file(path, delim = "\\t", ...)
+parse.spot.file(path, delim = "\\t")
 }
 \arguments{
 \item{path}{Path to count files}

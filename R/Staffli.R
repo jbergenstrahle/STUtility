@@ -337,6 +337,13 @@ MergeSTData <- function (
   # Merge platforms
   platforms <- unlist(lapply(st.objects, function(x) x@platforms))
 
+  # Create Staffli object
+  m <- CreateStaffliObject(imgs = imgs, meta.data = st.meta_data, xdim = xdim, platforms = platforms)
+  m@rasterlists <- rasterlists
+  m@transformations <- transformations
+  m@limits <- limits
+  m@dims <- dims
+
   # Merge scatter.data
   if (all(unlist(lapply(st.objects, function(x) length(x@scatter.data) > 0)))) {
     n <- length(unique(st.objects[[1]]@meta.data$sample))
@@ -347,15 +354,8 @@ MergeSTData <- function (
       all_scatter.data <- rbind(all_scatter.data, scatter.data)
       n <- n + length(unique(scatter.data$z))
     }
+    m@scatter.data <- all_scatter.data
   }
-
-  # Create Staffli object
-  m <- CreateStaffliObject(imgs = imgs, meta.data = st.meta_data, xdim = xdim, platforms = platforms)
-  m@rasterlists <- rasterlists
-  m@transformations <- transformations
-  m@limits <- limits
-  m@dims <- dims
-  m@scatter.data <- all_scatter.data
 
   object@tools$Staffli <- m
   return(object)

@@ -19,6 +19,18 @@
 #' for features with no or very little overlap but gets cluttered when to many
 #' features are included.
 #'
+#' This visualization method should be used only on carefully selected features and you should be
+#' aware that color representation of quantitative data can be very misleading. It should only be
+#' usde to assess qualitative aspects of the data, for example if you wish to know where 5 "non-overlapping"
+#' features are expressed spatially. You should therefore investigate beforehand if the features of interest
+#' overlap or, otherwise the results can become very confusing.
+#'
+#' @section scaling of features:
+#' All features are by default scaled independently to a 0 to 1 range which means that the relative
+#' differencies between the feature expression levels is not preserved. This is because some features
+#' can still be very distinct for a region of interest even though their magnitude of expression is low.
+#' If you want to preserve the relative differencies you can set `rescale = FALSE`.
+#'
 #' @param object Seurat object
 #' @param features
 #' \itemize{

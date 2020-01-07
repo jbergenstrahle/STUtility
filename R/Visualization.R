@@ -17,6 +17,12 @@ NULL
 #' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
 #' where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
 #'
+#' @section Colorscale:
+#' Note that the dimensionality reduction outputs from method s.a. PCA, ICA and UMAP are typically centered at 0 and it is tehrefore
+#' appropriate to use a divergent colorscale for this type of output, e.g. the "RdBu" color palette in RColorBrewer. However,
+#' if you are plotting factor from the Non-negative Matrix Factorization (NMF) method, you will only have positive value and the
+#' `center.zero` argument should tehrefore be set to FALSE.
+#'
 #' @param object Seurat object
 #' @param dims Dimensions to plot [default: 1, 2]
 #' @param spots Character vector with spot IDs to plot [default: all spots]
@@ -735,8 +741,15 @@ STPlot <- function (
   # Center colorscale at 0
   if (is.null(spot.colors)) {
     if (center.zero & !any(data.type %in% c("character", "factor"))) {
+      if (!is.null(limits)) {
+        max_val <- max(limits)
+      } else {
+        max_val <- max(abs(data[, variable]))
+      }
+      limits <- c(-max_val, max_val)
       p <- p +
-        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
+        scale_color_gradientn(colours = cols, limits = limits)
+        #scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
     } else if (any(data.type %in% c("character", "factor"))) {
       p <- p +
         labs(color = variable) +

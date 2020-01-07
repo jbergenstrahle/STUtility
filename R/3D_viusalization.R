@@ -745,7 +745,7 @@ HSVPlot3D <- function (
 
     if (return.data) return(na.omit(interpolated.data))
 
-    p <- plot_ly(interpolated.data,
+    p <- plot_ly(na.omit(interpolated.data),
                  scene = scene,
                  x = ~xmax - x,
                  y = ~y,

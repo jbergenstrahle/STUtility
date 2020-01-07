@@ -2,17 +2,16 @@
 % Please edit documentation in R/process_from_table.R
 \name{InputFromTable}
 \alias{InputFromTable}
-\title{Create S4 object from info table.
-This function is a wrapper to create a complete S4 object with all the samples and metadata}
+\title{Create S4 clas Seurat object from info table.}
 \usage{
 InputFromTable(infotable, transpose = TRUE, topN = 0,
   min.gene.count = 0, min.gene.spots = 0, min.spot.feature.count = 0,
   min.spot.count = 0, annotation = NULL, id.column = NULL,
-  replace.column = NULL, platform = "Visium",
-  scaleVisium = 0.1039393, verbose = TRUE, ...)
+  replace.column = NULL, platform = "Visium", scaleVisium = NULL,
+  verbose = TRUE, ...)
 }
 \arguments{
-\item{infotable}{table with paths to count files and metadata}
+\item{infotable}{table with paths to count files and metadata. See details below for more information.}
 
 \item{topN}{OPTIONAL: Filter out the top most expressed genes}
 
@@ -31,13 +30,18 @@ column containing the new gene ids}
 
 \item{replace.column}{character vector of unique gene ids to replace the old ids}
 
-\item{scaleVisium}{10X visium scale factor for pixel coordinates, default set to 0.1039393}
+\item{scaleVisium}{10X visium scale factor for pixel coordinates mtaching the "tissue_hires_image.png" files [required].
+If a numeric value is given, it is assumed that all samples have the same scaling factor. Alternatively, an additional
+column named "scaleVisium" can be provided with a scaling factor for each sample, or a column named "json" with paths to
+the "scalefactors_json.json" files.}
 
 \item{verbose}{Print messages}
 
-\item{...}{parameters passed to \code{\link{CreateSeuratObejct}}}
+\item{...}{parameters passed to \code{\link{CreateSeuratObject}}}
 }
 \description{
-Create S4 object from info table.
 This function is a wrapper to create a complete S4 object with all the samples and metadata
+}
+\details{
+This wrapper function has been written
 }

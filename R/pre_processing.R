@@ -4,7 +4,7 @@
 #' load count files
 #'
 #' @param path Path to count files
-#' @param delim delimiter
+#' @param delim Delimiter used in gene count matrix file
 #' @param row.names set column as row.names
 #' @param visium Load 10x visium output files
 #'
@@ -12,21 +12,28 @@
 #'
 #' @keywords internal
 
-st.load.matrix = function(path, delim="\t", row.names = 1, visium = F, ...) {
+st.load.matrix = function (
+  path,
+  delim = "\t",
+  row.names = 1,
+  visium = F
+) {
   stopifnot(file.exists(path))
   x = c()
-  if(visium==F){ #Original ST loading
-    tmp = suppressWarnings({try({x = data.frame(fread(input = path, integer64 = "character",
-                                     sep = delim),
-                               row.names = row.names,
-                               check.names = FALSE)})})
-  }else{ #10X Visium loading
-    tmp = suppressWarnings({try({x = Seurat::Read10X_h5(filename=path)})})
+  if(visium == F){ #Original ST loading
+    tmp = suppressWarnings({try({x = data.frame(fread(input = path, integer64 = "character", sep = delim), row.names = row.names, check.names = FALSE)})})
+  } else { #10X Visium loading
+    suff <- getExtension(path)
+    if (dir.exists(path) & suff == basename(path)) {
+      tmp = suppressWarnings({try({x = Seurat::Read10X(data.dir = path)})})
+    } else {
+      tmp = suppressWarnings({try({x = Seurat::Read10X_h5(filename = path)})})
+    }
   }
   if(inherits(tmp, 'try-error')) {
-    return(as.matrix(c()))
+    return(as(c(), "dgCMatrix"))
   } else {
-    return(as.matrix(x))
+    return(as(x, "dgCMatrix"))
   }
 }
 
@@ -78,3 +85,14 @@ Merger <- function(
   return(do.call(cbind, matrix.list))
 }
 
+#' Obtain file extension
+#'
+#' @param file Path to file
+#'
+getExtension <- function (
+  file
+){
+  ex <- strsplit(basename(file), split="\\.")[[1]]
+  if (ex[length(ex)] == "gz") suff <- paste(ex[length(ex) - 1], ex[length(ex)], sep = ".") else suff <- ex[length(ex)]
+  return(suff)
+}

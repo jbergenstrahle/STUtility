@@ -68,7 +68,9 @@ nbs_2.markers$gene <- rownames(nbs_2.markers)
 se.subset <- SubsetSTData(se, spots = rownames(subset(se[[]], nbs_2 %in% c("2", "nbs_2"))))
 sorted.marks <- nbs_2.markers %>% top_n(n = 40, wt = abs(avg_logFC))
 sorted.marks <- sorted.marks[order(sorted.marks$avg_logFC, decreasing = T), ]
-DoHeatmap(se.subset, features = sorted.marks$gene, group.colors = c("black", "lightgray"), disp.min = -2, disp.max = 2)
+
+magma.cols <- viridis::magma(n = 11)
+DoHeatmap(se.subset, features = sorted.marks$gene, group.colors = c("black", "lightgray"), disp.min = -3, disp.max = 3) + scale_fill_gradientn(colours = magma.cols)
 
 ```
 

@@ -14,7 +14,7 @@
 #' @param delim delimiter
 #' @keywords internal
 
-parse.spot.file = function(path, delim = "\t", ...) {
+parse.spot.file = function(path, delim = "\t") {
   x = c()
   tmp = suppressWarnings({try({x = data.frame(fread(input = path, integer64 = "character",
                                                     sep = delim),
@@ -27,18 +27,25 @@ parse.spot.file = function(path, delim = "\t", ...) {
 }
 
 
-#' Create S4 object from info table.
+#' Create S4 clas Seurat object from info table.
+#'
 #' This function is a wrapper to create a complete S4 object with all the samples and metadata
 #'
-#' @param infotable table with paths to count files and metadata
+#' @details
+#' This wrapper function has been written
+#'
+#' @param infotable table with paths to count files and metadata. See details below for more information.
 #' @param min.gene.count filter away genes that has a total read count below this threshold
 #' @param min.gene.spots filter away genes that is not expressed below this number of capture spots
 #' @param min.spot.feature.count filter away capture spots that contains a total feature count below this threshold
 #' @param min.spot.count filter away capture spots that contains a total read count below this threshold
 #' @param topN OPTIONAL: Filter out the top most expressed genes
-#' @param scaleVisium 10X visium scale factor for pixel coordinates, default set to 0.1039393
+#' @param scaleVisium 10X visium scale factor for pixel coordinates mtaching the "tissue_hires_image.png" files [required].
+#' If a numeric value is given, it is assumed that all samples have the same scaling factor. Alternatively, an additional
+#' column named "scaleVisium" can be provided with a scaling factor for each sample, or a column named "json" with paths to
+#' the "scalefactors_json.json" files.
 #' @param verbose Print messages
-#' @param ... parameters passed to \code{\link{CreateSeuratObejct}}
+#' @param ... parameters passed to \code{\link{CreateSeuratObject}}
 #'
 #' @inheritParams ConvertGeneNames
 #'
@@ -56,7 +63,7 @@ InputFromTable <- function (
   id.column = NULL,
   replace.column = NULL,
   platform = "Visium",
-  scaleVisium = 0.1039393,
+  scaleVisium = NULL,
   verbose = TRUE,
   ...
 ){
@@ -69,7 +76,7 @@ InputFromTable <- function (
 
   # Check if spotfiles are present
   if ("spotfiles" %in% colnames(infotable)){
-    print("Removing all spots outside of tissue")
+    print("Using spotfiles to remove spots outside of tissue")
   }
 
   # Specify platform
@@ -79,6 +86,23 @@ InputFromTable <- function (
     platforms <- infotable$platform
   }
 
+  # Check if Visium platform i Visium, in which case the scalefactors are required
+  if (any(platforms == "Visium")) {
+    if ("json" %in% colnames(infotable)) {
+      suffs <- sapply(infotable[, "json"], getExtension)
+      if (!all(suffs == "json")) stop("Incorrect format of json files in infotable ...", call. = FALSE)
+      scaleVisium <- sapply(infotable[, "json"], function(f) {jsonlite::read_json(f)$tissue_hires_scalef})
+    } else if ("scaleVisium" %in% colnames(infotable)) {
+      if (!class(infotable[, "scaleVisium"]) == "numeric") stop("Column scaleVisium is not numeric ... \n", call. = FALSE)
+      scaleVisium <- infotable[, "scaleVisium"]
+    } else if (class(scaleVisium) == "numeric" & length(scaleVisium) == 1) {
+      scaleVisium <- rep(scaleVisium, nrow(infotable))
+      warning("Only 1 scaleVisium provided. Using this scalefactor for all samples ... \n", call = FALSE)
+    } else {
+      stop("No scalefactors provided for Visium samples ... \n", call. = FALSE)
+    }
+  }
+
   # Parse data files and store in counts and spotFileData
   for (i in seq_along(countPaths)) {
     path <- countPaths[i]
@@ -86,12 +110,12 @@ InputFromTable <- function (
 
     if (platforms[i] == "Visium") {
       # Load data
-      if (length(grep(path, pattern = ".h5")) == 1) {
+      if (getExtension(path) %in% c("h5", "mtx") | dir.exists(path)) {
         counts[[path]] <- st.load.matrix(path, visium = TRUE)
-      } else if (length(grep(path, pattern = ".tsv")) == 1) {
+      } else if (getExtension(path) == "tsv" | getExtension(path) == "tsv.gz") {
         counts[[path]] <- t(st.load.matrix(path))
       } else {
-        stop("Currently only .h5 and .tsv formats are supported for Visium samples")
+        stop("Currently only .h5, .mtx and .tsv formats are supported for Visium samples")
       }
 
 
@@ -110,14 +134,26 @@ InputFromTable <- function (
           spotFileData[[i]] <- spotsData
         } else {
           rownames(spotsData) <- as.character(spotsData[, 1])
-          colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x") #OBS, what is column nr2,3,4?
+          if (length(grep(pattern = "\\-1$", x = rownames(spotsData))) > 0) {
+            rownames(spotsData) <- gsub(pattern = "\\-1$", replacement = "", x = rownames(spotsData))
+          }
+          if (ncol(spotsData) == 6) {
+            print("hubba")
+            colnames(spotsData) <- c("barcode", "selection", "adj_y", "adj_x", "pixel_y", "pixel_x")
+            spotsData <- subset(spotsData, selection == 1)
+          } else if (ncol(spotsData) == 7) {
+            colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x")
+          } else {
+            stop("Spotfiles format not recognized ... \n", call. = FALSE)
+          }
+          #OBS, what is column nr2,3,4?
           spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")] <- apply(spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")], 2, as.numeric)
           spotsData[, c("x", "y")] <- spotsData[, c("adj_x", "adj_y")]
-          spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "barcode", "visium")]
+          spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y")]
           spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
           counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
-          spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium
-          spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium
+          spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium[i]
+          spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium[i]
           spotFileData[[i]] <- spotsData
         }
       } else {
@@ -169,7 +205,7 @@ InputFromTable <- function (
 
   # Generate empty merged count matrix
   samples <- c()
-  cnt <- matrix(0, nrow = length(genes), ncol = 0)
+  cnt <- as(matrix(0, nrow = length(genes), ncol = 0), "dgCMatrix")
   rownames(cnt) <- genes
 
   # Merge counts and add unique id
@@ -179,9 +215,9 @@ InputFromTable <- function (
     curgenes <- rownames(count)
     m <- matrix(0, nrow = length(genes), ncol = nspots)
     rownames(m) <- genes
-    m[curgenes,] <- count
+    m[curgenes, ] <- as.matrix(count)
     colnames(m) <- paste(colnames(count), "_", i, sep = "")
-    cnt <- cbind(cnt, m)
+    cnt <- cbind(cnt, as(m, "dgCMatrix"))
     samples <- c(samples, rep(paste0(i), nspots))
   }
 

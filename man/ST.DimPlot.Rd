@@ -87,6 +87,14 @@ purely "A" the color will be red and if it is purely "B" it will green. Any mixt
 where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
 }
 
+\section{Colorscale}{
+
+Note that the dimensionality reduction outputs from method s.a. PCA, ICA and UMAP are typically centered at 0 and it is tehrefore
+appropriate to use a divergent colorscale for this type of output, e.g. the "RdBu" color palette in RColorBrewer. However,
+if you are plotting factor from the Non-negative Matrix Factorization (NMF) method, you will only have positive value and the
+`center.zero` argument should tehrefore be set to FALSE.
+}
+
 \examples{
 
 se <- RunPCA(se)

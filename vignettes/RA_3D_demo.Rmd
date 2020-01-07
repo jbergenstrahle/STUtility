@@ -1,0 +1,339 @@
+---
+title: "RA 3D"
+author: "Ludvig Larsson"
+date: "1/3/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+```{r load_libs}
+library(STutility)
+#saveRDS(se, file = "~/10x/R_objects/se_RA")
+se <- readDS("~/10x/R_objects/se_RA")
+```
+
+
+## Create spotfiles
+
+```{r seurat}
+
+spotfiles <- list.files("~/RA_project/data/Patient2/HE_spots_xy_files", full.names = T)
+xys <- lapply(spotfiles, function(f) {
+  df <- read.table(file = f, header = T, sep = "\t", stringsAsFactors = F)
+  xy <- data.frame(do.call(rbind, strsplit(rownames(df), split = "_")), stringsAsFactors = F)
+  df <- setNames(cbind(xy, xy, df), nm = c("x", "y", "new_x", "new_y", "pixel_x", "pixel_y"))
+  df <- as.data.frame(lapply(df, as.numeric))
+})
+
+dir.create(path = "~/RA_project/data/Patient2/spotfiles")
+for (i in seq_along(xys)) {
+  write.table(x = xys[i], file = paste0("~/RA_project/data/Patient2/spotfiles/selection_", i, ".tsv"), sep = "\t", row.names = F, col.names = T, quote = F)
+}
+
+```
+
+Create gene_id conversion data.frame
+
+```{r}
+
+ensids <- read.table("~/Fetal_heart_project/annotation/genes.tsv", header = T, stringsAsFactors = F)
+ensids$gene_id <- substr(x = ensids$gene_id, start = 1, stop = 15)
+ensids <- ensids[-which(duplicated(ensids$gene_id)), ]
+write.table(x = ensids, file = "~/RA_project/genes.tsv", quote = F, sep = "\t", row.names = F, col.names = T)
+
+```
+
+## Load data
+
+```{r}
+
+samples <- list.files("~/RA_project/data/tsv", full.names = T)[5:11]
+imgs <- list.files(pattern = ".jpg", "~/RA_project/data/Patient2/images", full.names = T)[1:7]
+spotfiles <- list.files("~/RA_project/data/Patient2/spotfiles", full.names = T)
+
+infoTable <- data.frame(samples, imgs, spotfiles, stringsAsFactors = FALSE)
+
+```
+
+## Read input
+
+```{r seurat}
+
+se <- InputFromTable(infoTable, 
+                     platform = "1k", 
+                     annotation = ensids, 
+                     min.gene.count = 300, 
+                     min.spot.count = 1e3)
+
+```
+
+## Load images
+
+```{r load_imgs}
+
+se <- LoadImages(se, time.resolve = F)
+
+```
+
+## Align images
+
+```{r manual_align}
+
+se <- MaskImages(se)
+se <- ManualAlignImages(se, reference.index = 4)
+
+```
+
+## Check alignment
+
+```{r plot_aligned}
+
+ImagePlot(se, method = "raster")
+
+```
+
+## Normalize data
+
+```{r normalization, warning=F, message=F}
+
+se@meta.data$sample_id <- paste0("sample_", se@tools$Staffli@meta.data$sample)
+
+se <- SCTransform(se, vars.to.regress = c("sample_id"))
+
+```
+
+## Create 3D stack
+
+```{r 3D_stack}
+
+se <- Create3DStack(se)
+
+```
+
+## Find spatial features
+
+```{r spatcor}
+
+spatgenes <- CorSpatialGenes(se)
+head(spatgenes, 20)
+
+```
+
+## Plotting in 3D
+
+```{r 3D_plot}
+
+FeaturePlot3D(se, features = "SELL", pt.size = 0.5, cols = c("lightgray", "lightgray", "mistyrose", "red", "dark red", "black"))
+
+```
+
+## Run NMF
+
+```{r nmf}
+
+se <- RunNMF(se, nfactors = 10, n.cores = 7)
+
+```
+<br>
+## Plot factors
+CCL21 - Inhibits hemopoiesis and stimulates chemotaxis. Chemotactic in vitro for thymocytes and activated T-cells, but not for B-cells, macrophages, or neutrophils. 
+CCL19 -  Recombinant CCL19 shows potent chemotactic activity for T-cells and B-cells but not for granulocytes and monocytes.
+EVL - Ena/VASP proteins are actin-associated proteins involved in a range of processes dependent on cytoskeleton remodeling and cell polarity such as axon guidance and lamellipodial and filopodial dynamics in migrating cells.
+CD3E + SELL CD4 T-cell markers.
+<br>
+```{r nmf1_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 1, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 1, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+I think this factor must be some artefact along the edges. Maybe the cells have initiated a stress response or something ...
+<br>
+```{r nmf2_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 2, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 2, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+MZB1 = B/plasma cell marker 
+<br>
+```{r nmf3_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 3, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 3, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+MZB1 B cell marker, HBA1/HBA2 blood markers
+<br>
+```{r nmf4_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 4, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 4, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+CD79A/CD79B - B lymphocyte antigen receptor
+CD52 - Present on mature lymphocytes
+<br>
+```{r nmf5_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 5, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 5, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+Ribosomal protein genes ...
+<br>
+```{r nmf6_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 6, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 6, dark.theme = T),
+  ncol = 2)
+
+```
+<br> 
+C1QB/C1QC - Antigen presenting cells, e.g. Denritic cells macrophages?
+CFD - This protease catalyzes the cleavage of factor B, the rate-limiting step of the alternative pathway of complement activation.
+CD14 - (cluster of differentiation 14) is a human protein made mostly by macrophages as part of the innate immune system
+<br>
+```{r nmf7_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 7, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 7, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+CD6 on surface of T-cells
+SIGIRR - Acts as a negative regulator of the Toll-like and IL-1R receptor signaling pathways
+<br>
+```{r nmf8_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 8, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 8, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+HLA-DRA/HLA-DBQ1 - Class II molecules are expressed in antigen presenting cells (APC: B lymphocytes, dendritic cells, macrophages)
+TMSB4X - This gene encodes an actin sequestering protein which plays a role in regulation of actin polymerization. The protein is also involved in cell proliferation, migration, and differentiation.
+VIM - This gene encodes a type III intermediate filament protein. Intermediate filaments, along with microtubules and actin microfilaments, make up the cytoskeleton. Vimentins are class-III intermediate filaments found in various non-epithelial cells, especially mesenchymal cells.
+MS4A1 - B cell marker
+<br>
+```{r nmf9_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 9, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 9, dark.theme = T),
+  ncol = 2)
+
+```
+<br>
+HLA-DRB1 - Class II molecules are expressed in antigen presenting cells (APC: B lymphocytes, dendritic cells, macrophages).
+CD14 - (cluster of differentiation 14) is a human protein made mostly by macrophages as part of the innate immune system
+
+<br>
+```{r nmf10_plot, fig.width=8, fig.height=8}
+
+cowplot::plot_grid(
+  ST.DimPlot(se, reduction = "NMF", dims = 10, 
+             pt.size = 1.5, dark.theme = T, ncol = 2,
+             cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"), 
+             center.zero = F),
+  FactorGeneLoadingPlot(se, factor = 10, dark.theme = T),
+  ncol = 2)
+
+```
+
+### HSVPlot
+
+```{r hsv2d, fig.width=10, fig.height=6}
+
+p1 <- HSVPlot(se, features = paste0("factor_", c(1, 10, 5, 7)), pt.size = 1.5)
+c(df1, df2) %<-% SummarizeAssocFeatures(se, dims = c(1, 10, 5, 7))
+
+p2 <- swne::ggHeat(df2[nrow(df2):1, ], rescaling = "column") +
+  scale_fill_gradientn(colours = viridis::magma(n = 11)) +
+  DarkTheme() +
+  theme(plot.background = element_rect(fill = "black", colour = "black"), plot.margin = margin(2, 2, 2, 2, "cm"))
+
+cowplot::plot_grid(p1, p2, ncol = 2)
+
+```
+
+### Plot 3D
+
+```{r NMF_3D}
+
+DimPlot3D(se, reduction = "NMF", dims = 7, dark.theme = T, cols = c("black", "navyblue", "cyan", "yellow", "red", "dark red"))
+
+```
+
+### HSVPlot 3D
+
+```{r HSV_NMF_3D}
+
+HSVPlot3D(se, features = paste0("factor_", c(1, 10, 5, 7)), dark.theme = T)
+
+```
+
+## Date
+
+```{r date}
+date()
+```
+
+## Session Info
+
+```{r sessioninfo}
+sessionInfo()
+```
+
+
+

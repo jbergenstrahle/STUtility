@@ -4,12 +4,12 @@
 \alias{st.load.matrix}
 \title{load count files}
 \usage{
-st.load.matrix(path, delim = "\\t", row.names = 1, visium = F, ...)
+st.load.matrix(path, delim = "\\t", row.names = 1, visium = F)
 }
 \arguments{
 \item{path}{Path to count files}
 
-\item{delim}{delimiter}
+\item{delim}{Delimiter used in gene count matrix file}
 
 \item{row.names}{set column as row.names}
 
