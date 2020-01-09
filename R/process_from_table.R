@@ -138,7 +138,6 @@ InputFromTable <- function (
             rownames(spotsData) <- gsub(pattern = "\\-1$", replacement = "", x = rownames(spotsData))
           }
           if (ncol(spotsData) == 6) {
-            print("hubba")
             colnames(spotsData) <- c("barcode", "selection", "adj_y", "adj_x", "pixel_y", "pixel_x")
             spotsData <- subset(spotsData, selection == 1)
           } else if (ncol(spotsData) == 7) {

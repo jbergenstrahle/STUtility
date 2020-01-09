@@ -33,7 +33,7 @@ st.load.matrix = function (
   if(inherits(tmp, 'try-error')) {
     return(as(c(), "dgCMatrix"))
   } else {
-    return(as(x, "dgCMatrix"))
+    return(as(as.matrix(x), "dgCMatrix"))
   }
 }
 

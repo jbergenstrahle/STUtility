@@ -25,9 +25,10 @@ Depends:
 	SingleCellExperiment (>= 1.2.0),
 	ggplot2 (>= 3.2.0)
 Imports:
+    Matrix (>= 1.2),
     akima (>= 0.6),
     imager,
-	raster (>= 3.0),
+	  raster (>= 3.0),
     magick (>= 2.0),
     Morpho (>= 2.7),
     Rvcg (>= 0.18),

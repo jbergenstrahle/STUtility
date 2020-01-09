@@ -12,7 +12,7 @@ knitr::opts_chunk$set(echo = TRUE)
 ```{r load_libs}
 library(STutility)
 #saveRDS(se, file = "~/10x/R_objects/se_RA")
-se <- readDS("~/10x/R_objects/se_RA")
+se <- readRDS("~/10x/R_objects/se_RA")
 ```
 
 
@@ -320,6 +320,7 @@ DimPlot3D(se, reduction = "NMF", dims = 7, dark.theme = T, cols = c("black", "na
 ```{r HSV_NMF_3D}
 
 HSVPlot3D(se, features = paste0("factor_", c(1, 10, 5, 7)), dark.theme = T)
+htmlwidgets::saveWidget(HSVPlot3D(se, features = paste0("factor_", c(1, 10, 5, 7)), dark.theme = T), "~/STUtility_backup/figures/RA_3D.html")
 
 ```
 
