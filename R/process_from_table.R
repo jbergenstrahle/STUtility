@@ -27,9 +27,11 @@ parse.spot.file = function(path, delim = "\t") {
 }
 
 
-#' Create S4 clas Seurat object from info table.
+#' Create Seurat object from Spatial Transcriptomics data
 #'
-#' This function is a wrapper to create a complete S4 object with all the samples and metadata
+#' This function is a wrapper to create a complete S4 Seurat object with all the samples and metadata.
+#' The input is a data.frame containing paths to all relevant files, s.a. gene count matrices, HE images and
+#' spot selection files. The function can also perform some basic filtering and gene conversion.
 #'
 #' @details
 #' This wrapper function has been written to make it easier to various types of Spatial Transcriptomics data, both for the
