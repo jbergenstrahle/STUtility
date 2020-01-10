@@ -1172,10 +1172,11 @@ DimOverlay <- function (
 # Feature plots on HE images
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
-#'  Visualize 'features' on an ST array grid overlayed on top of HE image
+#'  Visualize 'features' on one selected HE image
 #'
 #' Colors spots on an an ST array grid according to a 'feature'
-#' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
+#' (i.e. gene expression (raw counts or scaled) and features available in the meta data slot).
+#' NOTE that this function only draws a plot for one sample at the time.
 #'
 #' @param sample.index Index specifying the sample that you want to use for plotting
 #' @param spots Character vector with spot IDs to plot [default: all spots]
