@@ -32,7 +32,65 @@ parse.spot.file = function(path, delim = "\t") {
 #' This function is a wrapper to create a complete S4 object with all the samples and metadata
 #'
 #' @details
-#' This wrapper function has been written
+#' This wrapper function has been written to make it easier to various types of Spatial Transcriptomics data, both for the
+#' 10X Visium platform and the older array types, here called '1k' and '2k' (with 1000 and 2000 spots respectively). The infotable should
+#' at minimum contain paths to the gene count matrices in a column named 'samples', which can be provided as:
+#' \itemize{\item{'.tsv' or '.tsv.gz' if the platform is set to either '1k' or '2k'}}
+#' \itemize{\item{'.h5' or path to the output folder containing 'barcodes.tsv', 'features.tsv' and 'matrix.mtx' files if the platform is set to 'either 'Visium'}}
+#'
+#' It is however recommended to include a column named 'imgs' in the `infotable` with paths to the HE images, otherwise none of of the image related
+#' processing and visualization methods can be utilized. In addition to the images, a third column named 'spotfiles' should be provided with paths
+#' to the tables specifying what spatial coordinates are located under the tissue and which also specifies the pixel coorindates of the spots in the HE images.
+#' It is important that the 'spotfiles' pixel coordinates match the HE images provided in the 'imgs' column. If you have run SpaceRanger, the HE images would
+#' would correspond to the 'tissue_hires_image.png' files and the spotfiles to the 'tissue_positions_list.csv' files in the output folder. For '1k' and '2k'
+#' data, you have to make sure that whatever HE images ('imgs') you are using have a matched selection table in tsv format ('spotfiles'). See
+#' \link{https://github.com/SpatialTranscriptomicsResearch/st_spot_detector/wiki/ST-Spot-Detector-Usage-Guide} for more information.
+#'
+#' NOTE that for Visium samples, you also need to provide scaling factors which is described in the section below
+#'
+#' @section samples:
+#' If you are analyzing 'Visium' samples, you should provide the '.h5' files in the 'samples' column of infotable.
+#' If you are analyzing '1k' or '2k' samples processed with the ST_Pipeline, you can provide the '.tsv' files as 'samples'.
+#' We recommend you to use the output '.tsv' file from the ST Pipeline without any modifications and make sure that the
+#' matrix is transposed correctly. The matrix will be transposed by defualt, but this can be deactivated by setting `transpose = FALSE`.
+#'
+#' @section imgs:
+#' If you are analyzing 'Visium' samples, you should provide the 'tissue_hires_image.png' files in the 'imgs' column of infotable.
+#' If you are analyzing '1k' or '2k' samples you should provide the HE images that were processed with the ST Spot Detector. It is
+#' important that these images match the spotfiles!
+#'
+#' @section spotfiles:
+#' If you are analyzing 'Visium' samples, you should provide the 'tissue_positions_list.csv' files in the 'spotfiles' column of infotable.
+#' If you are analyzing '1k' or '2k' samples you should provide the HE images that were processed with the ST Spot Detector, typically called
+#' 'spot_data-selection...' or 'spot_data-all...'. It is important that these spotfiles are matched with the HE images!
+#'
+#' @section scaleVisium:
+#' If you are analyzing 'Visium' samples, you need to provide a scaling factor to align the spots to the correct positions on the array.
+#' These scaling factors are provided in the 'scalefactors_json.json' file in the SpaceRanger output folder. The scaling factor needed for STutility
+#' is called "tissue_hires_scalef" and can be provided with the `scaleVisium` argument in `InputFromTable` if the scaling factor is the same
+#' for all of your samples. If they are not the same, you can either specify the scaling factors manually into a column named 'scaleVisium'
+#' or you can provide the paths to the json files into a column named 'json' in of the infotable data.frame.
+#'
+#' @section gene id conversion:
+#' If you need to convert the gene ids of your expression matrices, you can provide a data.frame with an `ìd.column`
+#' with gene symbols matching the symbols of your input matrices and a `replace.column` with the gene symbols that you
+#' want to convert to. NOTE that any genes not found in the annotation data.frame will be discarded.
+#'
+#' @section platform:
+#' If you are not analyzing 'Visium' data (default platform), you need to specify what other platform you have used, i.e. '1k' or '2k'.
+#' You can also provide a column named 'platform' in the infotable data.frame with a charcter vector specifying the platforms
+#' used for each sample.
+#'
+#' @section meta data:
+#' You can also add additional meta data into the infotable data.frame which will be included in the `@meta.data` slot
+#' of the returned Seurat object.
+#'
+#' @section notes:
+#' Make sure to check that the paths are correct and preferably absolute paths. If you change the working directory
+#' and want to reload the HE images into your Seurat object, you need to make sure that these files can be found on your
+#' system.
+#'
+#' When creating the infotable data.frame, set the parameter `stringsAsFactors = FALSE`.
 #'
 #' @param infotable table with paths to count files and metadata. See details below for more information.
 #' @param min.gene.count filter away genes that has a total read count below this threshold
@@ -40,7 +98,12 @@ parse.spot.file = function(path, delim = "\t") {
 #' @param min.spot.feature.count filter away capture spots that contains a total feature count below this threshold
 #' @param min.spot.count filter away capture spots that contains a total read count below this threshold
 #' @param topN OPTIONAL: Filter out the top most expressed genes
-#' @param scaleVisium 10X visium scale factor for pixel coordinates mtaching the "tissue_hires_image.png" files [required].
+#' @param annotation data.frame containing columns needed for gene id conversion. See the gene id conversion section
+#' for more information.
+#' @param id.column column name in annotation data.frame providing the gene ids of the input matrices
+#' @param replace.column column name in annotation data.frame providing the gene ids for the conversion
+#' @param platform name of the platform used to generate the data [options: 'Visium', '1k', '2k']
+#' @param scaleVisium 10X visium scale factor for pixel coordinates matching the "tissue_hires_image.png" files [required].
 #' If a numeric value is given, it is assumed that all samples have the same scaling factor. Alternatively, an additional
 #' column named "scaleVisium" can be provided with a scaling factor for each sample, or a column named "json" with paths to
 #' the "scalefactors_json.json" files.
@@ -54,11 +117,11 @@ parse.spot.file = function(path, delim = "\t") {
 InputFromTable <- function (
   infotable,
   transpose = TRUE,
-  topN = 0,
   min.gene.count = 0,
   min.gene.spots = 0,
   min.spot.feature.count = 0,
   min.spot.count = 0,
+  topN = 0,
   annotation = NULL,
   id.column = NULL,
   replace.column = NULL,
