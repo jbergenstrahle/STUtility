@@ -115,6 +115,5 @@ ST.DimPlot(se, dims = 1:5, reduction = "pca", min.cutoff = 'q1')
 \seealso{
 \code{\link{ST.FeaturePlot}} for how to plot features,
 \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
-HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-to overlay plots on the HE images in multiple samples.
+HE images.
 }

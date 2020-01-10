@@ -2,15 +2,15 @@
 % Please edit documentation in R/Visualization.R
 \name{DimOverlay}
 \alias{DimOverlay}
-\title{Dimensional reduction plot on ST coordinates on top of HE image}
+\title{Overlay dimensionality reduction vectors on HE images}
 \usage{
-DimOverlay(object, dims = 1:2, sample.index = 1, spots = NULL,
+DimOverlay(object, dims = c(1:2), reduction = NULL, sampleids = 1,
+  spots = NULL, ncols.dims = NULL, ncols.samples = NULL,
   type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
-  pt.size = 1, pt.alpha = 1, reduction = NULL, shape.by = NULL,
-  palette = "MaYl", cols = NULL, grid.ncol = NULL,
-  center.zero = TRUE, channels.use = NULL, verbose = FALSE,
-  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
-  value.scale = c("samplewise", "all"), ...)
+  pt.size = 1, pt.alpha = 1, shape.by = NULL, palette = "MaYl",
+  cols = NULL, center.zero = FALSE, channels.use = NULL,
+  dark.theme = FALSE, sample.labels = TRUE, show.sb = TRUE,
+  value.scale = c("samplewise", "all"), verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -18,9 +18,19 @@ DimOverlay(object, dims = 1:2, sample.index = 1, spots = NULL,
 \item{dims}{List of dimensions for original images. This list has to contain one element for each sample and each element
 should be a vector of length 2 specifying the dimensions of the original HE image.}
 
-\item{sample.index}{Index specifying the sample that you want to use for plotting}
+\item{reduction}{Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"}
+
+\item{sampleids}{Integer vector specifying sample indices to include in the plot [default: 1]}
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
+
+\item{ncols.dims}{Number of columns passed to \code{\link{DimOverlay()}}. For example,
+if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay()}}
+plots into a 2x2 grid [default: `length(dims)`]. (see \emph{Arrange plots*} for a detailed description)}
+
+\item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
+if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots into a 2x2 grid [default: `1`].
+(see \emph{Arrange plots} for a detailed description)}
 
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
@@ -41,8 +51,6 @@ See 'Blending values' below for a more thourough description.}
 
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
 
-\item{reduction}{Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"}
-
 \item{shape.by}{String specifying the column where the shaping label is stored}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
@@ -51,8 +59,6 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
-
-\item{grid.ncol}{Number of columns for display when combining plots. This option will only have an effect on the sample level structure.}
 
 \item{center.zero}{Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
 the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.
@@ -63,36 +69,39 @@ the interpretaion of the output plot.}
 \item{channels.use}{Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 color names specified [default: c("red", "green", "blue)]}
 
-\item{verbose}{Print messages}
-
 \item{dark.theme}{Switches color of scalebar to 'white'}
 
-\item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
+\item{verbose}{Print messages}
 
-\item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}
-
-\item{slot}{Which slot to pull expression data from? [default: 'data']}
-}
-\value{
-A ggplot object
+\item{...}{Parameters passed to other methods}
 }
 \description{
 Graphs the selected vectors of a dimensional reduction technique on a 2D grid of spots overlaid on top of an HE images.
+Draws sample 1 as default, but can take multiple samples as well.
 }
 \details{
-Note that this function only allows you to plot one sample at the time. It is typically difficult to explore details in the HE image
-when diplaying multiple samples side by side, so we decided to limit the choice to plot one sample at the time. If you have higher resolution images,
-it could also take significant time to draw the plots. If you still wish to show multiple samples together you can use the \code{\link{MultiFeatureOverlay}}
-function.
+It is typically difficult to explore details in the HE image when diplaying multiple samples side by side,
+so we recommend to draw the plots for one sample at the time. If you have higher resolution images,
+it could also take significant time to draw the plots.
 }
 \section{Blending values}{
 
-The blend option can be useful if you wish to visualize multiple dimensions simultaneuosly and works for two or three dimensionality
-reduction vectors. Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+The blend option can be useful if you wish to visualize multiple dimensionality reduction simultaneuosly and works for two or three value vectors.
+Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
 spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
 "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
 purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
-where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
+where a 50/50 mixture gives yellow color.
+}
+
+\section{Arrange plots}{
+
+
+The `ncols.dims` argument will determine how each subplot called using
+\code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+`ncols.dims = length(dims)`. The `ncols.samples` argument will determine how these subplots
+are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+The output layout matrix would then be `length(samples)*length(dims)`
 }
 
 \examples{
@@ -101,23 +110,21 @@ where a 50/50 mixture gives yellow color. The amplitude if the values will also 
 se <- LoadImages(se) \%>\%
    RunPCA()
 
-# Plot the first 2 dimensions
-DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1)
+# Plot the first 2 dimensions on the first two samples
+DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2)
 
-# Blend values for dimensions 1 and 2
-DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, blend = T)
+# Blend values for dimensions 1 and 2 on the first two samples
+DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, blend = T)
 
-# Plot the first 2 dimensions and trim off 1st percentile values
-DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, min.cutoff = 'q1')
+# Plot the first 2 dimensions and trim off 1st percentile values on the first two samples
+DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, min.cutoff = 'q1')
 
-# Mask images and plot plot the first 2 dimensions on the masked image
+# Mask images and plot the first 2 dimensions on the masked images for samples 1 and 2
 se <- MaskImages(se)
-DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, type = "masked")
+DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, type = "masked")
 
 }
 \seealso{
 \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
-without the HE image, \code{\link{FeatureOverlay}} for how to overlay feature plots on the
-HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-to overlay plots on the HE images in multiple samples.
+without the HE image and \code{\link{FeatureOverlay}} for how to overlay feature plots on the HE images.
 }

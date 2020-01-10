@@ -75,8 +75,7 @@ NULL
 #'
 #' @seealso \code{\link{ST.FeaturePlot}} for how to plot features,
 #' \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
-#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-#' to overlay plots on the HE images in multiple samples.
+#' HE images.
 #'
 
 ST.DimPlot <- function (
@@ -341,8 +340,7 @@ ST.DimPlot <- function (
 #'
 #' @seealso \code{\link{ST.DimPlot}} for how to plot dimensionality reduction output,
 #' \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
-#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-#' to overlay plots on the HE images in multiple samples.
+#' HE images.
 #'
 
 ST.FeaturePlot <- function (
@@ -943,21 +941,6 @@ SmoothPlot <- function (
 
 #' Dimensional reduction plot on ST coordinates on top of HE image
 #'
-#' Graphs the selected vectors of a dimensional reduction technique on a 2D grid of spots overlaid on top of an HE images.
-#'
-#' @details Note that this function only allows you to plot one sample at the time. It is typically difficult to explore details in the HE image
-#' when diplaying multiple samples side by side, so we decided to limit the choice to plot one sample at the time. If you have higher resolution images,
-#' it could also take significant time to draw the plots. If you still wish to show multiple samples together you can use the \code{\link{MultiFeatureOverlay}}
-#' function.
-#'
-#' @section Blending values:
-#' The blend option can be useful if you wish to visualize multiple dimensions simultaneuosly and works for two or three dimensionality
-#' reduction vectors. Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
-#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
-#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
-#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
-#' where a 50/50 mixture gives yellow color. The amplitude if the values will also determine the brightness of the color.
-#'
 #' @param sample.index Index specifying the sample that you want to use for plotting
 #' @param spots Character vector with spot IDs to plot [default: all spots]
 #' @param type Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
@@ -973,34 +956,8 @@ SmoothPlot <- function (
 #'
 #' @return A ggplot object
 #'
-#' @examples
-#'
-#' # Load images and run PCA
-#' se <- LoadImages(se) %>%
-#'    RunPCA()
-#'
-#' # Plot the first 2 dimensions
-#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1)
-#'
-#' # Blend values for dimensions 1 and 2
-#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, blend = T)
-#'
-#' # Plot the first 2 dimensions and trim off 1st percentile values
-#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, min.cutoff = 'q1')
-#'
-#' # Mask images and plot plot the first 2 dimensions on the masked image
-#' se <- MaskImages(se)
-#' DimOverlay(se, dims = 1:2, reduction = "pca", sample.index = 1, type = "masked")
-#'
-#' @export
-#'
-#' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
-#' without the HE image, \code{\link{FeatureOverlay}} for how to overlay feature plots on the
-#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-#' to overlay plots on the HE images in multiple samples.
-#'
 
-DimOverlay <- function (
+spatial_dim_plot <- function (
   object,
   dims = 1:2,
   sample.index = 1,
@@ -1166,7 +1123,6 @@ DimOverlay <- function (
 }
 
 
-# TODO: add cols options to overlay functions
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Feature plots on HE images
@@ -1193,37 +1149,8 @@ DimOverlay <- function (
 #'
 #' @return A ggplot object
 #'
-#' @examples
-#'
-#' # Load images
-#' se <- LoadImages(se)
-#'
-#' # Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image
-#' FeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sample.index = 1)
-#'
-#' # Plot selected genes
-#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1)
-#'
-#' # Plot normalized values
-#' se <- SCTransform(se)
-#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1)
-#'
-#' # Change to scaled data
-#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1, slot = "scale.data", center.zero = TRUE)
-#'
-#' # Mask images and plot plot the slected genes on the masked image
-#' se <- MaskImages(se)
-#' FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1, type = "masked")
-#'
-#' @export
-#'
-#' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
-#' without the HE image, \code{\link{DimOverlay}} for how to overlay dimensionality reduction output on the
-#' HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-#' to overlay plots on the HE images in multiple samples.
-#'
 
-FeatureOverlay <- function (
+spatial_feature_plot <- function (
   object,
   features,
   sample.index = 1,
@@ -1557,29 +1484,42 @@ ST.ImagePlot <- function (
   final.plot <- plot_grid(plotlist = plots)
 }
 
-#' Apply DimOverlay to multiple samples
+#' Overlay dimensionality reduction vectors on HE images
+#'
+#' Graphs the selected vectors of a dimensional reduction technique on a 2D grid of spots overlaid on top of an HE images.
+#' Draws sample 1 as default, but can take multiple samples as well.
+#'
+#' @details It is typically difficult to explore details in the HE image when diplaying multiple samples side by side,
+#' so we recommend to draw the plots for one sample at the time. If you have higher resolution images,
+#' it could also take significant time to draw the plots.
+#'
+#' @section Blending values:
+#' The blend option can be useful if you wish to visualize multiple dimensionality reduction simultaneuosly and works for two or three value vectors.
+#' Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+#' where a 50/50 mixture gives yellow color.
 #'
 #' @section Arrange plots:
 #'
-#' \code{\link{MultiDimOverlay()}} will first draw one plot for all `dims` in each sample using
-#' \code{\link{DimOverlay()}}. The `ncols.dims` argument will determine how each subplot called using
+#' The `ncols.dims` argument will determine how each subplot called using
 #' \code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
 #' `ncols.dims = length(dims)`. The `ncols.samples` argument will determine how these subplots
 #' are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
 #' The output layout matrix would then be `length(samples)*length(dims)`
 #'
 #' @param object Seurat object
-#' @param sampleids Integer vector specifying sample indices to include in the plot
+#' @param sampleids Integer vector specifying sample indices to include in the plot [default: 1]
 #' @param ncols.dims Number of columns passed to \code{\link{DimOverlay()}}. For example,
 #' if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay()}}
 #' plots into a 2x2 grid [default: `length(dims)`]. (see \emph{Arrange plots*} for a detailed description)
 #' @param ncols.samples Number of columns in the layout grid for the samples. For example,
-#' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
-#' from \code{\link{DimOverlay()}} plots into a 2x2 grid [default: `1`].
+#' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots into a 2x2 grid [default: `1`].
 #' (see \emph{Arrange plots} for a detailed description)
-#' @param ... Parameters passed to DimOverlay
+#' @param ... Parameters passed to other methods
 #'
-#' @inheritParams DimOverlay
+#' @inheritParams spatial_dim_plot
 #'
 #' @examples
 #'
@@ -1588,48 +1528,48 @@ ST.ImagePlot <- function (
 #'    RunPCA()
 #'
 #' # Plot the first 2 dimensions on the first two samples
-#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2)
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2)
 #'
 #' # Blend values for dimensions 1 and 2 on the first two samples
-#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, blend = T)
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, blend = T)
 #'
 #' # Plot the first 2 dimensions and trim off 1st percentile values on the first two samples
-#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, min.cutoff = 'q1')
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, min.cutoff = 'q1')
 #'
 #' # Mask images and plot the first 2 dimensions on the masked images for samples 1 and 2
 #' se <- MaskImages(se)
-#' MultiDimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, type = "masked")
+#' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, type = "masked")
 #'
 #' @export
 #'
 #' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
-#' without the HE image, \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to
-#' overlay feature plots on the HE images and \code{\link{MultiFeatureOverlay}} and for how
-#' to overlay feature plots on the HE images in multiple samples.
+#' without the HE image and \code{\link{FeatureOverlay}} for how to overlay feature plots on the HE images.
 #'
 
-MultiDimOverlay <- function (
+DimOverlay <- function (
   object,
-  sampleids,
+  dims = c(1:2),
+  reduction = NULL,
+  sampleids = 1,
   spots = NULL,
   ncols.dims = NULL,
   ncols.samples = NULL,
-  dims = c(1:2),
   type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
   blend = FALSE,
   pt.size = 1,
   pt.alpha = 1,
-  reduction = NULL,
   shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
   center.zero = FALSE,
   channels.use = NULL,
-  verbose = FALSE,
   dark.theme = FALSE,
+  sample.labels = TRUE,
+  show.sb = TRUE,
   value.scale = c("samplewise", "all"),
+  verbose = FALSE,
   ...
 ) {
 
@@ -1673,12 +1613,13 @@ MultiDimOverlay <- function (
     }
   }
   p.list <- lapply(remaining_samples, function(i) {
-    DimOverlay(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
+    spatial_dim_plot(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
                reduction = reduction, shape.by = shape.by, palette = palette,
                cols = cols, grid.ncol = ncols.dims,
-               center.zero = center.zero, channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,
-               value.scale = value.scale.list, ... = ...)
+               center.zero = center.zero, channels.use = channels.use, dark.theme = dark.theme,
+               sample.label = sample.labels, show.sb = show.sb,
+               value.scale = value.scale.list, verbose = verbose, ... = ...)
   })
   p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
   if (dark.theme) p <- p + dark_theme()
@@ -1686,16 +1627,45 @@ MultiDimOverlay <- function (
 }
 
 
-#' Apply FeatureOverlay to multiple samples
+#' Overlay features on HE images
+#'
+#' Graphs the selected features on a 2D grid of spots overlaid on top of an HE images.
+#' If numerical features are selected, e.g. gene expression values, a "spatial heatmap" will be drawn and
+#' if a categorical variable is selected (such as cluster labels) each group of spots will be assigned a
+#' color. Categorical and numerical values cannot be combined.
+#'
+#' NOTE that this function draws sample 1 as default, but can take multiple samples as well using the `sampleids argument`.
+#'
+#' @details It is typically difficult to explore details in the HE image when diplaying multiple samples side by side,
+#' so we recommend to draw the plots for one sample at the time. If you have higher resolution images,
+#' it could also take significant time to draw the plots.
+#'
+#' @section Blending values:
+#' The blend option can be useful if you wish to visualize multiple numerical features simultaneuosly and works for two or three feature value vectors.
+#' Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+#' where a 50/50 mixture gives yellow color.
 #'
 #' @section Arrange plots:
 #'
-#' \code{\link{MultiFeatureverlay()}} will first draw one plot for all `features` in each sample using
-#' \code{\link{FeatureOverlay()}}. The `ncols.features` argument will determine how each subplot called using
-#' \code{\link{FeatureOverlay()}} is arranged and will by default put all features in 1 row, i.e.
+#' The `ncols.features` argument will determine how each subplot called using
+#' \code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
 #' `ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
 #' are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
-#' The output layout matrix would then be `length(samples)*length(features)`
+#' The output layout matrix would then have the dimensions `length(samples)xlength(features)`
+#'
+#' @section Splitting categorical features:
+#' If you are plotting a categorical feature, e.g.cluster labels, you have the option to split each label into facets using \code{split.labels=TRUE}.
+#' This is very useful if you have many different labels which can make it difficult to distinguish the different colors.
+#'
+#' @section Arrange plots:
+#'
+#' The `ncols.features` argument will determine how each subplot is arranged and will by default put all features in 1 row, i.e.
+#' `ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
+#' are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+#' The output layout matrix would then have the dimensions `length(samples)xlength(features)`
 #'
 #' @param object Seurat object
 #' @param sampleids Names of samples to plot
@@ -1707,7 +1677,7 @@ MultiDimOverlay <- function (
 #' from \code{\link{FeatureOverlay()}} plots into a 2x2 grid [default: `1`].
 #' (see \emph{Arrange plots*} for a detailed description)
 #' @param ... Parameters passed to DimOverlay
-#' @inheritParams FeatureOverlay
+#' @inheritParams spatial_feature_plot
 #'
 #' @examples
 #'
@@ -1715,37 +1685,36 @@ MultiDimOverlay <- function (
 #' se <- LoadImages(se)
 #'
 #' # Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image on the first two samples
-#' MultiFeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sampleids = 1:2)
+#' FeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sampleids = 1:2)
 #'
 #' # Plot selected genes on the first two samples
-#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 #'
 #' # Plot normalized values on the first two samples
 #' se <- SCTransform(se)
-#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 #'
 #' # Change to scaled data
-#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, slot = "scale.data", center.zero = TRUE)
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, slot = "scale.data", center.zero = TRUE)
 #'
 #' # Mask images and plot plot the slected genes on the masked images for samples 1 and 2
 #' se <- MaskImages(se)
-#' MultiFeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, type = "masked")
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, type = "masked")
 #'
 #' @export
 #'
 #' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
-#' without the HE image, \code{\link{DimOverlay}} for how to overlay dimensionality reduction output on the
-#' HE images and \code{\link{MultiDimOverlay}} for how to overlay dimensionality reduction plots on the HE
-#' images in multiple samples.
+#' without the HE image and \code{\link{DimOverlay}} for how to overlay dimensionality reduction output on the
+#' HE images.
 #'
 
-MultiFeatureOverlay <- function (
+FeatureOverlay <- function (
   object,
-  sampleids,
+  features,
+  sampleids = 1,
   spots = NULL,
   ncols.features = NULL,
   ncols.samples = NULL,
-  features,
   type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
@@ -1756,11 +1725,14 @@ MultiFeatureOverlay <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
+  split.labels = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
-  verbose = FALSE,
   dark.theme = FALSE,
+  sample.label = TRUE,
+  show.sb = TRUE,
   value.scale = c("samplewise", "all"),
+  verbose = FALSE,
   ...
 ) {
 
@@ -1797,13 +1769,13 @@ MultiFeatureOverlay <- function (
   }
 
   p.list <- lapply(remaining_samples, function(s) {
-    FeatureOverlay(object, features = features, sample.index = s, spots = spots, type = type,
+    spatial_feature_plot(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
                    palette = palette, cols = cols,
                    grid.ncol = ncols.features, center.zero = center.zero,
-                   channels.use = channels.use, verbose = verbose, dark.theme = dark.theme,
-                   value.scale = value.scale.list, ... = ...)
+                   channels.use = channels.use, split.labels = split.labels, dark.theme = dark.theme,
+                   sample.label = sample.label, show.sb = show.sb, value.scale = value.scale.list, verbose = verbose, ... = ...)
   })
 
   p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)

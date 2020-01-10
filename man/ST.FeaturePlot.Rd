@@ -136,6 +136,5 @@ ST.featurePlot(se, features = "seurat_clusters", split.labels = TRUE)
 \seealso{
 \code{\link{ST.DimPlot}} for how to plot dimensionality reduction output,
 \code{\link{FeatureOverlay}} and \code{\link{DimOverlay}} for how to overlay plots on the
-HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-to overlay plots on the HE images in multiple samples.
+HE images.
 }

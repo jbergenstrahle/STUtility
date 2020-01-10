@@ -2,15 +2,16 @@
 % Please edit documentation in R/Visualization.R
 \name{FeatureOverlay}
 \alias{FeatureOverlay}
-\title{Visualize 'features' on an ST array grid overlayed on top of HE image}
+\title{Overlay features on HE images}
 \usage{
-FeatureOverlay(object, features, sample.index = 1, spots = NULL,
-  type = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
-  blend = FALSE, pt.size = 2, pt.alpha = 1, shape.by = NULL,
-  palette = NULL, cols = NULL, grid.ncol = NULL,
-  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE,
-  show.sb = TRUE, value.scale = c("samplewise", "all"), ...)
+FeatureOverlay(object, features, sampleids = 1, spots = NULL,
+  ncols.features = NULL, ncols.samples = NULL, type = NULL,
+  min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
+  pt.size = 2, pt.alpha = 1, shape.by = NULL, palette = NULL,
+  cols = NULL, split.labels = FALSE, center.zero = FALSE,
+  channels.use = NULL, dark.theme = FALSE, sample.label = TRUE,
+  show.sb = TRUE, value.scale = c("samplewise", "all"),
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -20,9 +21,18 @@ FeatureOverlay(object, features, sample.index = 1, spots = NULL,
     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 }}
 
-\item{sample.index}{Index specifying the sample that you want to use for plotting}
+\item{sampleids}{Names of samples to plot}
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
+
+\item{ncols.features}{Number of columns passed to \code{\link{FeatureOverlay()}}. For example,
+if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay()}}
+plots into a 2x2 grid [default: `length(features)`]. (see \emph{Arrange plots*} for a detailed description)}
+
+\item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
+if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
+from \code{\link{FeatureOverlay()}} plots into a 2x2 grid [default: `1`].
+(see \emph{Arrange plots*} for a detailed description)}
 
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
@@ -54,7 +64,8 @@ Disabled if a color vector is provided (see \code{cols} below).}
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
-\item{grid.ncol}{Number of columns for display when combining plots. This option will only have an effect on the sample level structure.}
+\item{split.labels}{Only works if the features are specified by character vectors.
+The plot will be split into one plot for each group label, highlighting the labelled spots.}
 
 \item{center.zero}{Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
 the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.
@@ -65,50 +76,85 @@ the interpretaion of the output plot.}
 \item{channels.use}{Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 color names specified [default: c("red", "green", "blue)]}
 
-\item{verbose}{Print messages}
-
-\item{split.labels}{Only works if the features are specified by character vectors.
-The plot will be split into one plot for each group label, highlighting the labelled spots.}
-
 \item{dark.theme}{Switches color of scalebar to 'white'}
 
 \item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
-\item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}
-}
-\value{
-A ggplot object
+\item{verbose}{Print messages}
+
+\item{...}{Parameters passed to DimOverlay}
 }
 \description{
-Colors spots on an an ST array grid according to a 'feature'
-(i.e. gene expression (raw counts or scaled) and features available in the meta data slot)
+Graphs the selected features on a 2D grid of spots overlaid on top of an HE images.
+If numerical features are selected, e.g. gene expression values, a "spatial heatmap" will be drawn and
+if a categorical variable is selected (such as cluster labels) each group of spots will be assigned a
+color. Categorical and numerical values cannot be combined.
 }
+\details{
+NOTE that this function draws sample 1 as default, but can take multiple samples as well using the `sampleids argument`.
+
+It is typically difficult to explore details in the HE image when diplaying multiple samples side by side,
+so we recommend to draw the plots for one sample at the time. If you have higher resolution images,
+it could also take significant time to draw the plots.
+}
+\section{Blending values}{
+
+The blend option can be useful if you wish to visualize multiple numerical features simultaneuosly and works for two or three feature value vectors.
+Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+"A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+where a 50/50 mixture gives yellow color.
+}
+
+\section{Arrange plots}{
+
+
+The `ncols.features` argument will determine how each subplot called using
+\code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+`ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
+are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+The output layout matrix would then have the dimensions `length(samples)xlength(features)`
+
+
+
+The `ncols.features` argument will determine how each subplot is arranged and will by default put all features in 1 row, i.e.
+`ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
+are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
+The output layout matrix would then have the dimensions `length(samples)xlength(features)`
+}
+
+\section{Splitting categorical features}{
+
+If you are plotting a categorical feature, e.g.cluster labels, you have the option to split each label into facets using \code{split.labels=TRUE}.
+This is very useful if you have many different labels which can make it difficult to distinguish the different colors.
+}
+
 \examples{
 
 # Load images
 se <- LoadImages(se)
 
-# Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image
-FeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sample.index = 1)
+# Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image on the first two samples
+FeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sampleids = 1:2)
 
-# Plot selected genes
-FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1)
+# Plot selected genes on the first two samples
+FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 
-# Plot normalized values
+# Plot normalized values on the first two samples
 se <- SCTransform(se)
-FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1)
+FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 
 # Change to scaled data
-FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1, slot = "scale.data", center.zero = TRUE)
+FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, slot = "scale.data", center.zero = TRUE)
 
-# Mask images and plot plot the slected genes on the masked image
+# Mask images and plot plot the slected genes on the masked images for samples 1 and 2
 se <- MaskImages(se)
-FeatureOverlay(se, features = c("Cck", "Dcn"), sample.index = 1, type = "masked")
+FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, type = "masked")
 
 }
 \seealso{
 \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
-without the HE image, \code{\link{DimOverlay}} for how to overlay dimensionality reduction output on the
-HE images and \code{\link{MultiFeatureOverlay}} and \code{\link{MultiDimOverlay}} for how
-to overlay plots on the HE images in multiple samples.
+without the HE image and \code{\link{DimOverlay}} for how to overlay dimensionality reduction output on the
+HE images.
 }
