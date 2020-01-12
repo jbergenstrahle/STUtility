@@ -1504,15 +1504,15 @@ ST.ImagePlot <- function (
 #' @section Arrange plots:
 #'
 #' The `ncols.dims` argument will determine how each subplot called using
-#' \code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+#' \code{\link{DimOverlay}} is arranged and will by default put all dims in 1 row, i.e.
 #' `ncols.dims = length(dims)`. The `ncols.samples` argument will determine how these subplots
 #' are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
 #' The output layout matrix would then be `length(samples)*length(dims)`
 #'
 #' @param object Seurat object
 #' @param sampleids Integer vector specifying sample indices to include in the plot [default: 1]
-#' @param ncols.dims Number of columns passed to \code{\link{DimOverlay()}}. For example,
-#' if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay()}}
+#' @param ncols.dims Number of columns passed to \code{\link{DimOverlay}}. For example,
+#' if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay}}
 #' plots into a 2x2 grid [default: `length(dims)`]. (see \emph{Arrange plots*} for a detailed description)
 #' @param ncols.samples Number of columns in the layout grid for the samples. For example,
 #' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots into a 2x2 grid [default: `1`].
@@ -1651,7 +1651,7 @@ DimOverlay <- function (
 #' @section Arrange plots:
 #'
 #' The `ncols.features` argument will determine how each subplot called using
-#' \code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+#' \code{\link{DimOverlay}} is arranged and will by default put all dims in 1 row, i.e.
 #' `ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
 #' are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
 #' The output layout matrix would then have the dimensions `length(samples)xlength(features)`
@@ -1669,12 +1669,12 @@ DimOverlay <- function (
 #'
 #' @param object Seurat object
 #' @param sampleids Names of samples to plot
-#' @param ncols.features Number of columns passed to \code{\link{FeatureOverlay()}}. For example,
-#' if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay()}}
+#' @param ncols.features Number of columns passed to \code{\link{FeatureOverlay}}. For example,
+#' if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay}}
 #' plots into a 2x2 grid [default: `length(features)`]. (see \emph{Arrange plots*} for a detailed description)
 #' @param ncols.samples Number of columns in the layout grid for the samples. For example,
 #' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
-#' from \code{\link{FeatureOverlay()}} plots into a 2x2 grid [default: `1`].
+#' from \code{\link{FeatureOverlay}} plots into a 2x2 grid [default: `1`].
 #' (see \emph{Arrange plots*} for a detailed description)
 #' @param ... Parameters passed to DimOverlay
 #' @inheritParams spatial_feature_plot

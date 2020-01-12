@@ -74,7 +74,7 @@ find.optimal.transform <- function (
 
 #' Apply rigid transformation to a set of points
 #'
-#' Takes a list of obtained with \code{\link{FindOptimalTransform}} and
+#' Takes a list obtained with \code{\link{find.optimal.transform}} and
 #' a matrix of x, y coordinates and returns the transformed x, y coordinates
 #'
 #' @param icp List containing transformation matrices

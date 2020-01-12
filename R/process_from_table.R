@@ -46,7 +46,7 @@ parse.spot.file = function(path, delim = "\t") {
 #' It is important that the 'spotfiles' pixel coordinates match the HE images provided in the 'imgs' column. If you have run SpaceRanger, the HE images would
 #' would correspond to the 'tissue_hires_image.png' files and the spotfiles to the 'tissue_positions_list.csv' files in the output folder. For '1k' and '2k'
 #' data, you have to make sure that whatever HE images ('imgs') you are using have a matched selection table in tsv format ('spotfiles'). See
-#' \link{https://github.com/SpatialTranscriptomicsResearch/st_spot_detector/wiki/ST-Spot-Detector-Usage-Guide} for more information.
+#' [spotdetector tool github](https://github.com/SpatialTranscriptomicsResearch/st_spot_detector/wiki/ST-Spot-Detector-Usage-Guide) for more information.
 #'
 #' NOTE that for Visium samples, you also need to provide scaling factors which is described in the section below
 #'
