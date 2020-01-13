@@ -199,8 +199,10 @@ InputFromTable <- function (
           spotFileData[[i]] <- spotsData
         } else {
           rownames(spotsData) <- as.character(spotsData[, 1])
-          if (length(grep(pattern = "\\-1$", x = rownames(spotsData))) > 0) {
-            rownames(spotsData) <- gsub(pattern = "\\-1$", replacement = "", x = rownames(spotsData))
+          if (getExtension(path) %in% c("mtx")){
+            if (length(grep(pattern = "\\-1$", x = rownames(spotsData))) > 0) {
+                rownames(spotsData) <- gsub(pattern = "\\-1$", replacement = "", x = rownames(spotsData))
+            }
           }
           if (ncol(spotsData) == 6) {
             colnames(spotsData) <- c("barcode", "selection", "adj_y", "adj_x", "pixel_y", "pixel_x")

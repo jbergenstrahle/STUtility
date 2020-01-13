@@ -46,7 +46,11 @@ Suggests:
     shiny (>= 1.3.0),
 	ggiraph (>= 0.6.1),
 	shinyjs (>= 1.0),
-	Giotto (>= 0.1.4)
+	Giotto (>= 0.1.4),
+	adespatial (>= 0.3),
+	sp (>= 1.3),
+	spData (>= 0.3.2),
+	spdep (>= 1.1)
 VignetteBuilder: knitr
 RoxygenNote: 6.1.1
 Collate: 
