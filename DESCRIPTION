@@ -39,8 +39,8 @@ Imports:
 	scales (>= 1.0.0),
 	data.table (>= 1.12.2),
 	reshape2 (>= 1.4.3),
-    shinyjs (>= 1.1),
-    ggiraph (>= 0.7)
+    shinyjs (>= 1.0),
+    ggiraph (>= 0.6)
 Suggests: 
     knitr,
     rmarkdown,
