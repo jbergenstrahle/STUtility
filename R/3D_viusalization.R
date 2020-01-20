@@ -223,7 +223,7 @@ DimPlot3D <- function (
             A <- setNames(cbind(A, interpolated_data.list[[i]][, 4]), nm = c(colnames(A), dims[i]))
           }
           colored.data <- apply(A[, dims], 2, scales::rescale)
-          colored.data[is.na(colored.data)] <- 0
+          #colored.data[is.na(colored.data)] <- 0
           spot.colors <- ColorBlender(colored.data, channels.use)
           return(setNames(data.frame(A[, 1:3], spot.colors), nm = c("x", "y", "z", "spot.colors")))
         }))
@@ -245,7 +245,7 @@ DimPlot3D <- function (
       } else {
         data <- setNames(data, nm = c("x", "y", "z", dims))
         colored.data <- apply(data[, dims], 2, scales::rescale)
-        colored.data[is.na(colored.data)] <- 0
+        #colored.data[is.na(colored.data)] <- 0
         spot.colors <- ColorBlender(colored.data, channels.use)
         data$spot.colors <- spot.colors
 
@@ -448,12 +448,12 @@ FeaturePlot3D <- function (
             A <- setNames(cbind(A, interpolated_data.list[[i]][, 4]), nm = c(colnames(A), features[i]))
           }
           colored.data <- apply(A[, features], 2, scales::rescale)
-          colored.data[is.na(colored.data)] <- 0
+          #colored.data[is.na(colored.data)] <- 0
           spot.colors <- ColorBlender(colored.data, channels.use)
           return(setNames(data.frame(A[, 1:3], spot.colors), nm = c("x", "y", "z", "spot.colors")))
         }))
 
-        p <- plot_ly(interpolated.data,
+        p <- plot_ly(na.omit(interpolated.data),
                      scene = scene,
                      x = ~xmax - x, y = ~y, z = ~z,
                      marker = list(color = interpolated.data$spot.colors,
@@ -468,7 +468,7 @@ FeaturePlot3D <- function (
       } else {
         data <- setNames(data, nm = c("x", "y", "z", features))
         colored.data <- apply(data[, features], 2, scales::rescale)
-        colored.data[is.na(colored.data)] <- 0
+        #colored.data[is.na(colored.data)] <- 0
         spot.colors <- ColorBlender(colored.data, channels.use)
         data$spot.colors <- spot.colors
 
