@@ -154,7 +154,8 @@ DimPlot3D <- function (
   channels.use = NULL,
   scene = "scene1",
   return.data = FALSE,
-  dark.theme = FALSE
+  dark.theme = FALSE,
+  verbose = FALSE
 ) {
 
   # Check to see if Staffli object is present

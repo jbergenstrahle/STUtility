@@ -10,7 +10,7 @@ DimPlot3D(object, spots = NULL, dims = 1, reduction = NULL,
   pt.alpha = 1, cols = c("navyblue", "cyan", "yellow", "red",
   "dark red"), add.alpha = FALSE, add.margins = 0,
   channels.use = NULL, scene = "scene1", return.data = FALSE,
-  dark.theme = FALSE)
+  dark.theme = FALSE, verbose = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}
