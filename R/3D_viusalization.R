@@ -79,24 +79,50 @@ Create3DStack <- function (
   return(object)
 }
 
-# TODO: fix cutoff thresholds
 
-#' Plots the values of a feature in 3D
+#' Plots a selected dimensionality reduction vector in 3D
+#'
+#' This function is similar to the ST.DimPlot but works for 3D stacked data. First, you need to mask and align the tissue sections in your
+#' Seurat object and run the \code{Create3DStack} function to create the 3D stack from the aligned images.
+#'
+#' @section Blending values:
+#' The blend option can be useful if you wish to visualize multiple dimensionality reduction simultaneuosly and works for two or three value vectors.
+#' Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+#' where a 50/50 mixture gives yellow color.
+#'
+#' @section distance between tissue sections:
+#' The distance between adjacent tissue sections is by default set to 1 with the z axis ranging from 0 to the number of sections. You can control the
+#' distances manually by converting the z coordinates using the `zcoords`. The range of the z axis can be controlled to either force the sections
+#' closer to each other or adding distance between them. This can be done using the `add.margins` option which accepts a numeric value that will
+#' stretch out the z axis range. For example, if you have 6 sections and `add.margins = 20`, the z axis will range from [-20, 26] and therefore
+#' push the sections closer to each other.
+#'
+#' @section opacity:
+#' Sometimes it can be useful to add some opacity to the points to make it easier to look at 3D structures. If `pt.alpha` is specified, the same opacity
+#' will be applied to all points. If `add.alpha` is active, the opacity will be scaled with the feature values, meaning that the points with the lowest
+#' feature values will be transparent. `add.alpha` does not work for blended values.
 #'
 #' @param object Seurat object
 #' @param spots Subset spots to plot
-#' @param dims Dimensions to plot
-#' @param reduction Reduction object to pull data from
-#' @param slot Which slot to pull the data from? [default: 'data']
-#' @param zcoords Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:#sections]
+#' @param dims Dimensions to plot [default: 1]. Only one dimension can be plotted at the time unless the blend option is
+#' activated, in which case you can plot 2 or three dimensions at the time.
+#' @param reduction Reduction object to pull data from [e.g. 'umap', 'pca', 'ica', 'NMF', ...]
+#' @param mode Select mode to display the 3D stack in. The default 'cloud' option will use the stacked point patterns as a scaffold for the 3D
+#' visualization whereas the 'spots' options will use the spot coordinates instead.
+#' @param pts.downsample Downsample the point cloud to this number [default: 5e5].
+#' @param zcoords Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:number_of_sections]
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature, may specify quantile in the form of 'q##' where '##'
 #' is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values that skew the colorscale in the plot. For example, if you specify
 #' 'q1', you will trim of values below the 1st percentile. [default: no cuttoffs]
 #' @param blend Scale and blend expression values to visualize coexpression of two dims (this options will override other coloring parameters).
 #' See 'Blending values' below for a more thourough description.
 #' @param pt.size Sets the size of points in the 3D plot
-#' @param pt.alpha Sets the opacity of the points
+#' @param pt.alpha Sets the opacity of the points. Only active if `add.alpha = FALSE`
 #' @param cols Colors used to create a colorscale
+#' @param add.alpha Adds opacity to points scaled by feature values. See opacity section for more details.
 #' @param add.margins Add margins along z axis to push sections closer to each other
 #' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 #' color names specified [default: c("red", "green", "blue)]
@@ -115,20 +141,20 @@ DimPlot3D <- function (
   dims = 1,
   reduction = NULL,
   mode = c("cloud", "spots"),
+  pts.downsample = 5e5,
   zcoords = NULL,
-  slot = 'data',
   min.cutoff = NA,
   max.cutoff = NA,
   blend = FALSE,
   pt.size = NULL,
   pt.alpha = 1,
-  cols = NULL,
+  cols = c("navyblue", "cyan", "yellow", "red", "dark red"),
+  add.alpha = FALSE,
   add.margins = 0,
   channels.use = NULL,
   scene = "scene1",
   return.data = FALSE,
-  dark.theme = FALSE,
-  verbose = FALSE
+  dark.theme = FALSE
 ) {
 
   # Check to see if Staffli object is present
@@ -145,6 +171,9 @@ DimPlot3D <- function (
   if (mode == "cloud") {
     if (!length(x = st.object@scatter.data) > 0) stop("3D stack is missing. Run Create3DStack() first ... \n", call. = FALSE)
     scatter.data <- st.object@scatter.data
+    if (nrow(scatter.data) > pts.downsample) {
+      scatter.data <- scatter.data[sample(1:nrow(scatter.data), size = pts.downsample, replace = FALSE), ]
+    }
   }
 
   reduction <- reduction %||% {
@@ -197,7 +226,7 @@ DimPlot3D <- function (
     nxy <- colnames(scatter.data)[1:2] %>% as.numeric()
   }
 
-  xmax <- lapply(st.object@dims, function(d) {d[2] %>% as.numeric()}) %>% unlist() %>% max()
+  xmax <- lapply(st.object['raw'], function(d) {dim(d)[2] %>% as.numeric()}) %>% unlist() %>% max()
 
   # Check if blend option is set
   if (blend) {
@@ -223,14 +252,16 @@ DimPlot3D <- function (
             A <- setNames(cbind(A, interpolated_data.list[[i]][, 4]), nm = c(colnames(A), dims[i]))
           }
           colored.data <- apply(A[, dims], 2, scales::rescale)
-          #colored.data[is.na(colored.data)] <- 0
+          colored.data <- na.omit(colored.data)
           spot.colors <- ColorBlender(colored.data, channels.use)
-          return(setNames(data.frame(A[, 1:3], spot.colors), nm = c("x", "y", "z", "spot.colors")))
+          return(setNames(data.frame(na.omit(A)[, 1:3], spot.colors), nm = c("x", "y", "z", "spot.colors")))
         }))
 
-        if (return.data) return(na.omit(interpolated.data))
+        if (return.data) return(colored.data)
 
-        p <- plot_ly(na.omit(interpolated.data),
+        if (pt.alpha < 1) interpolated.data$spot.colors <- scales::alpha(interpolated.data$spot.colors, alpha = pt.alpha)
+
+        p <- plot_ly(interpolated.data,
                      scene = scene,
                      x = ~xmax - x, y = ~y, z = ~z,
                      marker = list(color = interpolated.data$spot.colors,
@@ -239,17 +270,20 @@ DimPlot3D <- function (
                                    opacity = pt.alpha)) %>%
           add_markers() %>%
           layout(title = paste(paste(channels.use, dims, sep = ": "), collapse = "; "), paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-                 scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
+                 scene = list(zaxis = list(title = '', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                              xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                              yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
         names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
         return(p)
       } else {
         data <- setNames(data, nm = c("x", "y", "z", dims))
         colored.data <- apply(data[, dims], 2, scales::rescale)
-        #colored.data[is.na(colored.data)] <- 0
         spot.colors <- ColorBlender(colored.data, channels.use)
         data$spot.colors <- spot.colors
 
         if (return.data) return(data)
+
+        if (pt.alpha < 1) data$spot.colors <- scales::alpha(data$spot.colors, alpha = pt.alpha)
 
         p <- plot_ly(data,
                      scene = scene,
@@ -260,7 +294,9 @@ DimPlot3D <- function (
                                    opacity = pt.alpha)) %>%
           add_markers() %>%
           layout(title = paste(paste(channels.use, dims, sep = ": "), collapse = "; "), paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-                 scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE)))
+                 scene = list(zaxis = list(title = '', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                              xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                              yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
         names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
         return(p)
       }
@@ -285,35 +321,60 @@ DimPlot3D <- function (
 
       if (return.data) return(na.omit(interpolated.data))
 
-      p <- plot_ly(na.omit(interpolated.data),
+      interpolated.data <- na.omit(interpolated.data)
+      interpolated.data$alpha <- scales::rescale(interpolated.data[, "val"])
+      interpolated.data$spot.colors <- apply(colorRamp(cols)(interpolated.data$alpha), 1, function(x) rgb(red = x[1], green = x[2], blue = x[3], maxColorValue = 255))
+
+      if (add.alpha) {
+        interpolated.data$spot.colors <- scales::alpha(interpolated.data$spot.colors, alpha = interpolated.data$alpha)
+      } else if (pt.alpha < 1 & !add.alpha) {
+        interpolated.data$spot.colors <- scales::alpha(interpolated.data$spot.colors, alpha = pt.alpha)
+      }
+
+      p <- plot_ly(interpolated.data,
                    scene = scene,
                    x = ~xmax - x, y = ~y, z = ~z,
-                   marker = list(color = ~val,
+                   marker = list(color = interpolated.data$spot.colors,
                                  showscale = TRUE,
+                                 cmin = min(interpolated.data[, "val"]),
+                                 cmax = max(interpolated.data[, "val"]),
                                  colorscale = cs,
                                  size = pt.size,
                                  opacity = pt.alpha)) %>%
         add_markers() %>%
         layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-               scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
-      names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
+               scene = list(zaxis = list(title = '', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                            xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                            yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
+
       return(p)
     } else {
       data <- setNames(data, c("x", "y", "z", "value"))
 
       if (return.data) return(data)
 
+      data$alpha <- scales::rescale(data[, "value"])
+      data$spot.colors <- apply(colorRamp(cols)(data$alpha), 1, function(x) rgb(red = x[1], green = x[2], blue = x[3], maxColorValue = 255))
+      if (add.alpha) {
+        data$spot.colors <- scales::alpha(data$spot.colors, alpha = data$alpha)
+      } else if (pt.alpha < 1 & !add.alpha) {
+        data$spot.colors <- scales::alpha(data$spot.colors, alpha = pt.alpha)
+      }
+
       p <- plot_ly(data,
                    scene = scene,
                    x = ~xmax - x, y = ~y, z = ~z,
-                   marker = list(color = ~value,
+                   marker = list(color = data$spot.colors,
                                  showscale = TRUE,
+                                 cmin = min(data[, "value"]),
+                                 cmax = max(data[, "value"]),
                                  colorscale = cs,
-                                 size = pt.size,
-                                 opacity = pt.alpha)) %>%
+                                 size = pt.size)) %>%
         add_markers() %>%
         layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-               scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE)))
+               scene = list(zaxis = list(title = '', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                            xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                            yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
       names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
       return(p)
     }
@@ -321,21 +382,48 @@ DimPlot3D <- function (
 }
 
 
-#' Plots the values of a feature in 3D
+#' Plots the values of a selected feature in 3D
+#'
+#' This function is similar to the ST.FeaturePlot but works for 3D stacked data. First, you need to mask and align the tissue sections in your
+#' Seurat object and run the \code{Create3DStack} function to create the 3D stack from the aligned images.
+#'
+#' @section Blending values:
+#' The blend option can be useful if you wish to visualize multiple feature vectors simultaneuosly and works for two or three value vectors.
+#' Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+#' spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+#' "A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+#' purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+#' where a 50/50 mixture gives yellow color.
+#'
+#' @section distance between tissue sections:
+#' The distance between adjacent tissue sections is by default set to 1 with the z axis ranging from 0 to the number of sections. You can control the
+#' distances manually by converting the z coordinates using the `zcoords`. The range of the z axis can be controlled to either force the sections
+#' closer to each other or adding distance between them. This can be done using the `add.margins` option which accepts a numeric value that will
+#' stretch out the z axis range. For example, if you have 6 sections and `add.margins = 20`, the z axis will range from [-20, 26] and therefore
+#' push the sections closer to each other.
+#'
+#' @section opacity:
+#' Sometimes it can be useful to add some opacity to the points to make it easier to look at 3D structures. If `pt.alpha` is specified, the same opacity
+#' will be applied to all points. If `add.alpha` is active, the opacity will be scaled with the feature values, meaning that the points with the lowest
+#' feature values will be transparent. `add.alpha` does not work for blended values.
 #'
 #' @param object Seurat object
 #' @param spots Subset spots to plot
 #' @param features Features to plot
+#' @param mode Select mode to display the 3D stack in. The default 'cloud' option will use the stacked point patterns as a scaffold for the 3D
+#' visualization whereas the 'spots' options will use the spot coordinates instead.
+#' @param pts.downsample Downsample the point cloud to this number [default: 5e5].
+#' @param zcoords Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:number_of_sections]
 #' @param slot Which slot to pull the data from? [default: 'data']
-#' @param zcoords Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:#sections]
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature, may specify quantile in the form of 'q##' where '##'
 #' is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values that skew the colorscale in the plot. For example, if you specify
 #' 'q1', you will trim of values below the 1st percentile. [default: no cuttoffs]
 #' @param blend Scale and blend expression values to visualize coexpression of two features (this options will override other coloring parameters).
 #' See 'Blending values' below for a more thourough description.
 #' @param pt.size Sets the size of points in the 3D plot
-#' @param pt.alpha Sets the opacity of the points
+#' @param pt.alpha Sets the opacity of the points. Only active if `add.alpha = FALSE`
 #' @param cols Colors used to create a colorscale
+#' @param add.alpha Adds opacity to points scaled by feature values. See opacity section for more details.
 #' @param add.margins Add margins along z axis to push sections closer to each other
 #' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 #' color names specified [default: c("red", "green", "blue)]
@@ -343,6 +431,7 @@ DimPlot3D <- function (
 #' @param return.data return the data.frame with x,y coordinates and interpolated values
 #' instead of plotting
 #' @param dark.theme Draws the plot with a dark theme
+#' @param verbose Print messages
 #'
 #' @importFrom plotly plot_ly add_markers layout
 #'
@@ -353,6 +442,7 @@ FeaturePlot3D <- function (
   spots = NULL,
   features,
   mode = c("cloud", "spots"),
+  pts.downsample = 5e5,
   zcoords = NULL,
   slot = 'data',
   min.cutoff = NA,
@@ -360,7 +450,8 @@ FeaturePlot3D <- function (
   blend = FALSE,
   pt.size = NULL,
   pt.alpha = 1,
-  cols = NULL,
+  cols = c("navyblue", "cyan", "yellow", "red", "dark red"),
+  add.alpha = FALSE,
   add.margins = 0,
   channels.use = NULL,
   scene = "scene1",
@@ -383,6 +474,9 @@ FeaturePlot3D <- function (
   if (mode == "cloud") {
     if (!length(x = st.object@scatter.data) > 0) stop("3D stack is missing. Run Create3DStack() first ... \n", call. = FALSE)
     scatter.data <- st.object@scatter.data
+    if (nrow(scatter.data) > pts.downsample) {
+      scatter.data <- scatter.data[sample(x = 1:nrow(scatter.data), size = pts.downsample, replace = FALSE), ]
+    }
   }
 
   # Get value
@@ -448,12 +542,16 @@ FeaturePlot3D <- function (
             A <- setNames(cbind(A, interpolated_data.list[[i]][, 4]), nm = c(colnames(A), features[i]))
           }
           colored.data <- apply(A[, features], 2, scales::rescale)
-          #colored.data[is.na(colored.data)] <- 0
+          colored.data <- na.omit(colored.data)
           spot.colors <- ColorBlender(colored.data, channels.use)
-          return(setNames(data.frame(A[, 1:3], spot.colors), nm = c("x", "y", "z", "spot.colors")))
+          return(setNames(data.frame(na.omit(A)[, 1:3], spot.colors), nm = c("x", "y", "z", "spot.colors")))
         }))
 
-        p <- plot_ly(na.omit(interpolated.data),
+        if (return.data) return(interpolated.data)
+
+        if (pt.alpha < 1) interpolated.data$spot.colors <- scales::alpha(interpolated.data$spot.colors, alpha = pt.alpha)
+
+        p <- plot_ly(interpolated.data,
                      scene = scene,
                      x = ~xmax - x, y = ~y, z = ~z,
                      marker = list(color = interpolated.data$spot.colors,
@@ -461,27 +559,33 @@ FeaturePlot3D <- function (
                                    size = pt.size,
                                    opacity = pt.alpha)) %>%
           add_markers() %>%
-          layout(title = paste(paste(channels.use, features, sep = ": "), collapse = "; "), paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-                 scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
+          layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
+                 scene = list(zaxis = list(title = '', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                              xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                              yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
         names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
         return(p)
       } else {
         data <- setNames(data, nm = c("x", "y", "z", features))
         colored.data <- apply(data[, features], 2, scales::rescale)
-        #colored.data[is.na(colored.data)] <- 0
         spot.colors <- ColorBlender(colored.data, channels.use)
         data$spot.colors <- spot.colors
+
+        if (return.data) return(data)
+
+        if (pt.alpha < 1) data$spot.colors <- scales::alpha(data$spot.colors, alpha = pt.alpha)
 
         p <- plot_ly(data,
                scene = scene,
                x = ~xmax - x, y = ~y, z = ~z,
                marker = list(color = data$spot.colors,
                              showscale = FALSE,
-                             size = pt.size,
-                             opacity = pt.alpha)) %>%
+                             size = pt.size)) %>%
           add_markers() %>%
-          layout(title = paste(paste(channels.use, features, sep = ": "), collapse = "; "), paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-                 scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE)))
+          layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
+                 scene = list(zaxis = list(title = '', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                              xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                              yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
         names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
         return(p)
       }
@@ -506,19 +610,32 @@ FeaturePlot3D <- function (
       }))
       interpolated.data <- setNames(interpolated.data, c("x", "y", "z", "val"))
 
-      if (return.data) return(interpolated.data)
+      if (return.data) return(na.omit(interpolated.data))
 
-      p <- plot_ly(na.omit(interpolated.data),
+      interpolated.data <- na.omit(interpolated.data)
+      interpolated.data$alpha <- scales::rescale(interpolated.data[, "val"])
+      interpolated.data$spot.colors <- apply(colorRamp(cols)(interpolated.data$alpha), 1, function(x) rgb(red = x[1], green = x[2], blue = x[3], maxColorValue = 255))
+
+      if (add.alpha) {
+        interpolated.data$spot.colors <- scales::alpha(interpolated.data$spot.colors, alpha = interpolated.data$alpha)
+      } else if (pt.alpha < 1 & !add.alpha) {
+        interpolated.data$spot.colors <- scales::alpha(interpolated.data$spot.colors, alpha = pt.alpha)
+      }
+
+      p <- plot_ly(interpolated.data,
                    scene = scene,
                    x = ~xmax - x, y = ~y, z = ~z,
-                   marker = list(color = ~val,
+                   marker = list(color = interpolated.data$spot.colors,
                                  showscale = TRUE,
+                                 cmin = min(interpolated.data[, "val"]),
+                                 cmax = max(interpolated.data[, "val"]),
                                  colorscale = cs,
-                                 size = pt.size,
-                                 opacity = pt.alpha)) %>%
+                                 size = pt.size)) %>%
         add_markers() %>%
-        layout(title = features, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-               scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE)))
+        layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
+               scene = list(zaxis = list(title = '', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                            xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                            yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
       names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
       return(p)
     } else {
@@ -526,17 +643,28 @@ FeaturePlot3D <- function (
 
       if (return.data) return(data)
 
+      data$alpha <- scales::rescale(data[, "value"])
+      data$spot.colors <- apply(colorRamp(cols)(data$alpha), 1, function(x) rgb(red = x[1], green = x[2], blue = x[3], maxColorValue = 255))
+      if (add.alpha) {
+        data$spot.colors <- scales::alpha(data$spot.colors, alpha = data$alpha)
+      } else if (pt.alpha < 1 & !add.alpha) {
+        data$spot.colors <- scales::alpha(data$spot.colors, alpha = pt.alpha)
+      }
+
       p <- plot_ly(data,
                    scene = scene,
                    x = ~xmax - x, y = ~y, z = ~z,
-                   marker = list(color = ~value,
+                   marker = list(color = data$spot.colors,
                                  showscale = TRUE,
+                                 cmin = min(data[, "value"]),
+                                 cmax = max(data[, "value"]),
                                  colorscale = cs,
-                                 size = pt.size,
-                                 opacity = pt.alpha)) %>%
+                                 size = pt.size)) %>%
         add_markers() %>%
-        layout(title = features, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
-               scene = list(zaxis = list(title = 'z', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE)))
+        layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
+               scene = list(zaxis = list(title = '', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
+                            xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
+                            yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
       names(p$x$layoutAttrs[[1]]) <- c("title", "paper_bgcolor", scene)
      return(p)
     }
@@ -705,7 +833,8 @@ HSVPlot3D <- function (
       for (i in 2:length(features)) {
         A <- setNames(cbind(A, interpolated_data.list[[i]][, 4]), nm = c(colnames(A), features[i]))
       }
-      A[is.na(A)] <- 0
+      #A[is.na(A)] <- 0
+      A <- na.omit(A)
 
       # Create hsv matrix and select highest v
       if (is.null(cols)) {

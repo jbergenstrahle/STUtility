@@ -24,9 +24,9 @@ Matrix of transformed x, y coordinates
 Matrix of transformed x, y coordinates
 }
 \description{
-Takes a list of obtained with \code{\link{FindOptimalTransform}} and
+Takes a list obtained with \code{\link{find.optimal.transform}} and
 a matrix of x, y coordinates and returns the transformed x, y coordinates
 
-Takes a list of obtained with \code{\link{FindOptimalTransform}} and
+Takes a list of obtained with \code{\link{find.optimal.transform}} and
 a matrix of x, y coordinates and returns the transformed x, y coordinates
 }

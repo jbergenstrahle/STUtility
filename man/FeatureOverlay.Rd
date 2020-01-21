@@ -25,13 +25,13 @@ FeatureOverlay(object, features, sampleids = 1, spots = NULL,
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{ncols.features}{Number of columns passed to \code{\link{FeatureOverlay()}}. For example,
-if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay()}}
+\item{ncols.features}{Number of columns passed to \code{\link{FeatureOverlay}}. For example,
+if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay}}
 plots into a 2x2 grid [default: `length(features)`]. (see \emph{Arrange plots*} for a detailed description)}
 
 \item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
 if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
-from \code{\link{FeatureOverlay()}} plots into a 2x2 grid [default: `1`].
+from \code{\link{FeatureOverlay}} plots into a 2x2 grid [default: `1`].
 (see \emph{Arrange plots*} for a detailed description)}
 
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
@@ -111,7 +111,7 @@ where a 50/50 mixture gives yellow color.
 
 
 The `ncols.features` argument will determine how each subplot called using
-\code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+\code{\link{DimOverlay}} is arranged and will by default put all dims in 1 row, i.e.
 `ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
 are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
 The output layout matrix would then have the dimensions `length(samples)xlength(features)`

@@ -24,8 +24,8 @@ should be a vector of length 2 specifying the dimensions of the original HE imag
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{ncols.dims}{Number of columns passed to \code{\link{DimOverlay()}}. For example,
-if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay()}}
+\item{ncols.dims}{Number of columns passed to \code{\link{DimOverlay}}. For example,
+if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay}}
 plots into a 2x2 grid [default: `length(dims)`]. (see \emph{Arrange plots*} for a detailed description)}
 
 \item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
@@ -98,7 +98,7 @@ where a 50/50 mixture gives yellow color.
 
 
 The `ncols.dims` argument will determine how each subplot called using
-\code{\link{DimOverlay()}} is arranged and will by default put all dims in 1 row, i.e.
+\code{\link{DimOverlay}} is arranged and will by default put all dims in 1 row, i.e.
 `ncols.dims = length(dims)`. The `ncols.samples` argument will determine how these subplots
 are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
 The output layout matrix would then be `length(samples)*length(dims)`

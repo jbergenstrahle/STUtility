@@ -52,7 +52,7 @@ The masking method provided uses the SLIC method; Simple Linear Iterative Cluste
 clustering pixels based on their color similarity and proximity in the image plane.
 Before running the SLIC method on the HE images we have noticed that some pre-processing can improve the
 masking significantly.
-First of all, a thresholding is applied to the image using a variant of Otsu's method (see \code{\link{imager::threshold}}.
+First of all, a thresholding is applied to the image using a variant of Otsu's method (see \code{\link[imager]{threshold}}.
 Thereafter, you can select which color channels to use for the masking. it can be beneficial to remove 1 or two color channels from the image
 using \code{channels.use}. Specifying \code{channels.use = 1} will keep only the first channel before running SLIC.
 The next step is to apply some blurring efect on the image to "smooth" out speckles in the image. This

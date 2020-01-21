@@ -2,27 +2,32 @@
 % Please edit documentation in R/3D_viusalization.R
 \name{DimPlot3D}
 \alias{DimPlot3D}
-\title{Plots the values of a feature in 3D}
+\title{Plots a selected dimensionality reduction vector in 3D}
 \usage{
 DimPlot3D(object, spots = NULL, dims = 1, reduction = NULL,
-  mode = c("cloud", "spots"), zcoords = NULL, slot = "data",
+  mode = c("cloud", "spots"), pts.downsample = 5e+05, zcoords = NULL,
   min.cutoff = NA, max.cutoff = NA, blend = FALSE, pt.size = NULL,
-  pt.alpha = 1, cols = NULL, add.margins = 0, channels.use = NULL,
-  scene = "scene1", return.data = FALSE, dark.theme = FALSE,
-  verbose = FALSE)
+  pt.alpha = 1, cols = c("navyblue", "cyan", "yellow", "red",
+  "dark red"), add.alpha = FALSE, add.margins = 0,
+  channels.use = NULL, scene = "scene1", return.data = FALSE,
+  dark.theme = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}
 
 \item{spots}{Subset spots to plot}
 
-\item{dims}{Dimensions to plot}
+\item{dims}{Dimensions to plot [default: 1]. Only one dimension can be plotted at the time unless the blend option is
+activated, in which case you can plot 2 or three dimensions at the time.}
 
-\item{reduction}{Reduction object to pull data from}
+\item{reduction}{Reduction object to pull data from [e.g. 'umap', 'pca', 'ica', 'NMF', ...]}
 
-\item{zcoords}{Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:#sections]}
+\item{mode}{Select mode to display the 3D stack in. The default 'cloud' option will use the stacked point patterns as a scaffold for the 3D
+visualization whereas the 'spots' options will use the spot coordinates instead.}
 
-\item{slot}{Which slot to pull the data from? [default: 'data']}
+\item{pts.downsample}{Downsample the point cloud to this number [default: 5e5].}
+
+\item{zcoords}{Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:number_of_sections]}
 
 \item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature, may specify quantile in the form of 'q##' where '##'
 is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values that skew the colorscale in the plot. For example, if you specify
@@ -33,9 +38,11 @@ See 'Blending values' below for a more thourough description.}
 
 \item{pt.size}{Sets the size of points in the 3D plot}
 
-\item{pt.alpha}{Sets the opacity of the points}
+\item{pt.alpha}{Sets the opacity of the points. Only active if `add.alpha = FALSE`}
 
 \item{cols}{Colors used to create a colorscale}
+
+\item{add.alpha}{Adds opacity to points scaled by feature values. See opacity section for more details.}
 
 \item{add.margins}{Add margins along z axis to push sections closer to each other}
 
@@ -50,5 +57,32 @@ instead of plotting}
 \item{dark.theme}{Draws the plot with a dark theme}
 }
 \description{
-Plots the values of a feature in 3D
+This function is similar to the ST.DimPlot but works for 3D stacked data. First, you need to mask and align the tissue sections in your
+Seurat object and run the \code{Create3DStack} function to create the 3D stack from the aligned images.
 }
+\section{Blending values}{
+
+The blend option can be useful if you wish to visualize multiple dimensionality reduction simultaneuosly and works for two or three value vectors.
+Each of the selected vectors are rescaled from 0 to 1 and are used as RGB color channels to produce mixed color for each
+spot. This can be particularly useful when looking at overlapping value vectors. For example, if you are looking at two overlapping value vectors
+"A" and "B" and use the blend option, the "A" values will be encoded in the "red" channel and the "B" values in the "green" channel. If a spot is
+purely "A" the color will be red and if it is purely "B" it will green. Any mixture of "A" and "B" will produce a color between red and green
+where a 50/50 mixture gives yellow color.
+}
+
+\section{distance between tissue sections}{
+
+The distance between adjacent tissue sections is by default set to 1 with the z axis ranging from 0 to the number of sections. You can control the
+distances manually by converting the z coordinates using the `zcoords`. The range of the z axis can be controlled to either force the sections
+closer to each other or adding distance between them. This can be done using the `add.margins` option which accepts a numeric value that will
+stretch out the z axis range. For example, if you have 6 sections and `add.margins = 20`, the z axis will range from [-20, 26] and therefore
+push the sections closer to each other.
+}
+
+\section{opacity}{
+
+Sometimes it can be useful to add some opacity to the points to make it easier to look at 3D structures. If `pt.alpha` is specified, the same opacity
+will be applied to all points. If `add.alpha` is active, the opacity will be scaled with the feature values, meaning that the points with the lowest
+feature values will be transparent. `add.alpha` does not work for blended values.
+}
+
