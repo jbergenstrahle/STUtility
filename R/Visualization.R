@@ -593,6 +593,9 @@ STPlot <- function (
   ...
 ) {
 
+  # Remove NA values from data
+  data <- na.omit(data)
+
   gg_color_hue <- function(n) {
     hues = seq(15, 375, length = n + 1)
     hcl(h = hues, l = 65, c = 100)[1:n]
@@ -1352,6 +1355,9 @@ ST.ImagePlot <- function (
   limits = NULL,
   ...
 ) {
+
+  # Remove NA values from data
+  data <- na.omit(data)
 
   # Define function to generate ggplot2 default colors
   gg_color_hue <- function(n) {

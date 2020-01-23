@@ -1,97 +1,153 @@
 ---
-title: "Region neighbours"
+title: "Region neighbors detection"
 author: "Ludvig Larsson"
-date: "1/3/2020"
-output: html_document
+date: "12/6/2019"
+output:
+  html_document:
+    theme: darkly
+    number_sections: false
+    toc: yes
+    toc_depth: 3
+    toc_float:
+      collapsed: false
+      smooth_scroll: true
 ---
+
+<style type="text/css">
+div.main-container {
+  background-color: #000000 !important;
+  max-width: 1400px;
+  margin-left: auto;
+  margin-right: auto;
+}
+</style>
+<style>
+#TOC {
+  background: url("https://www.spatialresearch.org/wp-content/uploads/2019/09/str-logo-spatial_research_3@2x.png");
+  background-size: contain;
+  padding-top: 100px !important;
+  background-repeat: no-repeat;
+  op: 5%;
+  opacity: 0.8;
+  width: 500px;
+  color: white;
+  border-color: #000000 !important;
+}
+</style>
+
+<style> code, pre{
+  background-color: #000000 !important;
+  color: white !important;
+}
+</style>
+<style> 
+body {
+  color: white
+}
+</style>
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
+<br>
 
-## Load data
+# Load data
 
+For this tutorial we'll use the `se.list´ object created in the "10x_public_data.tutorial.
+<br>
+```{r read_data, include=FALSE}
+se.list <- readRDS("~/10x/R_objects/se.list")
+```
 ```{r load_data, warning=FALSE, message=FALSE}
 
-#se <- readRDS("~/STUtility/saved/se_object")
-se.list <- readRDS("~/10x/R_objects/se.list")
 library(STutility)
 library(magrittr)
 library(dplyr)
 
 ```
+<br>
 
-## Connected Spatial Network
+## Spatial Connection Network
 
 If you have defined a region of interest and you want to find all spots neighbouring to this region you can use the `RegionNeighbours()` function to automatically detect such spots. For example, let's say that we want to select all neighbours to cluster 12 in the plot below and find the differentially expressed markers between the neighbours.
-
+<br>
 ```{r plot_clusters, fig.width=14, fig.height=6, out.width = "100%"}
 
-ST.FeaturePlot(se.list[[4]], features = "seurat_clusters", pt.size = 0.5)
+ST.FeaturePlot(se.list[[4]], features = "seurat_clusters", pt.size = 1, dark.theme = TRUE)
 
 ```
+<br>
+
+## Find region neighbors
 
 First, `RegionNeighbours()` function to find the neighbouring spots but we have to make sure that the active identity is appropriately set, here we use 'seurat_clusters'. 
-
+<br>
 ```{r region_nbs}
 
 se <- SetIdent(se.list[[4]], value = "seurat_clusters")
 se <- RegionNeighbours(se, id = 2, verbose = TRUE)
 
 ```
-
+<br>
 The default behaviour is to find all spots which are neighbours with the selected id but ignoring its label, therefore it will simply be called nbs_12 as in "neighbours to 12".
-
+<br>
 ```{r plot_neighbours, fig.width=14, fig.height=6, out.width = "100%"}
 
-MultiFeatureOverlay(se, features = "nbs_2", ncols.samples = 2, sampleids = 1:2, cols = c("red", "black", "lightgray"), pt.size = 0.5)
+FeatureOverlay(se, features = "nbs_2", ncols.samples = 2, sampleids = 1:2, cols = c("red", "lightgray"), pt.size = 1, dark.theme = TRUE)
 
 ```
-
+<br>
 You can also keep all spots from the id group by setting `keep.within.id = TRUE`.
-
+<br>
 ```{r region_nbs_2, fig.width=14, fig.height=6, out.width = "100%", warning=FALSE}
 
 se <- SetIdent(se.list[[4]], value = "seurat_clusters")
 se <- RegionNeighbours(se, id = 2, keep.within.id = T, verbose = TRUE)
-MultiFeatureOverlay(se, features = "nbs_2", ncols.samples = 2, sampleids = 1:2, cols = c("red", "black", "lightgray"), pt.size = 0.5)
+FeatureOverlay(se, features = "nbs_2", ncols.samples = 2, sampleids = 1:2, cols = c("red", "lightgray"), pt.size = 1, dark.theme = TRUE)
 
 ```
+<br>
 
-Now we can run a DE test to find differentially expressed markers between these two regions.
+## DE test
 
-```{r de_test, fig.width=6, fig.height=6}
+Now we can run a DE test to find differentially expressed markers between these two regions. We'll subset the data using the `SubsetSTData` function 
+<br>
+```{r de_test, fig.width=6, fig.height=6, warning=FALSE}
 
 se <- SetIdent(se, value = "nbs_2")
 nbs_2.markers <- FindMarkers(se, ident.1 = "2", ident.2 = "nbs_2")
 nbs_2.markers$gene <- rownames(nbs_2.markers)
+
+# 
 se.subset <- SubsetSTData(se, spots = rownames(subset(se[[]], nbs_2 %in% c("2", "nbs_2"))))
 sorted.marks <- nbs_2.markers %>% top_n(n = 40, wt = abs(avg_logFC))
 sorted.marks <- sorted.marks[order(sorted.marks$avg_logFC, decreasing = T), ]
 
 magma.cols <- viridis::magma(n = 11)
-DoHeatmap(se.subset, features = sorted.marks$gene, group.colors = c("black", "lightgray"), disp.min = -3, disp.max = 3) + scale_fill_gradientn(colours = magma.cols)
+DoHeatmap(se.subset, features = sorted.marks$gene, group.colors = c("red", "lightgray"), disp.min = -3, disp.max = 3) + scale_fill_gradientn(colours = magma.cols) + DarkTheme()
 
 ```
-
+<br>
 And lastly, if you want to keep the labels for the neighbours you can set `keep.idents = TRUE` and the neighbours will be called label_nb_to_12.
-
+<br>
 ```{r keep_idents, fig.width = 14, fig.height=6, out.width = "100%"}
 
 se <- SetIdent(se, value = "seurat_clusters")
 se <- RegionNeighbours(se, id = 2, keep.idents = TRUE, verbose = TRUE)
-MultiFeatureOverlay(se, features = "nbs_2", ncols.samples = 2, sampleids = 1:2, pt.size = 0.5)
+FeatureOverlay(se, features = "nbs_2", ncols.samples = 2, sampleids = 1:2, pt.size = 1, dark.theme = TRUE)
 
 ```
+<br>
 
 # Date
-
+<br>
 ```{r date}
 date()
-````
+```
+<br>
 
 # Session Info
-
+<br>
 ```{r session}
 sessionInfo()
 ```

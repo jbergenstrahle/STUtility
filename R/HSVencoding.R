@@ -116,7 +116,7 @@ HSVPlot <- function (
   }
 
   # Add group column to data
-  data[,  "sample"] <- st.object[[, "sample", drop = TRUE]]
+  data[,  "sample"] <- st.object[[spots, "sample", drop = TRUE]]
 
   # Add shape column if specified
   if (!is.null(x = shape.by)) {
@@ -275,7 +275,7 @@ HSVPlot <- function (
       plot <- plot +
         geom_point(data = data.frame(x = rep(-1, length(features)), y = rep(-1, length(features)), features), aes(x, y, colour = features)) +
         scale_color_manual(values = setNames(ann.cols, features))
-      suppressWarnings({print(plot)})
+      return(plot)
     } else {
       plots <- lapply(full.data.split, function (data) {
         plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
@@ -294,7 +294,7 @@ HSVPlot <- function (
       nrows <- ceiling(length(x = features)/ncols)
       plot <- cowplot::plot_grid(plotlist = plots, ncol = ncols, nrow = nrows)
       if (dark.theme) plot <- plot + dark_theme()
-      suppressWarnings({print(plot)})
+      return(plot)
     }
   } else if (plot.type == 'smooth') {
     feature.list <- list()
