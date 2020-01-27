@@ -565,7 +565,7 @@ spatial_hsv_plot <- function (
   if (!split.hsv) {
     plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, imdims,
                          pt.size, pt.alpha, palette, cols, ncol, spot.colors = data$cols,
-                         center.zero, plot.title = "", FALSE, dark.theme,
+                         FALSE, plot.title = "", FALSE, dark.theme,
                          pixels.per.um, NULL, ...)
     plot <- plot +
       geom_point(data = data.frame(x = rep(-1, length(features)), y = rep(-1, length(features)), features), aes(x, y, colour = features)) +
@@ -580,7 +580,7 @@ spatial_hsv_plot <- function (
       data <- data[[i]]
       plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, imdims,
                            pt.size, pt.alpha, palette, cols, ncol, spot.colors = data$cols,
-                           center.zero, plot.title = features[i], FALSE, dark.theme,
+                           FALSE, plot.title = features[i], FALSE, dark.theme,
                            pixels.per.um, NULL, ...)
       if (dark.theme) {
         plot <- plot + dark_theme()
