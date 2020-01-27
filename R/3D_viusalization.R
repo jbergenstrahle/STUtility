@@ -130,6 +130,7 @@ Create3DStack <- function (
 #' @param return.data return the data.frame with x,y coordinates and interpolated values
 #' instead of plotting
 #' @param dark.theme Draws the plot with a dark theme
+#' @param verbose Print messages
 #'
 #' @importFrom plotly plot_ly add_markers layout
 #'
@@ -682,6 +683,10 @@ FeaturePlot3D <- function (
 #'     \item A column name from meta.data (e.g. mitochondrial percentage - "percent.mito")
 #'     \item A column name from dimensionality reduction output (e.g. principal component 1 - "PC_1")
 #' }
+#' @param mode Select mode to display the 3D stack in. The default 'cloud' option will use the stacked point patterns as a scaffold for the 3D
+#' visualization whereas the 'spots' options will use the spot coordinates instead.
+#' @param rescale Rescale each feature column separately from 0 to 1 range. If set to FALSE, all feature columns
+#' will be scaled together from 0 to 1 and preserve the relative differencies
 #' @param slot Which slot to pull the data from? [default: 'data']
 #' @param zcoords Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:#sections]
 #' @param spots Vector of spots to plot (default is all spots)

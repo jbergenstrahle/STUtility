@@ -11,6 +11,7 @@
 #' @param object Seurat or Staffli object
 #' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
 #' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 2000 pixels)
+#' @param time.resolve Activate to stop R from loading raw images into memory
 #' @param verbose Print messages
 #'
 #' @importFrom magick image_read
@@ -99,7 +100,7 @@ LoadImages <- function (
 #' @importFrom stats kmeans
 #' @importFrom purrr modify_at
 #'
-#' @return A Seurat object with masked HE images
+#' @return A Seurat or Staffli object with masked HE images
 #'
 #' @export
 
@@ -189,7 +190,7 @@ AlignImages <- function (
 #' Creates an interactive shiny application to align images manually
 #'
 #' @param object Seurat object
-#' @param Image type used for alignment
+#' @param type Image type to use as input for alignment [default: 'masked.masks']
 #' @param reference.index Specifies reference sample image for alignment(default: 1)
 #' @param edges Uses the tissue edges as points set for alignment
 #' @param maxnum Maximum grid number
@@ -222,6 +223,7 @@ ManualAlignImages <- function (
 #' @param object Seurat object
 #' @param index Sample index
 #' @param verbose Print messages
+#' @param Input image type to run edge detection on [default: 'masked.masks']
 #'
 #' @importFrom imager imgradient add map_il
 

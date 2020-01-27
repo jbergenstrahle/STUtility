@@ -8,6 +8,13 @@ aligned along the edges}
 \method{get.edges}{Staffli}(object, index = 1, verbose = FALSE,
   type = "masked.masks")
 }
+\arguments{
+\item{object}{Seurat object}
+
+\item{index}{Sample index}
+
+\item{verbose}{Print messages}
+}
 \value{
 A list of data.frames with edge coordinates
 }

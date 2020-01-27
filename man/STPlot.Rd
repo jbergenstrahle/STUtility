@@ -60,7 +60,11 @@ The plot will be split into one plot for each group label, highlighting the labe
 \item{pxum}{A data.frame object with columns for 'x', 'xend', 'y' and 'sample'
 used for facetted plots.}
 
+\item{sb.size}{Defines the size of the scalebar}
+
 \item{dark.theme}{Switches color of scalebar to 'white'}
+
+\item{limits}{Sets the range of the colorbar values}
 
 \item{...}{Parameters passed to geom_point()}
 }

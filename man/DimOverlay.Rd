@@ -9,7 +9,7 @@ DimOverlay(object, dims = c(1:2), reduction = NULL, sampleids = 1,
   type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
   pt.size = 1, pt.alpha = 1, shape.by = NULL, palette = "MaYl",
   cols = NULL, center.zero = FALSE, channels.use = NULL,
-  dark.theme = FALSE, sample.labels = TRUE, show.sb = TRUE,
+  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
   value.scale = c("samplewise", "all"), verbose = FALSE, ...)
 }
 \arguments{
@@ -71,6 +71,13 @@ color names specified [default: c("red", "green", "blue)]}
 
 \item{dark.theme}{Switches color of scalebar to 'white'}
 
+\item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
+
+\item{show.sb}{Should the size bar be displayed? [default: TRUE]}
+
+\item{value.scale}{Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
+scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
+
 \item{verbose}{Print messages}
 
 \item{...}{Parameters passed to other methods}
@@ -110,13 +117,13 @@ The output layout matrix would then be `length(samples)*length(dims)`
 se <- LoadImages(se) \%>\%
    RunPCA()
 
-# Plot the first 2 dimensions on the first two samples
+# Plot the first 2 dimensions on the first two tissue sections
 DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2)
 
-# Blend values for dimensions 1 and 2 on the first two samples
+# Blend values for dimensions 1 and 2 on the first two tissue sections
 DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, blend = T)
 
-# Plot the first 2 dimensions and trim off 1st percentile values on the first two samples
+# Plot the first 2 dimensions and trim off 1st percentile values on the first two tissue sections
 DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, min.cutoff = 'q1')
 
 # Mask images and plot the first 2 dimensions on the masked images for samples 1 and 2

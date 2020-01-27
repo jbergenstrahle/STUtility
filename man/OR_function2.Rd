@@ -6,6 +6,9 @@
 \usage{
 OR_function2(A, B, C, D)
 }
+\arguments{
+\item{A, B, C, D}{Vectors to used for calculation of odds ratio}
+}
 \description{
 Calculate odds-ratio
 }

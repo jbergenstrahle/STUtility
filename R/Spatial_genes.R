@@ -10,6 +10,8 @@
 #' @param minK Minimum nearest neigbhours if maxdist is not provided [default: 0]
 #'
 #' @importFrom dplyr group_by mutate ungroup
+#' @importFrom dbscan kNN
+#' @importFrom igraph graph_from_data_frame
 #'
 #' @export
 #' @examples
@@ -52,12 +54,12 @@ GetSpatNet <- function (
     nNeighbours <- nNeighbours %||% ifelse(platforms[i] == "Visium", 6, 4)
     maxdist <- maxdist %||% ifelse(platforms[i] == "1k", 270*sdist, 150*sdist)
 
-    knn_spatial <- dbscan::kNN(x = xys[, c("x", "y")] %>% as.matrix(), k = nNeighbours)
+    knn_spatial <- kNN(x = xys[, c("x", "y")] %>% as.matrix(), k = nNeighbours)
     knn_spatial.norm <- data.frame(from = rep(1:nrow(knn_spatial$id), nNeighbours),
                                  to = as.vector(knn_spatial$id),
                                  weight = 1/(1 + as.vector(knn_spatial$dist)),
                                  distance = as.vector(knn_spatial$dist))
-    nw_spatial.norm = igraph::graph_from_data_frame(knn_spatial.norm, directed = FALSE)
+    nw_spatial.norm = graph_from_data_frame(knn_spatial.norm, directed = FALSE)
 
     # create network for coordinates
     spatnet <- knn_spatial.norm
@@ -87,12 +89,13 @@ GetSpatNet <- function (
 #'
 #' @param object Seurat object
 #' @param spots Character vector with spot IDs to plot [default: all spots]
+#' @param bin_method Chose between methods 'kmeans' or 'rank' to rank gene expression on
 #' @param slot Which slot to pull the data from? [default: 'data']
 #' @param features.include Features to include in the detection computation. By default,
 #' most variable features are selected.
 #' @param nstart kmeans: nstart parameter
 #' @param iter_max kmeans: iter.max parameter
-#' @param rank_percentage Percentage of top spots for binarization
+#' @param percentage_rank Percentage of top spots for binarization
 #' @param do_fisher_test Perform Fisher test
 #' @param community_expectation Degree expectation in spatial communities
 #' @param verbose Print messages
@@ -276,8 +279,6 @@ BinSpatialGenes = function (
 #' @param examine_top Top fraction to evaluate with silhouette
 #' @param python_path Specify specific path to python if required
 #'
-#' @export
-#'
 #' @examples
 #' spatgenes <- SpatialGenes(se)
 #'
@@ -367,7 +368,8 @@ SpatialGenes <- function (
 #' @param assay Name of assay the function is being run on
 #' @param slot Slot to use as input [default: 'scale.data']
 #' @param features Features to rank
-#' @param max.dist Maximum allowed distance to define neighbouring spots [default: 1.5]
+#' @param nNeighbours Number of neighbours to find for each spot
+#' @param maxdist Maximum allowed distance to define neighbouring spots [default: 1.5]
 #'
 #' @return data.frame with gene names and correlation scores
 #'
@@ -385,8 +387,8 @@ CorSpatialGenes <- function (
 ) {
 
   # Check if adespatial is installed
-  if (!require(adespatial)) stop("R package adespatial is required to run this function ... \n")
-  if (!require(spdep)) stop("R package spdep is required to run this function ... \n")
+  if (!requireNamespace("adespatial")) stop("R package adespatial is required to run this function ... \n")
+  if (!requireNamespace("spdep")) stop("R package spdep is required to run this function ... \n")
 
   # Collect Staffli object
   if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
@@ -481,6 +483,8 @@ rank_binarize = function(x, max_rank = 200) {
 #' fish_function
 #'
 #' Perform fisher exact test
+#'
+#' @param x_to,x_from Spot connections
 fish_function = function(x_to, x_from) {
 
   fish_table = table(x_to == '1',
@@ -495,6 +499,7 @@ fish_function = function(x_to, x_from) {
 #' fish_function2
 #'
 #' Perform fisher exact test
+#' @param A,B,C,D Vectors used for Fishers test
 fish_function2 = function(A, B, C, D) {
 
   # set NA's to 0
@@ -514,6 +519,8 @@ fish_function2 = function(A, B, C, D) {
 #' OR_function2
 #'
 #' Calculate odds-ratio
+#'
+#' @param A,B,C,D Vectors to used for calculation of odds ratio
 OR_function2 = function(A, B, C, D) {
 
   fish_matrix = matrix(c(A, B, C, D), nrow = 2)

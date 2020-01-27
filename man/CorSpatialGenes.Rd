@@ -16,7 +16,9 @@ CorSpatialGenes(object, assay = NULL, slot = "scale.data",
 
 \item{features}{Features to rank}
 
-\item{max.dist}{Maximum allowed distance to define neighbouring spots [default: 1.5]}
+\item{nNeighbours}{Number of neighbours to find for each spot}
+
+\item{maxdist}{Maximum allowed distance to define neighbouring spots [default: 1.5]}
 }
 \value{
 data.frame with gene names and correlation scores

@@ -66,6 +66,7 @@ SetQuantile <- function (
 #' Function used to scale numerical features
 #'
 #' @param data data.frame containing x, y coordinates and columns with numerical features
+#' @param features feature names
 #' @param min.cutoff,max.cutoff Vector of minimum and maximum cutoff values for each feature,
 #'  may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')
 
@@ -157,23 +158,24 @@ ST.rgbDimPlot <- function(
 
 #' Select spots by rgb values after ST.DimPlot
 #'
-#' @param object S4 object
-#' @param dimPlot A ST.DimPlot output object
-#' @param label1 Optional name of the 1st group of capture-spots
-#' @param label2 Optional name of the 2nd group of capture-spots
+#' @param object A Seurat object
+#' @param dimPlot A 'ggplot' object created with \code{ST.DimPlot}
+#' @param label1,label2 Optional names of the 1st and 2nd groups of capture-spots
 #'
 #' @export
 
-labelRGB <- function(object,
-                     dimPlot,
-                     label1 = "label1",
-                     label2 = NULL,
-                     red1=c(0,255),
-                     green1=c(0,255),
-                     blue1=c(0,255),
-                     red2=c(0,255),
-                     green2=c(0,255),
-                     blue2=c(0,255)){
+labelRGB <- function (
+  object,
+  dimPlot,
+  label1 = "label1",
+  label2 = NULL,
+  red1 = c(0, 255),
+  green1 = c(0, 255),
+  blue1 = c(0, 255),
+  red2 = c(0, 255),
+  green2 = c(0, 255),
+  blue2 = c(0, 255)
+){
   # --------------------- Add this part to parameter in ST.Dimplot
   ggBuild <- ggplot_build(dimPlot)
   rgbTransform <- as.data.frame(t(col2rgb(ggBuild$data[[1]]$colour)))
@@ -211,6 +213,7 @@ labelRGB <- function(object,
 #' Creates a colorscale legend for a dataset in grob format
 #'
 #' @param data data.frame with values that should be mapped onto colorscale
+#' @param data.type input data type, e.g. "factor", "numeric", "character", ...
 #' @param variable character string specifying tha name of the column (variable) containing values
 #' @param center.zero Specifies whether or not the colorscale should be centered at zero
 #' @param cols Character vector with color ids to be used in colorscale
@@ -253,8 +256,11 @@ g_legend <- function (
 
 #' Obtain array coordinates
 #'
-#' @param object Seurat object
-#'
+#' @param object A Seurat object
+#' @param data Data.frame with array coordinates
+#' @param image.type One of "raw", "masked" or "processed"
+#' @param spots Spots to subset data on
+
 obtain.array.coords <- function (
   st.object,
   data,
@@ -290,6 +296,7 @@ obtain.array.coords <- function (
 #' @param y The position of the scalebar along the y axis.
 #' @param pxum A data.frame object with columns for 'x', 'xend', 'y' and 'sample'
 #' used for facetted plots.
+#' @param sb.size Size of scalebar
 #' @param dark.theme Switches color of scalebar to 'white'
 #'
 #' @return An object of class 'ggplot' with a scalebar drawn on top of it

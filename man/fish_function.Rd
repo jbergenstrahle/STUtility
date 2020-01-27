@@ -6,6 +6,9 @@
 \usage{
 fish_function(x_to, x_from)
 }
+\arguments{
+\item{x_to, x_from}{Spot connections}
+}
 \description{
 Perform fisher exact test
 }

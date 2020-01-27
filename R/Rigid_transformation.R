@@ -1,11 +1,11 @@
 #' Match two point sets using iterative closest point search
 #'
-#' @param set1 Point set from image to be aligned with reference
-#' @param set2 Point set from reference image
+#' @param set1,set2 Point set from image to be aligned with reference and point set from reference image
 #' @param iterations Number of iterations
 #' @param mindist Minimum distance that definces valid points
 #' @param type Select type of transform to be applied
 #' @param threads number of trheads to use
+#'
 #' @return list with transformed x, y coordinates and list of transformation matrices
 #'
 #' @importFrom Rvcg vcgCreateKDtree vcgSearchKDtree
@@ -43,10 +43,8 @@ icpmat <- function (
 #' Tests different types of reflection settings and return the optimal solution
 #' based on RMSE between the transformed points and thre reference set
 #'
-#' @param set1 Point set from image to be aligned with reference
-#' @param set2 Point set from reference image
-#' @param xdim Width of image
-#' @param ydim Height of image
+#' @param set1,set2 Point set from image to be aligned with reference and point set from reference image
+#' @param xdim,ydim Width and height of image
 #' @return list with the list of tranformation matrices, reflection coordinates and rmse score
 #' for the optimal transformation
 #'
@@ -153,6 +151,7 @@ mirror <- function (
 #'
 #' @param h Numeric: offset along x axis
 #' @param k Numeric: offset along y axis
+#' @param alpha rotation angle
 #'
 
 rigid.transf <- function (
@@ -208,6 +207,7 @@ rigid.refl <- function (
 #'
 #' @param center.cur (x, y) image pixel coordinates specifying the current center of the tissue (stored in slot "tools" as "centers")
 #' @param center.new (x, y) image pixel coordinates specifying the new center (image center)
+#' @param alpha Rotation angle
 #'
 #' @inheritParams rigid.transf
 #' @inheritParams rigid.transl
@@ -237,9 +237,12 @@ rigid.refl <- function (
 #' points(edges.px, col = "green", cex = 0.1)
 #'
 #' # Apply transformations to point set
-#' tr1 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean), center.new = c(1200, 1200), alpha = 90)
-#' tr2 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean), center.new = c(500, 1200), mirror.x = T, alpha = 30)
-#' tr3 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean), center.new = c(1200, 500), mirror.y = T, alpha = 270)
+#' tr1 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean),
+#'                   center.new = c(1200, 1200), alpha = 90)
+#' tr2 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean),
+#'                   center.new = c(500, 1200), mirror.x = T, alpha = 30)
+#' tr3 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean),
+#'                   center.new = c(1200, 500), mirror.y = T, alpha = 270)
 #' plot(edges.px, xlim = c(0, 1700), ylim = c(0, 1700), cex = 0.1)
 #' points(t(tr1%*%t(edges.px[, 1:3])), cex = 0.1, col = "red")
 #' points(t(tr2%*%t(edges.px[, 1:3])), cex = 0.1, col = "yellow")

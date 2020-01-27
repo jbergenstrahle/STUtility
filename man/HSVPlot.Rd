@@ -9,8 +9,8 @@ HSVPlot(object, features, ncol = NULL, plot.type = "spots",
   min.cutoff = NA, max.cutoff = NA, slot = "data", pt.size = 1,
   pt.alpha = 1, add.alpha = FALSE, shape.by = NULL, sigma = 2,
   highlight.edges = FALSE, cols = NULL, dark.theme = TRUE,
-  grid.ncol = NULL, verbose = FALSE, theme = theme_void(),
-  scale.res = 1, ...)
+  grid.ncol = NULL, theme = theme_void(), scale.res = 1,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -60,12 +60,12 @@ option.}
 
 \item{grid.ncol}{Number of columns for display when combining plots}
 
-\item{verbose}{Print messages}
-
 \item{theme}{Add a custom theme to the output ggplot object}
 
 \item{scale.res}{Integer value setting the resolution of the output raster image. E.g. scale.res = 2 will double the
 resolution of the output but will also take longer to render. Only active if plot.type is set to 'smooth'.}
+
+\item{verbose}{Print messages}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }

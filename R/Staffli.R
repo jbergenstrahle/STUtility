@@ -56,7 +56,7 @@ Staffli <- setClass (
 #' required fields 'x' and 'y' which specifies the ST array coorindates and a column calles 'sample'
 #' which maps spots to a certain image.
 #' @param xdim Specifies the width of the scaled images in pixels [default: 400 pixels]
-#' @param platform Specify the platform used to generate the ST data [options: 'Visium', '2k', '1k']
+#' @param platforms Specify the platforms used to generate the ST data [options: 'Visium', '2k', '1k']
 #'
 #' @importFrom utils packageVersion
 #' @importFrom Matrix colSums
@@ -114,6 +114,7 @@ CreateStaffliObject <- function (
 #' are kept in the output Seurat object which will make the STUtility functions
 #' crash.
 #'
+#' @param object A Seurat object containing Staffli data
 #' @param spots A vector of spots to keep
 #' @param features A vector of features to keep
 #' @param expression Logical expression indicating features/variables to keep
@@ -216,7 +217,6 @@ MergeSTData <- function (
   y = NULL,
   add.spot.ids = NULL,
   merge.data = TRUE,
-  idents = NULL,
   project = "SeuratProject",
   ...
 ) {
@@ -246,7 +246,7 @@ MergeSTData <- function (
   st.y <- lapply(y, GetStaffli)
 
   # Merge seurat data
-  object <- merge(x = x, y = y, add.cell.ids = add.spot.ids, merge.data = merge.data, project = project)#, ...)
+  object <- merge(x = x, y = y, add.cell.ids = add.spot.ids, merge.data = merge.data, project = project, ...)
 
   # Combine Staffli objects into a list
   st.objects <- c(list(st.x), st.y)
@@ -370,7 +370,8 @@ setGeneric("iminfo", function(object) {
   standardGeneric("iminfo")
 })
 
-
+#' Method for extracting the HE image dimensions from a 'Staffli' object
+#'  @param object A Staffli object
 setMethod (
   f = "iminfo",
   signature = "Staffli",
@@ -384,7 +385,10 @@ setGeneric("scaled.imdims", function(object, type = "raw") {
   standardGeneric("scaled.imdims")
 })
 
-
+#' Method for extracting the scaled HE image dimensions from a 'Staffli' object
+#'
+#' @param object A Staffli object
+#' @param type Image type [choices: 'raw', 'masked', 'processed']
 setMethod (
   f = "scaled.imdims",
   signature = "Staffli",
@@ -393,7 +397,9 @@ setMethod (
   }
 )
 
-
+#' Method used to get samplenames from a Staffli object
+#'
+#' @param object A Staffli object
 setMethod (
   f = "names",
   signature = "Staffli",
@@ -407,7 +413,8 @@ setGeneric("rasterlists", function(object) {
   standardGeneric("rasterlists")
 })
 
-
+#' Method to extract the available image types from a Staffli object
+#' @param object A Staffli object
 setMethod (
   f = "rasterlists",
   signature = "Staffli",
@@ -416,7 +423,9 @@ setMethod (
   }
 )
 
-
+#' Method to extract the available image types from a Seurat object
+#'
+#' @param object A Seurat object
 setMethod (
   f = "rasterlists",
   signature = "Seurat",
@@ -432,7 +441,9 @@ setGeneric("samplenames", function(object) {
   standardGeneric("samplenames")
 })
 
-
+#' Method used to get samplenames from a Staffli object
+#'
+#' @param A Seurat object
 setMethod (
   f = "samplenames",
   signature = "Staffli",
@@ -441,7 +452,9 @@ setMethod (
   }
 )
 
-
+#' Method used to get samplenames from a Staffli object
+#'
+#' @param A Seurat object
 setMethod (
   f = "samplenames",
   signature = "Seurat",
@@ -457,7 +470,10 @@ setGeneric("GetStaffli", function(object) {
   standardGeneric("GetStaffli")
 })
 
-
+#' Method used to extract a Staffli object from the tools slot of a
+#' Seurat object
+#'
+#' @param object A Seurat object
 setMethod (
   f = "GetStaffli",
   signature = "Seurat",
@@ -467,7 +483,11 @@ setMethod (
   }
 )
 
-
+#' Method used to get meta data from a Staffli object
+#'
+#' @param x A Staffli object
+#' @param i Row names or indices to subset x on
+#' @param j Column names or indices to subset x on
 setMethod (
   f = "[[",
   signature = "Staffli",
@@ -476,7 +496,12 @@ setMethod (
   }
 )
 
-
+#' Method used to set meta data in a Staffli object
+#'
+#' @param x A Staffli object
+#' @param i Row names or indices to subset x on
+#' @param j Column names or indices to subset x on
+#' @param value Value to save into Staffli meta data
 setMethod (
   f = "[[<-",
   signature = "Staffli",
@@ -486,7 +511,12 @@ setMethod (
   }
 )
 
-
+#' Method used to get list of scaled images
+#' from selected type
+#'
+#' @param x A Staffli object
+#' @param i A characetr string specifying the name of the
+#' images to extract; "raw", "masked" or "processed"
 setMethod (
   f = "[",
   signature = "Staffli",
@@ -495,7 +525,12 @@ setMethod (
   }
 )
 
-
+#' Method used to set list of scaled images
+#' of selected type
+#'
+#' @param x A Staffli object
+#' @param i A characetr string specifying the name of the
+#' images to set; "raw", "masked" or "processed"
 setMethod (
   f = "[<-",
   signature = "Staffli",
@@ -508,7 +543,9 @@ setMethod (
   }
 )
 
-
+#' Show metho for Staffli objects
+#'
+#' @param object A Staffli object
 setMethod (
   f = "show",
   signature = "Staffli",
@@ -530,7 +567,11 @@ setMethod (
   }
 )
 
-
+#' Plot method for Staffli objects
+#'
+#' @param x A Staffli object
+#' @param type Image type to draw on
+#' @param ... Additional aprameters passed to points
 setMethod (
   f = "plot",
   signature = "Staffli",

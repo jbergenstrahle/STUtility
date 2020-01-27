@@ -14,6 +14,3 @@ This function takes an image of class \code{cimg} as input and returns
 an image of class \code{pixset}. The method is typically suitable for images
 with little background debris. Not suitable for 'Visium' images with fiducials.
 }
-\examples{
-
-}

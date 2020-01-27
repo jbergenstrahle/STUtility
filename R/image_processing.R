@@ -255,8 +255,7 @@ MaskImages.Staffli <- function (
   compactness = 1,
   add.contrast = NULL,
   verbose = FALSE,
-  custom.msk.fkn = NULL,
-  ...
+  custom.msk.fkn = NULL
 ) {
 
   # obtain Staffli object
@@ -273,7 +272,7 @@ MaskImages.Staffli <- function (
 
     if (!is.null(custom.msk.fkn)) {
       if (class(custom.msk.fkn) != "function") stop(paste0("custom.msk.fkn is not a function"), call. = FALSE)
-      seg <- custom.msk.fkn(im)#, ...)
+      seg <- custom.msk.fkn(im)
       if (dim(seg)[4] == 3) seg <- seg[, , , 1] %>% as.pixset()
       if (!"pixset" %in% class(seg)) stop(paste0("output from custom.msk.fkn is not a 'pxset' object"), call. = FALSE)
     } else {
@@ -394,8 +393,7 @@ MaskImages.Seurat <- function (
   compactness = 1,
   add.contrast = NULL,
   verbose = FALSE,
-  custom.msk.fkn = NULL,
-  ...
+  custom.msk.fkn = NULL
 ) {
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
   object@tools$Staffli <- MaskImages(object@tools$Staffli, thresholding, iso.blur, channels.use, compactness, add.contrast, verbose, custom.msk.fkn)

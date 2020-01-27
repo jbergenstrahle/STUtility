@@ -12,7 +12,7 @@ icpmat(set1, set2, iterations, mindist = 1e+15, type = c("rigid",
   "similarity", "affine"), threads = 1)
 }
 \arguments{
-\item{set1}{Point set from image to be aligned with reference}
+\item{set1, set2}{Point set from image to be aligned with reference and point set from reference image}
 
 \item{set2}{Point set from reference image}
 
@@ -25,8 +25,6 @@ icpmat(set1, set2, iterations, mindist = 1e+15, type = c("rigid",
 \item{threads}{number of trheads to use}
 
 \item{set1}{Point set from image to be aligned with reference}
-
-\item{set2}{Point set from reference image}
 
 \item{iterations}{Number of iterations}
 

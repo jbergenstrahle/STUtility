@@ -10,6 +10,8 @@ g_legend(data, data.type = "numeric", variable, center.zero, cols,
 \arguments{
 \item{data}{data.frame with values that should be mapped onto colorscale}
 
+\item{data.type}{input data type, e.g. "factor", "numeric", "character", ...}
+
 \item{variable}{character string specifying tha name of the column (variable) containing values}
 
 \item{center.zero}{Specifies whether or not the colorscale should be centered at zero}

@@ -8,6 +8,8 @@ generate.map.affine(tr, forward = FALSE)
 }
 \arguments{
 \item{tr}{results obtained with \code{\link{find.optimal.transform}}}
+
+\item{forward}{Should the forward transformation be computed?}
 }
 \value{
 A transformation function that takes x and y coordinates as input and outputs a

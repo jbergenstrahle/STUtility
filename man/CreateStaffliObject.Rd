@@ -16,7 +16,7 @@ which maps spots to a certain image.}
 
 \item{xdim}{Specifies the width of the scaled images in pixels [default: 400 pixels]}
 
-\item{platform}{Specify the platform used to generate the ST data [options: 'Visium', '2k', '1k']}
+\item{platforms}{Specify the platforms used to generate the ST data [options: 'Visium', '2k', '1k']}
 }
 \description{
 Create a Staffli object from set of images and associated spot coordinates.

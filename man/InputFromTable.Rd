@@ -13,6 +13,9 @@ InputFromTable(infotable, transpose = TRUE, min.gene.count = 0,
 \arguments{
 \item{infotable}{table with paths to count files and metadata. See details below for more information.}
 
+\item{transpose}{transposes the gene expression matrices [default: TRUE]. Only active when reading data
+from platforms '1k' or '2k'}
+
 \item{min.gene.count}{filter away genes that has a total read count below this threshold}
 
 \item{min.gene.spots}{filter away genes that is not expressed below this number of capture spots}

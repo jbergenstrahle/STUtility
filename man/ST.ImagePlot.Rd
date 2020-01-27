@@ -56,6 +56,8 @@ The plot will be split into one plot for each group label, highlighting the labe
 
 \item{pixels.per.um}{Defines the number of pixels per micrometer to draw the scale bar}
 
+\item{limits}{Sets the limits of the colorbar}
+
 \item{...}{Parameters passed to geom_point()}
 }
 \description{

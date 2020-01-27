@@ -48,12 +48,10 @@ FactorGeneLoadingPlot <- function (
 #' @param assay assay Name of Assay PCA is being run on
 #' @param features features to compute the NMF for
 #' @param nfactors Total Number of factors to compute and store (20 by default)
-#' @param nfactors.print factorss to print genes for
-#' @param nfeatures.print Number of genes to print for each factor
 #' @param reduction.name dimensional reduction name,  pca by default
 #' @param reduction.key dimensional reduction key, specifies the string before
 #' @param n.cores Number of threds to use in computation
-#' @param order.by.spatcor Order factors by spatial correlation
+#' @param order.by.spcor Order factors by spatial correlation
 #'
 #' @export
 #'
@@ -62,8 +60,6 @@ RunNMF <- function (
   assay = NULL,
   features = NULL,
   nfactors = 20,
-  ndims.print = 1:5,
-  nfeatures.print = 30,
   reduction.name = "NMF",
   reduction.key = "factor_",
   n.cores = 7,
@@ -227,19 +223,27 @@ SummarizeAssocFeatures <- function (
   }
 }
 
+#' Initiate NMF using ICA
+#'
+#' @param A input matrix
+#' @param k number of components to compute
+#' @param ica.fast Should a fast implementation of ICA be used?
+#'
+#' @importFrom irlba irlba
+#' @importFrom ica icafast
 
 ica_init <- function (A, k, ica.fast = F)
 {
   if (ica.fast) {
-    pc.res.h <- irlba::irlba(t(A), nv = 50, maxit = 100,
+    pc.res.h <- irlba(t(A), nv = 50, maxit = 100,
                              center = rowMeans(A))
-    ica.res.h <- ica::icafast(pc.res.h$u, nc = k, maxit = 25,
+    ica.res.h <- icafast(pc.res.h$u, nc = k, maxit = 25,
                               tol = 1e-04)
     return(list(W = (A - Matrix::rowMeans(A)) %*% ica.res.h$S,
                 H = t(ica.res.h$S)))
   }
   else {
-    ica.res <- ica::icafast(t(A), nc = k, maxit = 25, tol = 1e-04)
+    ica.res <- icafast(t(A), nc = k, maxit = 25, tol = 1e-04)
     return(list(W = ica.res$M, H = t(ica.res$S)))
   }
 }

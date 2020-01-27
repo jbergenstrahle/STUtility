@@ -26,6 +26,7 @@ NULL
 #' @param object Seurat object
 #' @param dims Dimensions to plot [default: 1, 2]
 #' @param spots Character vector with spot IDs to plot [default: all spots]
+#' @param indices Indices to subset data by
 #' @param plot.type Specify the type of plot to use [default: "spots"]. Available options are; "spots" (a "smooth" options will be added soon)
 #' @param blend Scale and blend expression values to visualize coexpression of two features (this options will override other coloring parameters).
 #' See 'Blending values' below for a more thourough description.
@@ -40,6 +41,10 @@ NULL
 #' @param grid.ncol Number of columns for display when combining plots. This option will only have an effect on the sample level structure.
 #' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 #' color names specified [default: c("red", "green", "blue)]
+#' @param sb.size Size of scalebar [default: 2.5]
+#' @param show.sb Should a scalebar be drawn? [default: TRUE]
+#' @param value.scale Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
+#' scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors
 #' @param verbose Print messages
 #'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
@@ -301,6 +306,10 @@ ST.DimPlot <- function (
 #' @param grid.ncol Number of columns for display when combining plots. This option will only have an effect on the sample level structure.
 #' @param channels.use Color channels to use for blending. Has to be a character vector of length 2 or 3 with "red", "green" and "blue"
 #' color names specified [default: c("red", "green", "blue)]
+#' @param sb.size Size of scalebar [default: 2.5]
+#' @param show.sb Should a scalebar be drawn? [default: TRUE]
+#' @param value.scale Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
+#' scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors
 #' @param verbose Print messages
 #'
 #' @param ... Extra parameters passed on to \code{\link{STPlot}}
@@ -561,6 +570,8 @@ ST.FeaturePlot <- function (
 #' @param split.labels Only works if the features are specified by character vectors.
 #' The plot will be split into one plot for each group label, highlighting the labelled spots.
 #' @param theme Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})
+#' @param sb.size Defines the size of the scalebar
+#' @param limits Sets the range of the colorbar values
 #' @param ... Parameters passed to geom_point()
 #'
 #' @inheritParams draw_scalebar
@@ -767,6 +778,7 @@ STPlot <- function (
 
 #' Graphs a smooth interpolation heatmap colored by continuous variable, e.g. dimensional reduction vector
 #'
+#' @param st.object A Staffli object
 #' @param image.type Specifies the image is "processed", otherwise NULL
 #' @param highlight.edges SHould edges be highlighted? [default: TRUE]
 #'
@@ -949,8 +961,10 @@ SmoothPlot <- function (
 #' @param type Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 #' run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
 #' order if they are available; "processed", "masked" and "raw".
-#' @param slot Which slot to pull expression data from? [default: 'data']
 #' @param sample.label Should the sample label be included in the image? [default: TRUE]
+#' @param show.sb Should the size bar be displayed? [default: TRUE]
+#' @param value.scale Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
+#' scaled independently and if `value.scale = "all"` the features will all have the same value reange.
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
 #' @inheritParams ST.ImagePlot
@@ -1144,6 +1158,9 @@ spatial_dim_plot <- function (
 #' order if they are available; "processed", "masked" and "raw".
 #' @param slot Which slot to pull expression data from? [dafault: 'data']
 #' @param sample.label Should the sample label be included in the image? [default: TRUE]
+#' @param show.sb Should the size bar be displayed? [default: TRUE]
+#' @param value.scale Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
+#' scaled independently and if `value.scale = "all"` the features will all have the same value reange.
 #' @param ... Extra parameters passed on to \code{\link{ST.ImagePlot}}
 #'
 #' @inheritParams ST.ImagePlot
@@ -1320,6 +1337,7 @@ spatial_feature_plot <- function (
 #' Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector
 #'
 #' @param pixels.per.um Defines the number of pixels per micrometer to draw the scale bar
+#' @param limits Sets the limits of the colorbar
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn annotation_custom scale_color_manual
 #' @importFrom magick image_info
@@ -1533,13 +1551,13 @@ ST.ImagePlot <- function (
 #' se <- LoadImages(se) %>%
 #'    RunPCA()
 #'
-#' # Plot the first 2 dimensions on the first two samples
+#' # Plot the first 2 dimensions on the first two tissue sections
 #' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2)
 #'
-#' # Blend values for dimensions 1 and 2 on the first two samples
+#' # Blend values for dimensions 1 and 2 on the first two tissue sections
 #' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, blend = T)
 #'
-#' # Plot the first 2 dimensions and trim off 1st percentile values on the first two samples
+#' # Plot the first 2 dimensions and trim off 1st percentile values on the first two tissue sections
 #' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, min.cutoff = 'q1')
 #'
 #' # Mask images and plot the first 2 dimensions on the masked images for samples 1 and 2
@@ -1572,7 +1590,7 @@ DimOverlay <- function (
   center.zero = FALSE,
   channels.use = NULL,
   dark.theme = FALSE,
-  sample.labels = TRUE,
+  sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
   verbose = FALSE,
@@ -1624,7 +1642,7 @@ DimOverlay <- function (
                reduction = reduction, shape.by = shape.by, palette = palette,
                cols = cols, grid.ncol = ncols.dims,
                center.zero = center.zero, channels.use = channels.use, dark.theme = dark.theme,
-               sample.label = sample.labels, show.sb = show.sb,
+               sample.label = sample.label, show.sb = show.sb,
                value.scale = value.scale.list, verbose = verbose, ... = ...)
   })
   p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
@@ -1690,18 +1708,20 @@ DimOverlay <- function (
 #' # Load images
 #' se <- LoadImages(se)
 #'
-#' # Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image on the first two samples
+#' # Overlay the number of unique genes and the number of
+#' # UMIs per spot on the first two tissue sections
 #' FeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sampleids = 1:2)
 #'
-#' # Plot selected genes on the first two samples
+#' # Plot selected genes on the first two tissue sections
 #' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 #'
-#' # Plot normalized values on the first two samples
+#' # Plot normalized values on the first two tissue sections
 #' se <- SCTransform(se)
 #' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 #'
 #' # Change to scaled data
-#' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, slot = "scale.data", center.zero = TRUE)
+#' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2,
+#'                slot = "scale.data", center.zero = TRUE)
 #'
 #' # Mask images and plot plot the slected genes on the masked images for samples 1 and 2
 #' se <- MaskImages(se)

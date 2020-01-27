@@ -10,6 +10,8 @@ Warp(im, map.rot, mask = FALSE)
 \item{im}{Raster image}
 
 \item{map.rot}{Affine transformation function, see \code{\link{generate.map.rot}}}
+
+\item{mask}{Returns image as a mask}
 }
 \description{
 Apply warping of x, y coordinates using a affine transformation function

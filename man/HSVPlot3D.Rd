@@ -20,6 +20,9 @@ HSVPlot3D(object, features, mode = c("cloud", "spots"), zcoords = NULL,
     \item A column name from dimensionality reduction output (e.g. principal component 1 - "PC_1")
 }}
 
+\item{mode}{Select mode to display the 3D stack in. The default 'cloud' option will use the stacked point patterns as a scaffold for the 3D
+visualization whereas the 'spots' options will use the spot coordinates instead.}
+
 \item{zcoords}{Vector of z coordinates with the same length as the number of sections in the dataset [default: 1:#sections]}
 
 \item{spots}{Vector of spots to plot (default is all spots)}
@@ -55,6 +58,9 @@ color names specified [default: c("red", "green", "blue)]}
 instead of plotting}
 
 \item{dark.theme}{Draws the plot with a dark theme}
+
+\item{rescale}{Rescale each feature column separately from 0 to 1 range. If set to FALSE, all feature columns
+will be scaled together from 0 to 1 and preserve the relative differencies}
 
 \item{verbose}{Print messages}
 }

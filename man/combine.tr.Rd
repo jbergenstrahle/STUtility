@@ -12,6 +12,8 @@ combine.tr(center.cur, center.new, alpha, mirror.x = FALSE,
 
 \item{center.new}{(x, y) image pixel coordinates specifying the new center (image center)}
 
+\item{alpha}{Rotation angle}
+
 \item{mirror.x}{Logical: mirrors x or y axis if set to TRUE}
 
 \item{mirror.y}{Logical: mirrors x or y axis if set to TRUE}
@@ -45,9 +47,12 @@ edges.px <- which(grad.mag > max(grad.mag[, , 1, 1])/2, arr.ind = TRUE)
 points(edges.px, col = "green", cex = 0.1)
 
 # Apply transformations to point set
-tr1 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean), center.new = c(1200, 1200), alpha = 90)
-tr2 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean), center.new = c(500, 1200), mirror.x = T, alpha = 30)
-tr3 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean), center.new = c(1200, 500), mirror.y = T, alpha = 270)
+tr1 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean),
+                  center.new = c(1200, 1200), alpha = 90)
+tr2 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean),
+                  center.new = c(500, 1200), mirror.x = T, alpha = 30)
+tr3 <- combine.tr(center.cur = apply(edges.px[, 1:2], 2, mean),
+                  center.new = c(1200, 500), mirror.y = T, alpha = 270)
 plot(edges.px, xlim = c(0, 1700), ylim = c(0, 1700), cex = 0.1)
 points(t(tr1\%*\%t(edges.px[, 1:3])), cex = 0.1, col = "red")
 points(t(tr2\%*\%t(edges.px[, 1:3])), cex = 0.1, col = "yellow")

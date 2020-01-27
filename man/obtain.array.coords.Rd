@@ -7,7 +7,13 @@
 obtain.array.coords(st.object, data, image.type, spots)
 }
 \arguments{
-\item{object}{Seurat object}
+\item{data}{Data.frame with array coordinates}
+
+\item{image.type}{One of "raw", "masked" or "processed"}
+
+\item{spots}{Spots to subset data on}
+
+\item{object}{A Seurat object}
 }
 \description{
 Obtain array coordinates

@@ -14,8 +14,6 @@
 #'
 #' @export
 #'
-#' @examples
-#'
 
 EdgeMask <- function (
   im

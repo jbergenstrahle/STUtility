@@ -80,6 +80,13 @@ you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\
 
 \item{verbose}{Print messages}
 
+\item{sb.size}{Size of scalebar [default: 2.5]}
+
+\item{show.sb}{Should a scalebar be drawn? [default: TRUE]}
+
+\item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
+scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
+
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }
 \value{

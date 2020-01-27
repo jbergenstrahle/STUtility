@@ -55,6 +55,8 @@ color names specified [default: c("red", "green", "blue)]}
 instead of plotting}
 
 \item{dark.theme}{Draws the plot with a dark theme}
+
+\item{verbose}{Print messages}
 }
 \description{
 This function is similar to the ST.DimPlot but works for 3D stacked data. First, you need to mask and align the tissue sections in your

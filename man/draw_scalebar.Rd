@@ -17,6 +17,8 @@ draw_scalebar(p, x = NULL, xend = NULL, y = NULL, pxum = NULL,
 \item{pxum}{A data.frame object with columns for 'x', 'xend', 'y' and 'sample'
 used for facetted plots.}
 
+\item{sb.size}{Size of scalebar}
+
 \item{dark.theme}{Switches color of scalebar to 'white'}
 }
 \value{

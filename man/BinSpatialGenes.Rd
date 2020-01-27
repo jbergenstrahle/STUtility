@@ -14,6 +14,8 @@ BinSpatialGenes(object, spots = NULL, bin_method = c("kmeans", "rank"),
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
+\item{bin_method}{Chose between methods 'kmeans' or 'rank' to rank gene expression on}
+
 \item{slot}{Which slot to pull the data from? [default: 'data']}
 
 \item{features.include}{Features to include in the detection computation. By default,
@@ -23,13 +25,13 @@ most variable features are selected.}
 
 \item{iter_max}{kmeans: iter.max parameter}
 
+\item{percentage_rank}{Percentage of top spots for binarization}
+
 \item{do_fisher_test}{Perform Fisher test}
 
 \item{community_expectation}{Degree expectation in spatial communities}
 
 \item{verbose}{Print messages}
-
-\item{rank_percentage}{Percentage of top spots for binarization}
 }
 \value{
 List of data.tables with results (see details)

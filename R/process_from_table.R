@@ -95,6 +95,8 @@ parse.spot.file = function(path, delim = "\t") {
 #' When creating the infotable data.frame, set the parameter `stringsAsFactors = FALSE`.
 #'
 #' @param infotable table with paths to count files and metadata. See details below for more information.
+#' @param transpose transposes the gene expression matrices [default: TRUE]. Only active when reading data
+#' from platforms '1k' or '2k'
 #' @param min.gene.count filter away genes that has a total read count below this threshold
 #' @param min.gene.spots filter away genes that is not expressed below this number of capture spots
 #' @param min.spot.feature.count filter away capture spots that contains a total feature count below this threshold
@@ -113,6 +115,8 @@ parse.spot.file = function(path, delim = "\t") {
 #' @param ... parameters passed to \code{\link{CreateSeuratObject}}
 #'
 #' @inheritParams ConvertGeneNames
+#'
+#' @importFrom jsonlite read_json
 #'
 #' @export
 
@@ -156,7 +160,7 @@ InputFromTable <- function (
     if ("json" %in% colnames(infotable)) {
       suffs <- sapply(infotable[, "json"], getExtension)
       if (!all(suffs == "json")) stop("Incorrect format of json files in infotable ...", call. = FALSE)
-      scaleVisium <- sapply(infotable[, "json"], function(f) {jsonlite::read_json(f)$tissue_hires_scalef})
+      scaleVisium <- sapply(infotable[, "json"], function(f) {read_json(f)$tissue_hires_scalef})
     } else if ("scaleVisium" %in% colnames(infotable)) {
       if (!class(infotable[, "scaleVisium"]) == "numeric") stop("Column scaleVisium is not numeric ... \n", call. = FALSE)
       scaleVisium <- infotable[, "scaleVisium"]

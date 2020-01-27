@@ -12,6 +12,8 @@ get.edges(object, index = 1, verbose = FALSE, type = "masked.masks")
 \item{index}{Sample index}
 
 \item{verbose}{Print messages}
+
+\item{Input}{image type to run edge detection on [default: 'masked.masks']}
 }
 \description{
 Obtain edges of binaryh mask stores in masked.masks list

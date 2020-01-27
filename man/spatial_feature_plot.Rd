@@ -74,6 +74,11 @@ The plot will be split into one plot for each group label, highlighting the labe
 
 \item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
+\item{show.sb}{Should the size bar be displayed? [default: TRUE]}
+
+\item{value.scale}{Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
+scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
+
 \item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}
 }
 \value{

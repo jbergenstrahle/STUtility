@@ -8,6 +8,8 @@ SubsetSTData(object, expression, spots = NULL, features = NULL,
   idents = NULL, ...)
 }
 \arguments{
+\item{object}{A Seurat object containing Staffli data}
+
 \item{expression}{Logical expression indicating features/variables to keep}
 
 \item{spots}{A vector of spots to keep}

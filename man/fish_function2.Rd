@@ -6,6 +6,9 @@
 \usage{
 fish_function2(A, B, C, D)
 }
+\arguments{
+\item{A, B, C, D}{Vectors used for Fishers test}
+}
 \description{
 Perform fisher exact test
 }

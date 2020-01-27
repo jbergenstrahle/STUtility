@@ -80,6 +80,11 @@ color names specified [default: c("red", "green", "blue)]}
 
 \item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
+\item{show.sb}{Should the size bar be displayed? [default: TRUE]}
+
+\item{value.scale}{Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
+scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
+
 \item{verbose}{Print messages}
 
 \item{...}{Parameters passed to DimOverlay}
@@ -135,18 +140,20 @@ This is very useful if you have many different labels which can make it difficul
 # Load images
 se <- LoadImages(se)
 
-# Overlay the number of unique genes and the number of UMIs per spot on sample 1 HE image on the first two samples
+# Overlay the number of unique genes and the number of
+# UMIs per spot on the first two tissue sections
 FeatureOverlay(se, features = c("nFeature_RNA", "nCount_RNA"), sampleids = 1:2)
 
-# Plot selected genes on the first two samples
+# Plot selected genes on the first two tissue sections
 FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 
-# Plot normalized values on the first two samples
+# Plot normalized values on the first two tissue sections
 se <- SCTransform(se)
 FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2)
 
 # Change to scaled data
-FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, slot = "scale.data", center.zero = TRUE)
+FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2,
+               slot = "scale.data", center.zero = TRUE)
 
 # Mask images and plot plot the slected genes on the masked images for samples 1 and 2
 se <- MaskImages(se)

@@ -20,6 +20,8 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
+\item{indices}{Indices to subset data by}
+
 \item{plot.type}{Specify the type of plot to use [default: "spots"]. Available options are; "spots" (a "smooth" options will be added soon)}
 
 \item{blend}{Scale and blend expression values to visualize coexpression of two features (this options will override other coloring parameters).
@@ -68,6 +70,13 @@ you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\
 \item{verbose}{Print messages}
 
 \item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
+
+\item{sb.size}{Size of scalebar [default: 2.5]}
+
+\item{show.sb}{Should a scalebar be drawn? [default: TRUE]}
+
+\item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
+scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
 
 \item{...}{Extra parameters passed on to \code{\link{STPlot}}}
 }

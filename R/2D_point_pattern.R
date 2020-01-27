@@ -6,7 +6,7 @@
 #'
 #' @param object Staffli object
 #' @param type Sets the image type to run segmentation on
-#' @param sammple.index Integer value specifying the index of the sample to be analyzed
+#' @param sample.index Integer value specifying the index of the sample to be analyzed
 #' @param limit Sets the intensity threshold in the interval [0, 1]
 #' @param maxnum Integer value specifying the maximum number of points
 #' @param edges Extracts the coordinates of the edges instead

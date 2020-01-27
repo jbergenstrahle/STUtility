@@ -20,6 +20,8 @@ ManualAlignImages(object, type = NULL, reference.index = 1,
 \arguments{
 \item{object}{Seurat object}
 
+\item{type}{Image type to use as input for alignment [default: 'masked.masks']}
+
 \item{reference.index}{Specifies reference sample image for alignment(default: 1)}
 
 \item{edges}{Uses the tissue edges as points set for alignment}
@@ -27,8 +29,6 @@ ManualAlignImages(object, type = NULL, reference.index = 1,
 \item{verbose}{Print messages}
 
 \item{maxnum}{Maximum grid number}
-
-\item{Image}{type used for alignment}
 }
 \value{
 A Staffli object

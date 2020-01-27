@@ -12,13 +12,13 @@ scatter_HE(object, type = "masked.masks", sample.index = NULL,
 
 \item{type}{Sets the image type to run segmentation on}
 
+\item{sample.index}{Integer value specifying the index of the sample to be analyzed}
+
 \item{limit}{Sets the intensity threshold in the interval [0, 1]}
 
 \item{maxnum}{Integer value specifying the maximum number of points}
 
 \item{edges}{Extracts the coordinates of the edges instead}
-
-\item{sammple.index}{Integer value specifying the index of the sample to be analyzed}
 }
 \description{
 The defualt segmentation uses the HE image as input and defines any pixel with an intensity value

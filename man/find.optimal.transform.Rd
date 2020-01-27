@@ -10,21 +10,13 @@ find.optimal.transform(set1, set2, xdim, ydim)
 find.optimal.transform(set1, set2, xdim, ydim)
 }
 \arguments{
-\item{set1}{Point set from image to be aligned with reference}
+\item{set1, set2}{Point set from image to be aligned with reference and point set from reference image}
 
-\item{set2}{Point set from reference image}
+\item{xdim, ydim}{Width and height of image}
 
-\item{xdim}{Width of image}
+\item{set1, set2}{Point set from image to be aligned with reference and point set from reference image}
 
-\item{ydim}{Height of image}
-
-\item{set1}{Point set from image to be aligned with reference}
-
-\item{set2}{Point set from reference image}
-
-\item{xdim}{Width of image}
-
-\item{ydim}{Height of image}
+\item{xdim, ydim}{Width and height of image}
 }
 \value{
 list with the list of tranformation matrices, reflection coordinates and rmse score

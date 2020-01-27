@@ -9,6 +9,8 @@ SmoothPlot(st.object, data, image.type, data.type = NULL, variable,
   dark.theme = FALSE, highlight.edges = TRUE, ...)
 }
 \arguments{
+\item{st.object}{A Staffli object}
+
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
 and one column with the feature values. Can also include an additional column for shapes.}
 

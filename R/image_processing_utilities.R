@@ -6,6 +6,8 @@ NULL
 #'
 #' @method get.edges Staffli
 #'
+#' @inheritParams get.edges
+#'
 #' @return  A list of data.frames with edge coordinates
 #' @examples
 #' # Create a new Staffli object, mask, align and plot edges for image 2
@@ -42,6 +44,8 @@ get.edges.Staffli <- function (
 #' aligned along the edges
 #'
 #' @method get.edges Seurat
+#'
+#' @inheritParams get.edges
 #'
 #' @return  A list of data.frames with edge coordinates
 #' @examples
@@ -106,10 +110,8 @@ icpmat <- function (
 #' Tests different types of reflection settings and return the optimal solution
 #' based on RMSE between the transformed points and thre reference set
 #'
-#' @param set1 Point set from image to be aligned with reference
-#' @param set2 Point set from reference image
-#' @param xdim Width of image
-#' @param ydim Height of image
+#' @param set1,set2 Point set from image to be aligned with reference and point set from reference image
+#' @param xdim,ydim Width and height of image
 #' @return list with the list of tranformation matrices, reflection coordinates and rmse score
 #' for the optimal transformation
 #'
@@ -140,7 +142,7 @@ find.optimal.transform <- function (
 #' Takes a list of obtained with \code{\link{find.optimal.transform}} and
 #' a matrix of x, y coordinates and returns the transformed x, y coordinates
 #'
-#' @param icp List containing transformation matrices
+#' @param map List containing transformation matrices
 #' @param set Matrix of x, y coordinates to be transformed
 #' @return Matrix of transformed x, y coordinates
 
@@ -168,6 +170,7 @@ apply.transform <- function (
 #' function with the lowest rmse between the aligned set and reference set.
 #'
 #' @param tr results obtained with \code{\link{find.optimal.transform}}
+#' @param forward Should the forward transformation be computed?
 #' @return A transformation function that takes x and y coordinates as input and outputs a
 #' list of warped x, y coordinates
 
@@ -256,6 +259,7 @@ sleepy <- function(x)
 #'
 #' @param im Raster image
 #' @param map.rot Affine transformation function, see \code{\link{generate.map.rot}}
+#' @param mask Returns image as a mask
 #'
 #' @importFrom imager as.cimg imwarp
 #' @importFrom grDevices as.raster

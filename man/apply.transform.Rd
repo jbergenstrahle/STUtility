@@ -10,9 +10,9 @@ apply.transform(map, set)
 apply.transform(map, set)
 }
 \arguments{
-\item{set}{Matrix of x, y coordinates to be transformed}
+\item{map}{List containing transformation matrices}
 
-\item{icp}{List containing transformation matrices}
+\item{set}{Matrix of x, y coordinates to be transformed}
 
 \item{icp}{List containing transformation matrices}
 

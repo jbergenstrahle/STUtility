@@ -9,6 +9,8 @@ feature.scaler(data, features, min.cutoff, max.cutoff)
 \arguments{
 \item{data}{data.frame containing x, y coordinates and columns with numerical features}
 
+\item{features}{feature names}
+
 \item{min.cutoff, max.cutoff}{Vector of minimum and maximum cutoff values for each feature,
 may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 'q10')}
 }

@@ -5,7 +5,7 @@
 \title{Merge two or more Seurat objects containing Staffli image data}
 \usage{
 MergeSTData(x = NULL, y = NULL, add.spot.ids = NULL,
-  merge.data = TRUE, idents = NULL, project = "SeuratProject", ...)
+  merge.data = TRUE, project = "SeuratProject", ...)
 }
 \arguments{
 \item{x}{Seurat object}

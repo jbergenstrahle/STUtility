@@ -23,6 +23,8 @@ LoadImages(object, image.paths = NULL, xdim = 400, verbose = FALSE,
 \item{xdim}{Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 2000 pixels)}
 
 \item{verbose}{Print messages}
+
+\item{time.resolve}{Activate to stop R from loading raw images into memory}
 }
 \value{
 A Staffli object

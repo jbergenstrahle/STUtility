@@ -12,11 +12,11 @@ MaskImages(object, thresholding = FALSE, iso.blur = 2,
 
 \method{MaskImages}{Staffli}(object, thresholding = TRUE, iso.blur = 2,
   channels.use = NULL, compactness = 1, add.contrast = NULL,
-  verbose = FALSE, custom.msk.fkn = NULL, ...)
+  verbose = FALSE, custom.msk.fkn = NULL)
 
 \method{MaskImages}{Seurat}(object, thresholding = TRUE, iso.blur = 2,
   channels.use = NULL, compactness = 1, add.contrast = NULL,
-  verbose = FALSE, custom.msk.fkn = NULL, ...)
+  verbose = FALSE, custom.msk.fkn = NULL)
 }
 \arguments{
 \item{object}{Seurat or Staffli object o pre-procesing step [default: TRUE]}
@@ -37,7 +37,7 @@ MaskImages(object, thresholding = FALSE, iso.blur = 2,
 of class "pixset" outlining the tissue area.}
 }
 \value{
-A Seurat object with masked HE images
+A Seurat or Staffli object with masked HE images
 
 A Staffli object
 

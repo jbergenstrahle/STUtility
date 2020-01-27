@@ -9,13 +9,11 @@ labelRGB(object, dimPlot, label1 = "label1", label2 = NULL,
   red2 = c(0, 255), green2 = c(0, 255), blue2 = c(0, 255))
 }
 \arguments{
-\item{object}{S4 object}
+\item{object}{A Seurat object}
 
-\item{dimPlot}{A ST.DimPlot output object}
+\item{dimPlot}{A 'ggplot' object created with \code{ST.DimPlot}}
 
-\item{label1}{Optional name of the 1st group of capture-spots}
-
-\item{label2}{Optional name of the 2nd group of capture-spots}
+\item{label1, label2}{Optional names of the 1st and 2nd groups of capture-spots}
 }
 \description{
 Select spots by rgb values after ST.DimPlot
