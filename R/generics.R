@@ -52,9 +52,35 @@ LoadImages <- function (
 #' as many superpixels. This can sometimes be helpful to get a finer sensitivity of the masking.
 #'
 #' @section Custom mask function:
-#' Masking can sometimes very difficult to accomplish without cutting off parts of the tissue or
-#' including unwanted parts of the tissue. If the masking fails you also have the option to
-#' write your own function that takes a "cimg" class image as input and returns a masked "pxset".
+#' The `custom.msk.function` gives you the option to use your own masking function specifically designed for your
+#' images. The custom function has to take a "cimg" class image as input and return an object of class "pxset".
+#'
+#' @section Troubleshooting:
+#' Masking HE images is a non trivial problem as the tissue morphology comes in many different shapes and
+#' colors. The default masking algorithm can fail or perform poorly for a number of different reasons and
+#' below is a couple of examples of common problems.
+#' \itemize{
+#'    \item{
+#'      Bubbles and dirt - If you have air bubbles or other no tissue residue in you images, there is a risk that
+#'      this will be picked up as tissue by the `MaskImages` function. The function uses the spotfile coordinates
+#'      to define what region is outside or inside tissue, but if these are not provided, any part of the image
+#'      picked up by the masking algorithm will be interpreted as relevant. If there is no way around this, you
+#'      can mask the images manually using an image editing software before loading them into your Seurat object.
+#'    }
+#'    \item{
+#'      Tissue gets masked instead of background - If this happens, it probably means that your pixel coordinates provided
+#'      in the spotfiles do not match the HE images provided. For example, if you've run the ST spot detector on a set of
+#'      HE images, you have to provide these exact HE images when running `InputFromTable` or otherwise the pixel coordinates
+#'      will be incorrect.
+#'    }
+#'    \item{
+#'      Parts of tissue gets masked - The masking algorithm relies on differencies in color intensity to segment out the tissue
+#'      area. A common problem is that parts of your tissue is more similar to the background than the rest of the tissue, whcih
+#'      typically happens for cell sparse tissue regions such as adipose tisse or connective tissue. If this happens you can try
+#'      out different settings for the `thresholding`, `ìso.blur`, `channels.use`, `compactness` or `add.contrast` options or you might have to
+#'      write your own masking function and pass it using the `custom.msk.fkn` option.
+#'    }
+#' }
 #'
 #' @param object Seurat or Staffli object o pre-procesing step [default: TRUE]
 #' @param thresholding Applies thresholding step

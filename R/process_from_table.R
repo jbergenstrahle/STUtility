@@ -199,7 +199,7 @@ InputFromTable <- function (
           spotFileData[[i]] <- spotsData
         } else {
           rownames(spotsData) <- as.character(spotsData[, 1])
-          if (getExtension(path) %in% c("mtx")){
+          if (getExtension(path) %in% c("mtx") | dir.exists(path)){
             if (length(grep(pattern = "\\-1$", x = rownames(spotsData))) > 0) {
                 rownames(spotsData) <- gsub(pattern = "\\-1$", replacement = "", x = rownames(spotsData))
             }
@@ -223,6 +223,7 @@ InputFromTable <- function (
           spotFileData[[i]] <- spotsData
         }
       } else {
+        if (platforms[i] == "Visium") stop("Spotfiles are required for Visium data.", call. = FALSE)
         warning(paste0("Extracting spot coordinates from gene count matrix headers. It is highly recommended to use spotfiles."), call. = FALSE)
 
         # Check if headers can be extracted

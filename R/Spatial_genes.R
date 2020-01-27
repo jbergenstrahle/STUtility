@@ -410,12 +410,6 @@ CorSpatialGenes <- function (
   listw <- mat2listw(empty.CN)
   fun <- function (x) lag.listw(listw, x, TRUE)
 
-  # 1 neighbour test
-  # i <- 1
-  # r <- lapply(1:ncol(resCN), function(i) {
-  #   rowSums(t(apply(abs(data.use[, which(resCN[, i] > 0)] - data.use[, i]), 1, function(x) ifelse(x == min(x), 1, 0)))*data.use[, which(resCN[, i] > 0)])
-  # })
-
   # Calculate the lag matrix from the network
   tablag <- apply(t(data.use), 2, fun)
 

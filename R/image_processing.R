@@ -356,6 +356,7 @@ MaskImages.Staffli <- function (
       }
     }
 
+    if (length(keep.sp) == 0) stop(paste0("Masking failed for sample ", i, " with zero spots were found under the tissue. Check that the pixel coordinates match the HE images."))
     masks[[i]] <- as.raster(add(keep.sp))
 
     if (verbose) {
