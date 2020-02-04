@@ -538,6 +538,7 @@ ST.FeaturePlot <- function (
   }
 }
 
+# TODO: fix channels.use
 
 #' Graphs ST spots colored by continuous or categorical features
 #'
@@ -949,6 +950,7 @@ SmoothPlot <- function (
   return(im)
 }
 
+# TODO: fix "all" scaling with blend option
 
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 # Dimensional reduction plots on HE images
@@ -1365,7 +1367,7 @@ ST.ImagePlot <- function (
   cols = NULL,
   ncol = NULL,
   spot.colors = NULL,
-  center.zero = T,
+  center.zero = TRUE,
   plot.title = NULL,
   split.labels = FALSE,
   dark.theme = FALSE,
@@ -1396,7 +1398,7 @@ ST.ImagePlot <- function (
       } else {
         label.colors <- gg_color_hue(length(levels(data[, variable])))
       }
-      names(label.colors) <- unique(data[, variable] %>% as.character())
+      names(label.colors) <- levels(data[, variable])
     } else if (class(data[, variable]) == "character") {
       if (!is.null(cols)) {
         stopifnot(length(cols) >= length(unique(data[, variable])))
@@ -1487,15 +1489,26 @@ ST.ImagePlot <- function (
     }
 
     # Center colorscale at 0
-    if (center.zero & !any(data.type %in% c("character", "factor"))) {
-      p <- p +
-        scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
-    } else if (any(data.type %in% c("character", "factor"))) {
-      p <- p +
-        scale_color_manual(values = label.colors)
-    } else {
-      p <- p +
-        scale_color_gradientn(colours = cols, limits = limits)
+    if (is.null(spot.colors)) {
+      #print(!any(data.type %in% c("character", "factor")))
+      if (center.zero & !any(data.type %in% c("character", "factor"))) {
+        if (!is.null(limits)) {
+          max_val <- max(limits)
+        } else {
+          max_val <- max(abs(data[, variable]))
+        }
+        limits <- c(-max_val, max_val)
+        p <- p +
+          scale_color_gradientn(colours = cols, limits = limits)
+        #scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
+      } else if (any(data.type %in% c("character", "factor"))) {
+        p <- p +
+          labs(color = variable) +
+          scale_color_manual(values = label.colors)
+      } else {
+        p <- p +
+          scale_color_gradientn(colours = cols, limits = limits)
+      }
     }
 
     if (dark.theme) {
@@ -1587,7 +1600,7 @@ DimOverlay <- function (
   shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
-  center.zero = FALSE,
+  center.zero = TRUE,
   channels.use = NULL,
   dark.theme = FALSE,
   sample.label = TRUE,

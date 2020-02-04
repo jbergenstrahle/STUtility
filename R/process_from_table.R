@@ -26,6 +26,7 @@ parse.spot.file = function(path, delim = "\t") {
   }
 }
 
+# TODO: load data without spotfiles Visium? Remove additional columns from meta.data
 
 #' Create Seurat object from Spatial Transcriptomics data
 #'

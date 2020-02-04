@@ -192,6 +192,7 @@ SubsetSTData <- function (
   return(object)
 }
 
+# TODO show.sb fails after merging
 
 #' Merge two or more Seurat objects containing Staffli image data
 #'

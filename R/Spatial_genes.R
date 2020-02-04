@@ -59,7 +59,8 @@ GetSpatNet <- function (
                                  to = as.vector(knn_spatial$id),
                                  weight = 1/(1 + as.vector(knn_spatial$dist)),
                                  distance = as.vector(knn_spatial$dist))
-    nw_spatial.norm = graph_from_data_frame(knn_spatial.norm, directed = FALSE)
+    #nw_spatial.norm = igraph::graph_from_data_frame(knn_spatial.norm, directed = FALSE)
+    #CN <- igraph::as_adjacency_matrix(nw_spatial.norm)
 
     # create network for coordinates
     spatnet <- knn_spatial.norm
@@ -350,6 +351,7 @@ SpatialGenes <- function (
   })
 }
 
+# TODO: fix imported libs
 
 #' Orders spatially correlated genes
 #'
