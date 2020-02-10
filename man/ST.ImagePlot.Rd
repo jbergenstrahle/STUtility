@@ -6,7 +6,7 @@
 \usage{
 ST.ImagePlot(data, data.type, shape.by, variable, image, dims,
   pt.size = 2, pt.alpha = 1, palette = "MaYl", cols = NULL,
-  ncol = NULL, spot.colors = NULL, center.zero = T,
+  ncol = NULL, spot.colors = NULL, center.zero = TRUE,
   plot.title = NULL, split.labels = FALSE, dark.theme = FALSE,
   pixels.per.um = NULL, limits = NULL, ...)
 }

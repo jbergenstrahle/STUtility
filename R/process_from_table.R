@@ -26,7 +26,7 @@ parse.spot.file = function(path, delim = "\t") {
   }
 }
 
-# TODO: load data without spotfiles Visium? Remove additional columns from meta.data
+# TODO: load data without spotfiles Visium?
 
 #' Create Seurat object from Spatial Transcriptomics data
 #'
@@ -134,9 +134,12 @@ InputFromTable <- function (
   replace.column = NULL,
   platform = "Visium",
   scaleVisium = NULL,
+  disable.subset = FALSE,
   verbose = TRUE,
   ...
 ){
+
+  if (!"samples" %in% colnames(infotable)) stop("No samples have been provided ... \n", call. = FALSE)
 
   # Generate empty lists
   counts <- list()
@@ -157,20 +160,26 @@ InputFromTable <- function (
   }
 
   # Check if Visium platform i Visium, in which case the scalefactors are required
-  if (any(platforms == "Visium")) {
-    if ("json" %in% colnames(infotable)) {
-      suffs <- sapply(infotable[, "json"], getExtension)
-      if (!all(suffs == "json")) stop("Incorrect format of json files in infotable ...", call. = FALSE)
-      scaleVisium <- sapply(infotable[, "json"], function(f) {read_json(f)$tissue_hires_scalef})
-    } else if ("scaleVisium" %in% colnames(infotable)) {
-      if (!class(infotable[, "scaleVisium"]) == "numeric") stop("Column scaleVisium is not numeric ... \n", call. = FALSE)
-      scaleVisium <- infotable[, "scaleVisium"]
-    } else if (class(scaleVisium) == "numeric" & length(scaleVisium) == 1) {
-      scaleVisium <- rep(scaleVisium, nrow(infotable))
-      warning("Only 1 scaleVisium provided. Using this scalefactor for all samples ... \n", call = FALSE)
-    } else {
-      stop("No scalefactors provided for Visium samples ... \n", call. = FALSE)
+  if ("imgs" %in% colnames(infotable)) {
+    if (any(platforms == "Visium")) {
+      if ("json" %in% colnames(infotable)) {
+        suffs <- sapply(infotable[, "json"], getExtension)
+        if (!all(suffs == "json")) stop("Incorrect format of json files in infotable ...", call. = FALSE)
+        scaleVisium <- sapply(infotable[, "json"], function(f) {read_json(f)$tissue_hires_scalef})
+        infotable[, "json"] <- NULL
+      } else if ("scaleVisium" %in% colnames(infotable)) {
+        if (!class(infotable[, "scaleVisium"]) == "numeric") stop("Column scaleVisium is not numeric ... \n", call. = FALSE)
+        scaleVisium <- infotable[, "scaleVisium"]
+        infotable[, "scaleVisium"] <- NULL
+      } else if (class(scaleVisium) == "numeric" & length(scaleVisium) == 1) {
+        scaleVisium <- rep(scaleVisium, nrow(infotable))
+        warning("Only 1 scaleVisium provided. Using this scalefactor for all samples ... \n", call = FALSE)
+      } else {
+        warning("No scalefactors provided for Visium samples ... \n", call. = FALSE)
+      }
     }
+  } else {
+    warning("No images provided. You will not be able to use image related functions... \n", call. = FALSE)
   }
 
   # Parse data files and store in counts and spotFileData
@@ -182,7 +191,7 @@ InputFromTable <- function (
       # Load data
       if (getExtension(path) %in% c("h5", "mtx") | dir.exists(path)) {
         counts[[path]] <- st.load.matrix(path, visium = TRUE)
-      } else if (getExtension(path) == "tsv" | getExtension(path) == "tsv.gz") {
+      } else if (getExtension(path) %in% c("tsv", "tsv.gz")) {
         counts[[path]] <- t(st.load.matrix(path))
       } else {
         stop("Currently only .h5, .mtx and .tsv formats are supported for Visium samples")
@@ -197,7 +206,10 @@ InputFromTable <- function (
         spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = ","), stringsAsFactors = F)
         if (ncol(spotsData) == 1) {
           spotsData <- setNames(data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = "\t"), stringsAsFactors = F),
-                                nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y"))
+                                nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "selected"))
+          if (ncol(spotsData) == 7 & !disable.subset) {
+            spotsData <- subset(spotsData, selected == 1)
+          }
           rownames(spotsData) <- paste(spotsData[, "x"], spotsData[, "y"], sep = "x")
           spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
           counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
@@ -211,9 +223,16 @@ InputFromTable <- function (
           }
           if (ncol(spotsData) == 6) {
             colnames(spotsData) <- c("barcode", "selection", "adj_y", "adj_x", "pixel_y", "pixel_x")
-            spotsData <- subset(spotsData, selection == 1)
-          } else if (ncol(spotsData) == 7) {
+            if (!disable.subset) {
+              spotsData <- subset(spotsData, selection == 1)
+            }
+          } else if (ncol(spotsData) == 7 & !getExtension(path) %in% c("tsv", "tsv.gz")) {
             colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x")
+          } else if (ncol(spotsData) %in% c(6, 7) & getExtension(path) %in% c("tsv", "tsv.gz")) {
+            colnames(spotsData) <- c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "selected")
+            if (!disable.subset) {
+              spotsData <- subset(spotsData, selected == 1)
+            }
           } else {
             stop("Spotfiles format not recognized ... \n", call. = FALSE)
           }
@@ -228,7 +247,9 @@ InputFromTable <- function (
           spotFileData[[i]] <- spotsData
         }
       } else {
-        if (platforms[i] == "Visium") stop("Spotfiles are required for Visium data.", call. = FALSE)
+        if (getExtension(path) %in% c("h5", "mtx") | dir.exists(path)) {
+          if (platforms[i] == "Visium") stop("Spotfiles are required for Visium data provided in .h5 or .mtx format.", call. = FALSE)
+        }
         warning(paste0("Extracting spot coordinates from gene count matrix headers. It is highly recommended to use spotfiles."), call. = FALSE)
 
         # Check if headers can be extracted
@@ -295,7 +316,7 @@ InputFromTable <- function (
 
   # Collect meta data if available
   intersecting_columns <- Reduce(intersect, lapply(spotFileData, colnames))
-  if (length(x = intersecting_columns) < 2) stop("No spot coordinates found. Aborting ... \n", call. = FALSE)
+  if (length(x = intersecting_columns) < 2) stop("No spot coordinates found. Data cannot be read ... \n", call. = FALSE)
   meta_data_staffli <- do.call(rbind, lapply(seq_along(spotFileData), function(i) {
     x <- spotFileData[[i]][, intersecting_columns]
     rownames(x) <- paste(rownames(x), "_", i, sep = "")

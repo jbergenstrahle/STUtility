@@ -8,7 +8,7 @@ DimOverlay(object, dims = c(1:2), reduction = NULL, sampleids = 1,
   spots = NULL, ncols.dims = NULL, ncols.samples = NULL,
   type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
   pt.size = 1, pt.alpha = 1, shape.by = NULL, palette = "MaYl",
-  cols = NULL, center.zero = FALSE, channels.use = NULL,
+  cols = NULL, center.zero = TRUE, channels.use = NULL,
   dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
   value.scale = c("samplewise", "all"), verbose = FALSE, ...)
 }
