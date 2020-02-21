@@ -1187,6 +1187,7 @@ spatial_feature_plot <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
+  ncol = NULL,
   grid.ncol = NULL,
   center.zero = FALSE,
   channels.use = NULL,
@@ -1321,7 +1322,7 @@ spatial_feature_plot <- function (
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
-                           ncol = NULL, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um,
+                           ncol = ncol, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um,
                            limits[[d]], ...)
 
       return(plot)
@@ -1518,8 +1519,10 @@ ST.ImagePlot <- function (
     return(p)
   })
 
-  final.plot <- plot_grid(plotlist = plots)
+  final.plot <- plot_grid(plotlist = plots, ncol = ncol)
 }
+
+# TODO: fix colors when subsetting spots
 
 #' Overlay dimensionality reduction vectors on HE images
 #'
@@ -1713,6 +1716,7 @@ DimOverlay <- function (
 #' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
 #' from \code{\link{FeatureOverlay}} plots into a 2x2 grid [default: `1`].
 #' (see \emph{Arrange plots*} for a detailed description)
+#' @param split.feature.ncol Sets the number of columns on if split.labels is active
 #' @param ... Parameters passed to DimOverlay
 #' @inheritParams spatial_feature_plot
 #'
@@ -1772,6 +1776,7 @@ FeatureOverlay <- function (
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
   verbose = FALSE,
+  split.feature.ncol = NULL,
   ...
 ) {
 
@@ -1811,7 +1816,7 @@ FeatureOverlay <- function (
     spatial_feature_plot(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
-                   palette = palette, cols = cols,
+                   palette = palette, cols = cols, ncol = split.feature.ncol,
                    grid.ncol = ncols.features, center.zero = center.zero,
                    channels.use = channels.use, split.labels = split.labels, dark.theme = dark.theme,
                    sample.label = sample.label, show.sb = show.sb, value.scale = value.scale.list, verbose = verbose, ... = ...)

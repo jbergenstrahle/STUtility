@@ -186,7 +186,10 @@ SubsetSTData <- function (
   }
 
   st.object@platforms <- st.object@platforms[samples]
-  st.object@pixels.per.um <- setNames(st.object@pixels.per.um[samples], nm = new_samples)
+  if (length(st.object@pixels.per.um) > 0) {
+    st.object@pixels.per.um <- setNames(st.object@pixels.per.um[samples], nm = new_samples)
+  }
+
   st.object@samplenames <- paste0(new_samples)
   object@tools$Staffli <- st.object
   return(object)

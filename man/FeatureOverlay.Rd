@@ -11,7 +11,7 @@ FeatureOverlay(object, features, sampleids = 1, spots = NULL,
   cols = NULL, split.labels = FALSE, center.zero = FALSE,
   channels.use = NULL, dark.theme = FALSE, sample.label = TRUE,
   show.sb = TRUE, value.scale = c("samplewise", "all"),
-  verbose = FALSE, ...)
+  verbose = FALSE, split.feature.ncol = NULL, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -86,6 +86,8 @@ color names specified [default: c("red", "green", "blue)]}
 scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
 
 \item{verbose}{Print messages}
+
+\item{split.feature.ncol}{Sets the number of columns on if split.labels is active}
 
 \item{...}{Parameters passed to DimOverlay}
 }

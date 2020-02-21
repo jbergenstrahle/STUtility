@@ -7,7 +7,7 @@
 spatial_feature_plot(object, features, sample.index = 1, spots = NULL,
   type = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
   blend = FALSE, pt.size = 2, pt.alpha = 1, shape.by = NULL,
-  palette = NULL, cols = NULL, grid.ncol = NULL,
+  palette = NULL, cols = NULL, ncol = NULL, grid.ncol = NULL,
   center.zero = FALSE, channels.use = NULL, verbose = FALSE,
   split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE,
   show.sb = TRUE, value.scale = c("samplewise", "all"), ...)
@@ -53,6 +53,9 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
+
+\item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
+in just in one row or one column.}
 
 \item{grid.ncol}{Number of columns for display when combining plots. This option will only have an effect on the sample level structure.}
 

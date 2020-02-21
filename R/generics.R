@@ -194,6 +194,8 @@ AlignImages <- function (
 #' @param reference.index Specifies reference sample image for alignment(default: 1)
 #' @param edges Uses the tissue edges as points set for alignment
 #' @param maxnum Maximum grid number
+#' @param custom.edge.detector Custom function used to detect edges in tissue image. If a function is provided, the
+#' edges option will be overridden.
 #' @param verbose Print messages
 #'
 #' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
@@ -208,6 +210,7 @@ ManualAlignImages <- function (
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
+  custom.edge.detector = NULL,
   maxnum = 1e3
 ) {
   UseMethod(generic = "ManualAlignImages", object = object)

@@ -5,7 +5,7 @@
 \title{Creates 2D point patterns for a set of images}
 \usage{
 grid.from.staffli(object, type, limit = 0.3, maxnum = 1000,
-  edges = FALSE)
+  edges = FALSE, custom.edge.detector = NULL)
 }
 \arguments{
 \item{object}{Staffli object}
@@ -17,6 +17,8 @@ grid.from.staffli(object, type, limit = 0.3, maxnum = 1000,
 \item{maxnum}{Integer value specifying the maximum number of points}
 
 \item{edges}{Extracts the coordinates of the edges instead}
+
+\item{custom.edge.detector}{Custom function used to detect edges}
 }
 \description{
 Creates 2D point patterns for a set of images

@@ -351,7 +351,7 @@ SpatialGenes <- function (
   })
 }
 
-# TODO: fix imported libs
+# TODO: fix imported libs (spdep not loaded), fix factor in output
 
 #' Orders spatially correlated genes
 #'
@@ -421,7 +421,7 @@ CorSpatialGenes <- function (
     cor(data.use[i, ], tablag[, i])
   }))
 
-  res <- data.frame(gene = rownames(data.use), cor = sp.cor)
+  res <- data.frame(gene = rownames(data.use), cor = sp.cor, stringsAsFactors = F)
   res <- res[order(sp.cor, decreasing = T), ]
   rownames(res) <- res$gene
   return(res)

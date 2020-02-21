@@ -5,7 +5,8 @@
 \title{Function used to generate a 2D set of points from an HE image}
 \usage{
 scatter_HE(object, type = "masked.masks", sample.index = NULL,
-  limit = 0.5, maxnum = 50000, edges = FALSE)
+  limit = 0.5, maxnum = 50000, edges = FALSE,
+  custom.edge.detector = NULL)
 }
 \arguments{
 \item{object}{Staffli object}
@@ -19,6 +20,8 @@ scatter_HE(object, type = "masked.masks", sample.index = NULL,
 \item{maxnum}{Integer value specifying the maximum number of points}
 
 \item{edges}{Extracts the coordinates of the edges instead}
+
+\item{custom.edge.detector}{Custom function used to detect edges}
 }
 \description{
 The defualt segmentation uses the HE image as input and defines any pixel with an intensity value

@@ -682,6 +682,8 @@ AlignImages.Seurat <- function (
 # Align Images (manual)
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+# TODO: make it possible to use other input than "masked.masks"
+
 #' @rdname ManualAlignImages
 #' @method ManualAlignImages Staffli
 #'
@@ -699,14 +701,15 @@ ManualAlignImages.Staffli <- function (
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
-  maxnum = 1e3
+  maxnum = 1e3,
+  custom.edge.detector = NULL
 ) {
 
   # Check if ultiple samples are available
-  if (length(x = object@samplenames) == 1) stop("Only one sample present in the Seurat object. At least 2 samples are required for alignment ... \n", call. = FALSE)
+  if (length(x = object@samplenames) == 1) stop("Only one sample present in the Staffli object. At least 2 samples are required for alignment ... \n", call. = FALSE)
 
   # Check if images have been masked
-  if (!"masked" %in% rasterlists(object)) stop(paste0("You have to mask images before running manual alignment "), call. = FALSE)
+  if (!"masked" %in% rasterlists(object)) warning(paste0("It is recommended to mask the images before alignment ... \n"), call. = FALSE)
 
   # Check that type is OK
   choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
@@ -717,7 +720,8 @@ ManualAlignImages.Staffli <- function (
   if (verbose) cat(paste0("Using '", type, "' images as input for alignment ... \n"))
 
   # Obtain point sets from each image
-  scatters <- grid.from.staffli(object, type = type, edges = edges, maxnum = maxnum)
+  if (class(custom.edge.detector) == "function") edges <- FALSE
+  scatters <- grid.from.staffli(object, type = type, edges = edges, maxnum = maxnum, custom.edge.detector = custom.edge.detector)
   fixed.scatter <- scatters[[reference.index]]$scatter
   counter <- NULL
   coords.ls <- NULL
@@ -749,9 +753,19 @@ ManualAlignImages.Staffli <- function (
                value = 0, min = -200, max = 200, step = 1
              ),
              sliderInput(
-               inputId = "size",
-               label = "Change point size",
-               value = 0.5, min = 0.1, max = 6, step = 0.1
+               inputId = "size_spot",
+               label = "Change spot size",
+               value = 0.5, min = 0, max = 5, step = 0.1
+             ),
+             sliderInput(
+               inputId = "size_ref",
+               label = "Change reference point size",
+               value = 0.3, min = 0, max = 5, step = 0.05
+             ),
+             sliderInput(
+               inputId = "size_target",
+               label = "Change target sample point size",
+               value = 0.3, min = 0, max = 5, step = 0.05
              ),
              checkboxInput(inputId = "flip_x",
                            label = "Mirror along x axis",
@@ -785,7 +799,15 @@ ManualAlignImages.Staffli <- function (
     })
 
     pt_size <- reactive({
-      input$size
+      input$size_spot
+    })
+
+    pt_size_ref <- reactive({
+      input$size_ref
+    })
+
+    pt_size_target <- reactive({
+      input$size_target
     })
 
     coords_list <- reactive({
@@ -827,8 +849,8 @@ ManualAlignImages.Staffli <- function (
 
       d <- round((sqrt(xylimit[1]^2 + xylimit[2]^2) - xylimit[2])/2)
 
-      plot(fixed.scatter[, 1], fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(d + xylimit[2], -d), xaxt = 'n', yaxt = 'n', ann = FALSE)
-      points(scatter.t[, 1], scatter.t[, 2], col = "gray")
+      plot(fixed.scatter[, 1], fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(d + xylimit[2], -d), xaxt = 'n', yaxt = 'n', ann = FALSE, cex = pt_size_ref())
+      points(scatter.t[, 1], scatter.t[, 2], col = "gray", cex = pt_size_target())
       points(coords.t[, 1], coords.t[, 2], col = "red", cex = pt_size())
 
     }, height = 800, width = 800)
@@ -906,10 +928,19 @@ ManualAlignImages.Staffli <- function (
   }
   warped_coords <- object[[, xy.names]]
 
+  # Select input image
+  if (type %in% c("masked", "masked.masks")) {
+    selected.input.image <- "masked"
+  } else if (type %in% c("processed", "processed.masks")) {
+    selected.input.image <- "processed"
+  } else {
+    selected.input.image <- "raw"
+  }
+
   for (i in processed.ids) {
 
     if (verbose) cat(paste0("Loading masked image for sample ", i, " ... \n"))
-    m <- object["masked"][[i]]
+    m <- object[selected.input.image][[i]]
 
     # Obtain alignment matrix
     tr <- alignment.matrices[[i]]
@@ -964,10 +995,11 @@ ManualAlignImages.Seurat <- function (
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
-  maxnum = 1e3
+  maxnum = 1e3,
+  custom.edge.detector = NULL
 ) {
   # Check if masked images are available
-  if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-  object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, maxnum)
+  if (!"masked" %in% rasterlists(object)) warning(paste0("Masked images are not present in Seurat object"), call. = FALSE)
+  object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, maxnum, custom.edge.detector)
   return(object)
 }

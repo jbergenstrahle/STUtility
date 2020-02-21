@@ -23,3 +23,5 @@ EdgeMask <- function (
   im <- threshold(im)
   im <- im[, , , 1] %>% as.cimg() %>% as.pixset()
 }
+
+
