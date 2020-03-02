@@ -2,7 +2,7 @@
 % Please edit documentation in R/Spatial_genes.R
 \name{CorSpatialGenes}
 \alias{CorSpatialGenes}
-\title{Orders spatially correlated genes}
+\title{Find genes with high spatial autocorrelation}
 \usage{
 CorSpatialGenes(object, assay = NULL, slot = "scale.data",
   features = NULL, nNeighbours = NULL, maxdist = NULL)
@@ -14,25 +14,46 @@ CorSpatialGenes(object, assay = NULL, slot = "scale.data",
 
 \item{slot}{Slot to use as input [default: 'scale.data']}
 
-\item{features}{Features to rank}
+\item{features}{Features to rank by spatial autocorrelation. If no features are provided, the
+features are selected using the `VariableFeatures` function in Seurat, meaning that the top variable genes
+will be used.}
 
-\item{nNeighbours}{Number of neighbours to find for each spot}
+\item{nNeighbours}{Number of neighbours to find for each spot, For Visium data, this parameter is set to
+6 because of the spots are arranged in a hexagonal pattern and should have maximum 6 neighbors.}
 
-\item{maxdist}{Maximum allowed distance to define neighbouring spots [default: 1.5]}
+\item{maxdist}{Maximum allowed distance to define neighbouring spots [default: 1.5]. If not provided, a
+maximum distance is automatically selected depending on the platform. For Visium data, this maximum distance
+is set to 150 microns.}
 }
 \value{
 data.frame with gene names and correlation scores
 }
 \description{
-This function can be used to find genes with spatial structure in ST data
-by using lag vectors.
+This function can be used to find genes with spatial structure in ST datasets.
+A more detailed decription of the algorithm is outlined in the Details section below.
 }
 \details{
+overview of method:
 \itemize{
-   \item{Builds a connection network from the array x,y coordinates for each sample. For a 'Visium' array, this would typically be 6 neighbours
+   \item{Build a connection network from the array x,y coordinates for each sample. For a 'Visium' array, this would typically be 6 neighbours
    because of the hexagonal structure of spots.}
    \item{Combine connection networks from multiple samples}
    \item{Compute the lag vector for each feature}
    \item{Compute the correlation between the lag vector and the original vector}
 }
+The connection network is build by defining edges between each spot and its `nNeighborurs` closest
+neighbours that are within a maximum distance defined by `maxdist`. This is to make sure that spots
+along the tissue edges or holes have the correct number of neighbours. A connection network is built for
+each section separately but they are then combined into one large connection network so that the
+autocorrelation can be computed for the whole dataset.
+
+Now that we have a neighbour group defined for
+each spot, we can calculate the lag vector for each feature. The lag vector of a features is essentially
+the summed expression of that feature in the neighbour groups, computed for all spots and can be thought
+of as a "smoothing" estimate.
+
+If we consider a spot A and its neighbours nbA, a feature with high spatial
+corelation should have similar expression levels in both groups. We can therefore compute the a
+correlation score between the lag vector and the "normal" expression vector to get an estimate of
+the spatial autocorrelation.
 }
