@@ -2,7 +2,7 @@
 % Please edit documentation in R/RegionNeighbours.R
 \name{RegionNeighbours}
 \alias{RegionNeighbours}
-\title{Finds neighbouring spots of selected group of spots}
+\title{Autodetect region neighbours}
 \usage{
 RegionNeighbours(object, id, column.key = "nbs_", keep.idents = FALSE,
   keep.within.id = FALSE, verbose = FALSE)
@@ -16,14 +16,24 @@ active identity (see `Idents`).}
 \item{column.key}{Sets the name of the column in the meta.data slot where the output is stored. [default: 'nbs_']}
 
 \item{keep.idents}{If set to TRUE, the identities of the neighbours are kept in the output, otherwise all
-neighbours will be named 'nbs_id' where id is the group label defined by the aprameter `ìd` [default: TRUE]}
+neighbours will be named 'nbs_id' where id is the group label defined by the aprameter `ìd` [default: FALSE]}
 
 \item{keep.within.id}{If set to TRUE, all id spots are kept, otherwise only the spots with outside neighbours are kept}
 
 \item{verbose}{Print messages}
 }
 \description{
-Finds neighbouring spots of selected group of spots
+This function allows you to automatically identify neighbours of a selected region.
+}
+\details{
+One way of using method this is to find spots surrounding a certain cluster. First, you need to make sure
+the identity of the Seurat object is set to the meta.data column that you want to use, so for example
+`se <- SetIdent(se, value = "seurat_clusters")` if you want to use the default seurat clusters.
+Then you select the label that defined the region of interest using the `id` parameter, so for example
+`ìd = "1"` will use cluster 1 as the region. If you set the `keep.idents` parameter to TRUE, the cluster ids
+of the neighbouring spots will be kept in the result, otherwise they will be returned as one single goup.
+You can also activate the `keep.within.id` parameter to include all spots of the selected region in the output,
+otherwise only the spots along the region border will be kept.
 }
 \examples{
 # Cluster data, find neighbours to cluster 10 and then plot the results

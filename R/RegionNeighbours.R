@@ -1,11 +1,22 @@
-#' Finds neighbouring spots of selected group of spots
+#' Autodetect region neighbours
+#'
+#' This function allows you to automatically identify neighbours of a selected region.
+#'
+#' One way of using method this is to find spots surrounding a certain cluster. First, you need to make sure
+#' the identity of the Seurat object is set to the meta.data column that you want to use, so for example
+#' `se <- SetIdent(se, value = "seurat_clusters")` if you want to use the default seurat clusters.
+#' Then you select the label that defined the region of interest using the `id` parameter, so for example
+#' `ìd = "1"` will use cluster 1 as the region. If you set the `keep.idents` parameter to TRUE, the cluster ids
+#' of the neighbouring spots will be kept in the result, otherwise they will be returned as one single goup.
+#' You can also activate the `keep.within.id` parameter to include all spots of the selected region in the output,
+#' otherwise only the spots along the region border will be kept.
 #'
 #' @param object Seurat object.
 #' @param id Group label used to define region, e.g. a cluster id. The region will be selected using the
 #' active identity (see `Idents`).
 #' @param column.key Sets the name of the column in the meta.data slot where the output is stored. [default: 'nbs_']
 #' @param keep.idents If set to TRUE, the identities of the neighbours are kept in the output, otherwise all
-#' neighbours will be named 'nbs_id' where id is the group label defined by the aprameter `ìd` [default: TRUE]
+#' neighbours will be named 'nbs_id' where id is the group label defined by the aprameter `ìd` [default: FALSE]
 #' @param keep.within.id If set to TRUE, all id spots are kept, otherwise only the spots with outside neighbours are kept
 #' @param verbose Print messages
 #'
