@@ -6,7 +6,7 @@
 \usage{
 RunNMF(object, assay = NULL, features = NULL, nfactors = 20,
   reduction.name = "NMF", reduction.key = "factor_", n.cores = 7,
-  order.by.spcor = FALSE, ...)
+  order.by.spcor = FALSE, sort.spcor.by.var = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}

@@ -64,6 +64,7 @@ RunNMF <- function (
   reduction.key = "factor_",
   n.cores = 7,
   order.by.spcor = FALSE,
+  sort.spcor.by.var = FALSE,
   ...
 ) {
   assay <- assay %||% DefaultAssay(object = object)
@@ -77,20 +78,38 @@ RunNMF <- function (
 
   # Order factors based on spatial correlation
   if (order.by.spcor) {
-    st.object <- GetStaffli(object)
-    m.list <- lapply(unique(st.object[[, "sample", drop = T]]), function(s) {
-      resCN <- adespatial::chooseCN(xy = xy, ask = FALSE, type = 6, plot.nb = FALSE, edit.nb = FALSE, result.type = "listw", k = 6)
-      m <- listw2mat(resCN)
-    })
-    nb <- Matrix::bdiag(m.list) %>% as.matrix()
-    listw <- mat2listw(nb)
+    CN <- do.call(rbind, GetSpatNet(object = object, nNeighbours = NULL, maxdist = NULL))
+    resCN <- as.matrix(data.frame(reshape2::dcast(CN, formula = from ~ to, value.var = "distance", fill = 0), row.names = 1))
+    resCN[resCN > 0] <- 1
+    empty.CN <- matrix(0, nrow = nrow(cell.embeddings), ncol = nrow(cell.embeddings), dimnames = list(rownames(cell.embeddings), rownames(cell.embeddings)))
+    colnames(resCN) <- gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))
+    colnames(resCN) <- gsub(pattern = "^X", replacement = "", x = colnames(resCN))
+    empty.CN[rownames(resCN), colnames(resCN)] <- resCN
+    listw <- mat2listw(empty.CN)
     fun <- function (x) lag.listw(listw, x, TRUE)
+
+    # Calculate the lag matrix from the network
     tablag <- apply(cell.embeddings, 2, fun)
-    sp.cor <- unlist(lapply(1:ncol(cell.embeddings), function(i) {
-      cor(cell.embeddings[, i], tablag[, i])
-    }))
-    cell.embeddings <- cell.embeddings[, order(sp.cor, decreasing = TRUE)]
-    feature.loadings <- feature.loadings[, order(sp.cor, decreasing = TRUE)]
+
+    # Split sp.cor by sample
+    if (sort.spcor.by.var) {
+      sp.cor.split <- do.call(rbind, lapply(unique(GetStaffli(object)@meta.data$sample), function(s) {
+        tablag.split <- tablag[GetStaffli(object)@meta.data$sample == s, ]
+        cell.embeddings.split <- cell.embeddings[GetStaffli(object)@meta.data$sample == s, ]
+        unlist(lapply(1:ncol(cell.embeddings.split), function(i) {
+          cor(tablag.split[, i], cell.embeddings.split[, i])
+        }))
+      }))
+      order.vec <- order(apply(sp.cor.split, 2, var))
+    } else {
+      sp.cor <- unlist(lapply(1:ncol(cell.embeddings), function(i) {
+        cor(cell.embeddings[, i], tablag[, i])
+      }))
+      order.vec <- order(sp.cor, decreasing = TRUE)
+    }
+
+    cell.embeddings <- cell.embeddings[, order.vec]
+    colnames(cell.embeddings) <- paste0(reduction.key, 1:ncol(cell.embeddings))
   }
 
   rownames(x = feature.loadings) <- var.genes
@@ -285,3 +304,4 @@ nnsvd_init <- function (A, k, LINPACK)
   }
   return(list(W = W, H = H))
 }
+

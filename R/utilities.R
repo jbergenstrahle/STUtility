@@ -97,32 +97,31 @@ FilterObjects <- function(object, classes.keep = c('Assay', 'DimReduc')) {
 #'
 
 palette.select <- function(palette, info = F) {
-  palettes <- list (
-    Reds = colorRampPalette(brewer.pal(n = 9, name = "Reds")),
-    LgBu = colorRampPalette(c("grey", "lightblue", "blue")),
-    GnRd = colorRampPalette(c("green", "black", "red")),
-    BuRd = colorRampPalette(c("blue", "black", "red")),
-    GrRd = colorRampPalette(c("lightgray", "mistyrose", "red")),
-    magma = colorRampPalette(magma(9)),
-    GnBu = colorRampPalette(rev(brewer.pal(9,"GnBu"))),
-    the.cols = colorRampPalette(c(rgb(255,255,217, maxColorValue=255),
+  palettes <- list(
+    Reds = brewer.pal(n = 9, name = "Reds"),
+    LgBu = c("grey", "lightblue", "blue"),
+    GnRd = c("green", "black", "red"),
+    BuRd = c("blue", "black", "red"),
+    GrRd = c("lightgray", "mistyrose", "red", "dark red"),
+    magma = magma(9),
+    GnBu = rev(brewer.pal(9,"GnBu")),
+    the.cols = c(rgb(255,255,217, maxColorValue=255),
                                   rgb(65,182,196, maxColorValue=255),
                                   rgb(8, 29, 88, maxColorValue=255)),
-                                space="Lab"),
-    offwhite.to.black = colorRampPalette(c(rgb(220,220,220, maxColorValue=255),
+    offwhite.to.black = c(rgb(220,220,220, maxColorValue=255),
                                            rgb(0, 0, 0, maxColorValue=255)),
-                                         space="Lab"),
-    viridis = colorRampPalette(viridis(9)),
-    cividis = colorRampPalette(cividis(9)),
-    plasma = colorRampPalette(plasma(9)),
-    heat = colorRampPalette(c("dark blue", "cyan", "yellow", "red")),
-    spectral = colorRampPalette(rev(brewer.pal(9,"Spectral"))),
-    RdBu = colorRampPalette(rev(brewer.pal(9,"RdBu"))),
-    MaYl = colorRampPalette(c("#FF00FF", "black", "#FFFF00")),
-    RdYlBu = colorRampPalette(rev(brewer.pal(n = 9, name = "RdYlBu")))
+    viridis = viridis(9),
+    cividis = cividis(9),
+    plasma = plasma(9),
+    heat = c("dark blue", "cyan", "yellow", "red"),
+    Spectral = rev(brewer.pal(11,"Spectral")),
+    RdBu = rev(brewer.pal(11,"RdBu")),
+    MaYl = c("#FF00FF", "black", "#FFFF00"),
+    RdYlBu = rev(brewer.pal(n = 11, name = "RdYlBu"))
   )
   if (info) {
-    return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div"), stringsAsFactors = F))
+    return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div", "div"),
+                      stringsAsFactors = F))
   }
   if (!palette %in% names(palettes)) {
     stop("Invalid palette name: ", palette, call. = FALSE)

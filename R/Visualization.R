@@ -675,7 +675,7 @@ STPlot <- function (
 
   # Obtain colors from selected palette or from provided cols
   cols <- cols %||% {
-    ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(3))
+    palette.select(palette)
   }
 
   # Define scales for each facet
@@ -817,7 +817,7 @@ SmoothPlot <- function (
 
   # Obtain colors from selected palette or from provided cols
   cols <- cols %||% {
-    ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(5))
+    palette.select(palette)
   }
 
   val.limits <- range(data[, variable])
@@ -1394,12 +1394,13 @@ ST.ImagePlot <- function (
         if (is.null(names(cols))) {
           label.colors <- cols[1:length(unique(data[, variable]))]
         } else {
-          label.colors <- cols[unique(data[, variable])]
+          label.colors <- cols[unique(as.character(data[, variable]))]
+          names(label.colors) <- unique(as.character(data[, variable]))
         }
       } else {
         label.colors <- gg_color_hue(length(levels(data[, variable])))
       }
-      names(label.colors) <- levels(data[, variable])
+      names(label.colors) <- ifelse(is.null(names(label.colors)), levels(data[, variable]), names(label.colors))
     } else if (class(data[, variable]) == "character") {
       if (!is.null(cols)) {
         stopifnot(length(cols) >= length(unique(data[, variable])))
@@ -1438,7 +1439,7 @@ ST.ImagePlot <- function (
 
   # Obtain colors from selected palette or from provided cols
   cols <- cols %||% {
-    ifelse(rep(palette == "heat", 3), palette.select(palette)(4), palette.select(palette)(3))
+    palette.select(palette)
   }
 
   # Define limits
