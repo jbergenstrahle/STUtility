@@ -19,9 +19,10 @@ ColorBlender <- function (
   col.order <- rgb.order[channels.use]
 
   if (ncol(data) == 2) {
-    data <- cbind(data, rep(0, nrow(data)))
-    col.order <- c(col.order, setdiff(1:3, col.order))
-    data <- data[, col.order]
+    first_vec <- data[, 1]
+    second_vec <- data[, 2]
+    data <- matrix(data = 0, nrow = nrow(data), ncol = 3)
+    data[, col.order[1]] <- first_vec; data[, col.order[2]] <- second_vec
   } else if (ncol(data) == 3) {
     data <- data[, col.order]
   }

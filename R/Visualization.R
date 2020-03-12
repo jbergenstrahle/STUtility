@@ -538,7 +538,6 @@ ST.FeaturePlot <- function (
   }
 }
 
-# TODO: fix channels.use
 
 #' Graphs ST spots colored by continuous or categorical features
 #'
@@ -1390,23 +1389,27 @@ ST.ImagePlot <- function (
   if (is.null(spot.colors)) {
     if (class(data[, variable]) == "factor") {
       if (!is.null(cols)) {
-        stopifnot(length(cols) >= length(unique(data[, variable])))
+        if (!length(cols) >= length(unique(data[, variable]))) stop("Not enough colors provided ... \n")
         if (is.null(names(cols))) {
           label.colors <- cols[1:length(unique(data[, variable]))]
         } else {
+          if (!all(unique(as.character(data[, variable])) %in% names(cols))) stop("cols names must match variables. Please check the names of the cols parameter ...")
           label.colors <- cols[unique(as.character(data[, variable]))]
           names(label.colors) <- unique(as.character(data[, variable]))
         }
       } else {
         label.colors <- gg_color_hue(length(levels(data[, variable])))
       }
-      names(label.colors) <- ifelse(is.null(names(label.colors)), levels(data[, variable]), names(label.colors))
+      if (is.null(names(label.colors))) {
+        names(label.colors) <- levels(data[, variable])
+      }
     } else if (class(data[, variable]) == "character") {
       if (!is.null(cols)) {
         stopifnot(length(cols) >= length(unique(data[, variable])))
         if (is.null(names(cols))) {
           label.colors <- cols[1:length(unique(data[, variable]))]
         } else {
+          if (!all(unique(data[, variable]) %in% names(cols))) stop("cols names must match variables. Please check the names of the cols parameter ...")
           label.colors <- cols[unique(data[, variable])]
         }
       } else {
@@ -1523,7 +1526,6 @@ ST.ImagePlot <- function (
   final.plot <- plot_grid(plotlist = plots, ncol = ncol)
 }
 
-# TODO: fix colors when subsetting spots
 
 #' Overlay dimensionality reduction vectors on HE images
 #'
