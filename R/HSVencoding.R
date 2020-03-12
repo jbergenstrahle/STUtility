@@ -188,7 +188,7 @@ HSVPlot <- function (
     # Normal visualization -------------------------------------------------------------------------------------
 
     if (image.type != "empty") {
-      dims <- lapply(iminfo(st.object), function(x) {x[2:3] %>% as.numeric()})
+      dims <- lapply(st.object@dims, function(x) {x[2:3] %>% as.numeric()})
     } else {
       dims <- st.object@limits
     }
@@ -198,7 +198,7 @@ HSVPlot <- function (
     # Plot combined HSV
     if (!split.hsv) {
       plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
-                     palette = NULL, cols = NULL, ncol, spot.colors = data$cols,
+                     palette = "Reds", cols = NULL, ncol, spot.colors = data$cols,
                      center.zero = F, center.tissue = F, plot.title = "",
                      dims, FALSE, theme = theme, dark.theme = dark.theme,
                      pxum = NULL, sb.size = 2.5, ...)
