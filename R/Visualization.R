@@ -690,7 +690,9 @@ STPlot <- function (
     limits_override <- c(limits_x, limits_y)
 
     # Invert y-axis by sample
-    split.data <- split(data, data[, "sample"])
+    split.data <- lapply(paste0(seq_along(unique(data[, "sample"]))), function(s) {
+      data[data[, "sample"] == s, ]
+    })
     split.data <- lapply(seq_along(split.data), function(i) {
       spld <- split.data[[i]]
       ydim <- dims[[i]][2]
@@ -706,23 +708,27 @@ STPlot <- function (
   # Create new plot
   p <- ggplot()
   # Make sure that levels are correct
-  data[, "sample"] <- factor(data[, "sample"], levels = unique(data[, "sample"]))
+  if (!split.labels) {
+    data[, "sample"] <- factor(data[, "sample"], levels = unique(data[, "sample"]))
+  } else {
+    data[, "sample"] <- factor(data[, "sample"], levels = levels.keep)
+  }
   if (length(spot.colors) > 0) {
 
     # Add shape aesthetic and blend colors if blend is active
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", shape = shape.by), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", shape = shape.by), color = spot.colors, size = pt.size, alpha = pt.alpha)#, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y"), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y"), color = spot.colors, size = pt.size, alpha = pt.alpha)#, ...)
     }
 
   } else {
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, alpha = pt.alpha, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, alpha = pt.alpha)#, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`")), size = pt.size, alpha = pt.alpha, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`")), size = pt.size, alpha = pt.alpha)#, ...)
     }
 
   }

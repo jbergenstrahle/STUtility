@@ -6,7 +6,7 @@
 #' @param object Seurat object
 #' @param limit Cut-off threshold for segmentation of points. Has to be a value between 0-1.
 #' @param maxnum Maximum number of points to store for each section [default: 5e5]. If you are analyzing many samples
-#' you will have to decrease tsis number, oterwise tere will too many points to draw.
+#' you will have to decrease this number.
 #' @param verbose Print messages
 #'
 #' @inheritParams rasterize_scatter
