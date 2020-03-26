@@ -5,11 +5,11 @@
 \title{Graphs ST spots colored by continuous or categorical features}
 \usage{
 STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
-  pt.alpha = 1, palette = "MaYl", cols = NULL, ncol = NULL,
-  spot.colors = NULL, center.zero = TRUE, center.tissue = F,
-  plot.title = NULL, dims = NULL, split.labels = FALSE,
-  theme = theme_void(), pxum = NULL, sb.size = 2.5,
-  dark.theme = FALSE, limits = NULL, ...)
+  pt.alpha = 1, pt.border = FALSE, palette = "MaYl", cols = NULL,
+  ncol = NULL, spot.colors = NULL, center.zero = TRUE,
+  center.tissue = F, plot.title = NULL, dims = NULL,
+  split.labels = FALSE, theme = theme_void(), pxum = NULL,
+  sb.size = 2.5, dark.theme = FALSE, limits = NULL, ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
@@ -24,6 +24,8 @@ and one column with the feature values. Can also include an additional column fo
 \item{pt.size}{Point size of each ST spot [default: 1]}
 
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
+
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}

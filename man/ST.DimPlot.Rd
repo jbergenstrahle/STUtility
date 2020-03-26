@@ -6,8 +6,8 @@
 \usage{
 ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
   plot.type = "spots", blend = FALSE, min.cutoff = NA,
-  max.cutoff = NA, pt.size = 1, pt.alpha = 1, reduction = NULL,
-  shape.by = NULL, palette = "MaYl", cols = NULL,
+  max.cutoff = NA, pt.size = 1, pt.alpha = 1, pt.border = FALSE,
+  reduction = NULL, shape.by = NULL, palette = "MaYl", cols = NULL,
   dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
   verbose = FALSE, theme = theme_void(), sb.size = 2.5,
@@ -34,6 +34,8 @@ is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values
 \item{pt.size}{Adjust point size for plotting [default: 1]}
 
 \item{pt.alpha}{Adjust point opacity for plotting [default: 1]}
+
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
 \item{reduction}{Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"}
 
@@ -78,7 +80,7 @@ you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\
 \item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
 scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
 
-\item{...}{Extra parameters passed on to \code{\link{STPlot}}}
+\item{...}{Extra parameters passed on to \code{\link{t}}}
 }
 \value{
 A ggplot object

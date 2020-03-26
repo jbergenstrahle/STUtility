@@ -13,7 +13,7 @@ Create3DStack(object, limit = 0.4, maxnum = 50000, nx = 200,
 \item{limit}{Cut-off threshold for segmentation of points. Has to be a value between 0-1.}
 
 \item{maxnum}{Maximum number of points to store for each section [default: 5e5]. If you are analyzing many samples
-you will have to decrease tsis number, oterwise tere will too many points to draw.}
+you will have to decrease this number.}
 
 \item{nx}{Number of cells to interpolate over across the x axis}
 

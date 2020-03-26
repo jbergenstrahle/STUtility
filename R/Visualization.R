@@ -35,6 +35,7 @@ NULL
 #' 'q1', you will trim of values below the 1st percentile. [default: no cuttoffs]
 #' @param pt.size Adjust point size for plotting [default: 1]
 #' @param pt.alpha Adjust point opacity for plotting [default: 1]
+#' @param pt.border Should a border be drawn around the spots? [default: TRUE]
 #' @param reduction Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"
 #' @param shape.by You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
 #' and different shapes on spots
@@ -47,7 +48,7 @@ NULL
 #' scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors
 #' @param verbose Print messages
 #'
-#' @param ... Extra parameters passed on to \code{\link{STPlot}}
+#' @param ... Extra parameters passed on to \code{\link{t}}
 #'
 #' @inheritParams draw_scalebar
 #' @inheritParams STPlot
@@ -94,6 +95,7 @@ ST.DimPlot <- function (
   max.cutoff = NA,
   pt.size = 1,
   pt.alpha = 1,
+  pt.border = FALSE,
   reduction = NULL,
   shape.by = NULL,
   palette = "MaYl",
@@ -203,7 +205,7 @@ ST.DimPlot <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 3, 2)):ncol(data)]
-    p <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha,
+    p <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha, pt.border,
                    palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "),
                    dims.list, split.labels = FALSE, theme = theme, pxum = pxum, sb.size = sb.size, dark.theme, ...)
@@ -218,7 +220,7 @@ ST.DimPlot <- function (
                        ifelse(length(dims) == 1, dims,  paste0(paste(dims[1:(length(dims) - 1)], collapse = ", "), " and ", dims[length(dims)])))
 
       plots <- lapply(X = dims, FUN = function(d) {
-        plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha,
+        plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha, pt.border,
                        palette, cols, ncol, spot.colors, center.zero, center.tissue,
                        d, dims.list, FALSE, theme = theme, pxum = pxum, sb.size = sb.size,
                        dark.theme, limits, ...)
@@ -312,7 +314,7 @@ ST.DimPlot <- function (
 #' scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors
 #' @param verbose Print messages
 #'
-#' @param ... Extra parameters passed on to \code{\link{STPlot}}
+#' @param ... Extra parameters passed on to \code{\link{t}}
 #'
 #' @inheritParams STPlot
 #' @inheritParams SmoothPlot
@@ -365,6 +367,7 @@ ST.FeaturePlot <- function (
   blend = FALSE,
   pt.size = 1,
   pt.alpha = 1,
+  pt.border = FALSE,
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
@@ -479,7 +482,7 @@ ST.FeaturePlot <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - ifelse(!is.null(shape.by), 4, 3)):ncol(data)]
-    plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha,
+    plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha, pt.border,
                    palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
                    dims, FALSE, theme, pxum, sb.size, dark.theme, ...)
@@ -495,7 +498,7 @@ ST.FeaturePlot <- function (
     # Create plots
     if (plot.type == "spots") {
       plots <- lapply(X = features, FUN = function(ftr) {
-            plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha,
+            plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha, pt.border,
                            palette, cols, ncol, spot.colors, center.zero,
                            center.tissue, ftr, dims, split.labels, theme, pxum,
                            sb.size, dark.theme, limits, ...)
@@ -548,6 +551,7 @@ ST.FeaturePlot <- function (
 #' @param variable Name of feature column
 #' @param pt.size Point size of each ST spot [default: 1]
 #' @param pt.alpha Opacity of each ST spot [default: 1]
+#' @param pt.border Should a border be drawn around the spots? [default: TRUE]
 #' @param palette Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 #' Disabled if a color vector is provided (see \code{cols} below).
 #' @param cols A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
@@ -587,6 +591,7 @@ STPlot <- function (
   variable,
   pt.size = 1,
   pt.alpha = 1,
+  pt.border = FALSE,
   palette = "MaYl",
   cols = NULL,
   ncol = NULL,
@@ -717,25 +722,33 @@ STPlot <- function (
 
     # Add shape aesthetic and blend colors if blend is active
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", shape = shape.by), color = spot.colors, size = pt.size, alpha = pt.alpha)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", shape = shape.by),
+                          shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                          fill = spot.colors, size = pt.size, alpha = pt.alpha, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y"), color = spot.colors, size = pt.size, alpha = pt.alpha)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y"),
+                          shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                          fill = spot.colors, size = pt.size, alpha = pt.alpha, ...)
     }
 
   } else {
 
     # Add shape aesthetic only
     if (!is.null(shape.by)) {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, alpha = pt.alpha)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", fill = paste0("`", variable, "`"), shape = shape.by),
+                          shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                          size = pt.size, alpha = pt.alpha, ...)
     } else {
-      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", color = paste0("`", variable, "`")), size = pt.size, alpha = pt.alpha)#, ...)
+      p <- p + geom_point(data = data, mapping = aes_string(x = "x", y = "y", fill = paste0("`", variable, "`")),
+                          shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                          size = pt.size, alpha = pt.alpha, ...)
     }
 
   }
 
   # Add ST array dimensions and plot title
   p <- p +
-    labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
+    labs(title = ifelse(!is.null(plot.title), plot.title, ""), fill = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
 
   # Set theme
   p <- p + theme
@@ -766,15 +779,15 @@ STPlot <- function (
       }
       limits <- c(-max_val, max_val)
       p <- p +
-        scale_color_gradientn(colours = cols, limits = limits)
+        scale_fill_gradientn(colours = cols, limits = limits)
         #scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
     } else if (any(data.type %in% c("character", "factor"))) {
       p <- p +
         labs(color = variable) +
-        scale_color_manual(values = label.colors)
+        scale_fill_manual(values = label.colors)
     } else {
       p <- p +
-        scale_color_gradientn(colours = cols, limits = limits)
+        scale_fill_gradientn(colours = cols, limits = limits)
     }
   }
 
@@ -992,6 +1005,7 @@ spatial_dim_plot <- function (
   blend = FALSE,
   pt.size = 1,
   pt.alpha = 1,
+  pt.border = FALSE,
   reduction = NULL,
   shape.by = NULL,
   palette = "MaYl",
@@ -1119,7 +1133,7 @@ spatial_dim_plot <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha,
+    plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE,
                          dark.theme, pixels.per.um = pixels.per.um, ...)
@@ -1132,7 +1146,7 @@ spatial_dim_plot <- function (
 
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
+      plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, palette, cols,
                            ncol = NULL, spot.colors, center.zero, plot.title = d, FALSE, dark.theme, pixels.per.um = pixels.per.um,
                            limits[[d]], ...)
 
@@ -1189,6 +1203,7 @@ spatial_feature_plot <- function (
   blend = FALSE,
   pt.size = 2,
   pt.alpha = 1,
+  pt.border = FALSE,
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
@@ -1313,7 +1328,7 @@ spatial_feature_plot <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha,
+    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
                          split.labels, dark.theme, pixels.per.um = pixels.per.um, ...)
@@ -1326,7 +1341,7 @@ spatial_feature_plot <- function (
 
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, palette, cols,
+      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, palette, cols,
                            ncol = ncol, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um,
                            limits[[d]], ...)
 
@@ -1369,6 +1384,7 @@ ST.ImagePlot <- function (
   dims,
   pt.size = 2,
   pt.alpha = 1,
+  pt.border = FALSE,
   palette = "MaYl",
   cols = NULL,
   ncol = NULL,
@@ -1466,18 +1482,26 @@ ST.ImagePlot <- function (
 
       # Add shape aesthetic and blend colors if blend is active
       if (!is.null(shape.by)) {
-        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), shape = shape.by),
+                            shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                            fill = spot.colors, size = pt.size, alpha = pt.alpha, ...)
       } else {
-        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y")), color = spot.colors, size = pt.size, alpha = pt.alpha, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y")),
+                            shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                            fill = spot.colors, size = pt.size, alpha = pt.alpha, ...)
       }
 
     } else {
 
       # Add shape aesthetic only
       if (!is.null(shape.by)) {
-        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`"), shape = shape.by), size = pt.size, alpha = pt.alpha, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), fill = paste0("`", variable, "`"), shape = shape.by),
+                            shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                            size = pt.size, alpha = pt.alpha, ...)
       } else {
-        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), color = paste0("`", variable, "`")), size = pt.size, alpha = pt.alpha, ...)
+        p <- p + geom_point(data = data[data[, "sample"] == v, ], mapping = aes_string(x = "x", y = paste0(y_dim, " - y"), fill = paste0("`", variable, "`")),
+                            shape = 21, stroke = ifelse(pt.border, 0.2, 0),
+                            size = pt.size, alpha = pt.alpha, ...)
       }
     }
 
@@ -1490,7 +1514,7 @@ ST.ImagePlot <- function (
 
     # Add ST array dimensions and plot title
     p <- p +
-      labs(title = ifelse(!is.null(plot.title), plot.title, ""), color = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
+      labs(title = ifelse(!is.null(plot.title), plot.title, ""), fill = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
 
     ## Set the scale bar
     if (!is.null(pixels.per.um)) {
@@ -1510,15 +1534,15 @@ ST.ImagePlot <- function (
         }
         limits <- c(-max_val, max_val)
         p <- p +
-          scale_color_gradientn(colours = cols, limits = limits)
+          scale_fill_gradientn(colours = cols, limits = limits)
         #scale_color_gradient2(low = cols[1], mid = cols[2], high = cols[3], midpoint = 0, limits = limits)
       } else if (any(data.type %in% c("character", "factor"))) {
         p <- p +
-          labs(color = variable) +
-          scale_color_manual(values = label.colors)
+          labs(fill = variable) +
+          scale_fill_manual(values = label.colors)
       } else {
         p <- p +
-          scale_color_gradientn(colours = cols, limits = limits)
+          scale_fill_gradientn(colours = cols, limits = limits)
       }
     }
 
@@ -1609,6 +1633,7 @@ DimOverlay <- function (
   blend = FALSE,
   pt.size = 1,
   pt.alpha = 1,
+  pt.border = TRUE,
   shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
@@ -1663,7 +1688,7 @@ DimOverlay <- function (
   }
   p.list <- lapply(remaining_samples, function(i) {
     spatial_dim_plot(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
-               max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha,
+               max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha = pt.alpha, pt.border = pt.border,
                reduction = reduction, shape.by = shape.by, palette = palette,
                cols = cols, grid.ncol = ncols.dims,
                center.zero = center.zero, channels.use = channels.use, dark.theme = dark.theme,
@@ -1774,6 +1799,7 @@ FeatureOverlay <- function (
   blend = FALSE,
   pt.size = 2,
   pt.alpha = 1,
+  pt.border = TRUE,
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
@@ -1824,7 +1850,7 @@ FeatureOverlay <- function (
   p.list <- lapply(remaining_samples, function(s) {
     spatial_feature_plot(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
-                   blend = blend, pt.size = pt.size, pt.alpha, shape.by = shape.by,
+                   blend = blend, pt.size = pt.size, pt.alpha = pt.alpha, pt.border = pt.border, shape.by = shape.by,
                    palette = palette, cols = cols, ncol = split.feature.ncol,
                    grid.ncol = ncols.features, center.zero = center.zero,
                    channels.use = channels.use, split.labels = split.labels, dark.theme = dark.theme,

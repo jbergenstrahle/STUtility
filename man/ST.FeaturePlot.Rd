@@ -7,12 +7,12 @@
 ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
   spots = NULL, plot.type = "spots", min.cutoff = NA,
   max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
-  pt.alpha = 1, shape.by = NULL, palette = NULL, cols = NULL,
-  dark.theme = FALSE, highlight.edges = TRUE, ncol = NULL,
-  grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
-  center.tissue = FALSE, theme = theme_void(), verbose = FALSE,
-  sb.size = 2.5, show.sb = TRUE, value.scale = c("samplewise",
-  "all"), ...)
+  pt.alpha = 1, pt.border = FALSE, shape.by = NULL, palette = NULL,
+  cols = NULL, dark.theme = FALSE, highlight.edges = TRUE,
+  ncol = NULL, grid.ncol = NULL, center.zero = FALSE,
+  channels.use = NULL, center.tissue = FALSE, theme = theme_void(),
+  verbose = FALSE, sb.size = 2.5, show.sb = TRUE,
+  value.scale = c("samplewise", "all"), ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -43,6 +43,8 @@ See 'Blending values' below for a more thourough description.}
 \item{pt.size}{Adjust point size for plotting [default: 1]}
 
 \item{pt.alpha}{Adjust point opacity for plotting [default: 1]}
+
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
 \item{shape.by}{You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
 and different shapes on spots}
@@ -87,7 +89,7 @@ you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\
 \item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
 scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
 
-\item{...}{Extra parameters passed on to \code{\link{STPlot}}}
+\item{...}{Extra parameters passed on to \code{\link{t}}}
 }
 \value{
 A ggplot object

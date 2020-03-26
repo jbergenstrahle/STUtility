@@ -6,11 +6,12 @@
 \usage{
 spatial_feature_plot(object, features, sample.index = 1, spots = NULL,
   type = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
-  blend = FALSE, pt.size = 2, pt.alpha = 1, shape.by = NULL,
-  palette = NULL, cols = NULL, ncol = NULL, grid.ncol = NULL,
-  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE,
-  show.sb = TRUE, value.scale = c("samplewise", "all"), ...)
+  blend = FALSE, pt.size = 2, pt.alpha = 1, pt.border = FALSE,
+  shape.by = NULL, palette = NULL, cols = NULL, ncol = NULL,
+  grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
+  verbose = FALSE, split.labels = FALSE, dark.theme = FALSE,
+  sample.label = TRUE, show.sb = TRUE, value.scale = c("samplewise",
+  "all"), ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -44,6 +45,8 @@ See 'Blending values' below for a more thourough description.}
 \item{pt.size}{Point size of each ST spot [default: 1]}
 
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
+
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
 \item{shape.by}{String specifying the column where the shaping label is stored}
 

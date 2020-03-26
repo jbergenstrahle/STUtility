@@ -7,11 +7,11 @@
 FeatureOverlay(object, features, sampleids = 1, spots = NULL,
   ncols.features = NULL, ncols.samples = NULL, type = NULL,
   min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
-  pt.size = 2, pt.alpha = 1, shape.by = NULL, palette = NULL,
-  cols = NULL, split.labels = FALSE, center.zero = FALSE,
-  channels.use = NULL, dark.theme = FALSE, sample.label = TRUE,
-  show.sb = TRUE, value.scale = c("samplewise", "all"),
-  verbose = FALSE, split.feature.ncol = NULL, ...)
+  pt.size = 2, pt.alpha = 1, pt.border = TRUE, shape.by = NULL,
+  palette = NULL, cols = NULL, split.labels = FALSE,
+  center.zero = FALSE, channels.use = NULL, dark.theme = FALSE,
+  sample.label = TRUE, show.sb = TRUE, value.scale = c("samplewise",
+  "all"), verbose = FALSE, split.feature.ncol = NULL, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -54,6 +54,8 @@ See 'Blending values' below for a more thourough description.}
 \item{pt.size}{Point size of each ST spot [default: 1]}
 
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
+
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
 \item{shape.by}{String specifying the column where the shaping label is stored}
 

@@ -5,8 +5,8 @@
 \title{Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
 ST.ImagePlot(data, data.type, shape.by, variable, image, dims,
-  pt.size = 2, pt.alpha = 1, palette = "MaYl", cols = NULL,
-  ncol = NULL, spot.colors = NULL, center.zero = TRUE,
+  pt.size = 2, pt.alpha = 1, pt.border = FALSE, palette = "MaYl",
+  cols = NULL, ncol = NULL, spot.colors = NULL, center.zero = TRUE,
   plot.title = NULL, split.labels = FALSE, dark.theme = FALSE,
   pixels.per.um = NULL, limits = NULL, ...)
 }
@@ -28,6 +28,8 @@ should be a vector of length 2 specifying the dimensions of the original HE imag
 \item{pt.size}{Point size of each ST spot [default: 1]}
 
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
+
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
