@@ -8,7 +8,7 @@ ST.ImagePlot(data, data.type, shape.by, variable, image, dims,
   pt.size = 2, pt.alpha = 1, pt.border = FALSE, palette = "MaYl",
   cols = NULL, ncol = NULL, spot.colors = NULL, center.zero = TRUE,
   plot.title = NULL, split.labels = FALSE, dark.theme = FALSE,
-  pixels.per.um = NULL, limits = NULL, ...)
+  pixels.per.um = NULL, limits = NULL, custom.theme = NULL, ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
@@ -59,6 +59,8 @@ The plot will be split into one plot for each group label, highlighting the labe
 \item{pixels.per.um}{Defines the number of pixels per micrometer to draw the scale bar}
 
 \item{limits}{Sets the limits of the colorbar}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Parameters passed to geom_point()}
 }

@@ -8,8 +8,8 @@ STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
   pt.alpha = 1, pt.border = FALSE, palette = "MaYl", cols = NULL,
   ncol = NULL, spot.colors = NULL, center.zero = TRUE,
   center.tissue = F, plot.title = NULL, dims = NULL,
-  split.labels = FALSE, theme = theme_void(), pxum = NULL,
-  sb.size = 2.5, dark.theme = FALSE, limits = NULL, ...)
+  split.labels = FALSE, pxum = NULL, sb.size = 2.5,
+  dark.theme = FALSE, limits = NULL, custom.theme = NULL, ...)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample
@@ -57,8 +57,6 @@ this list of dimensions will be used to specify the limits along the x- and y-ax
 \item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}
 
-\item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
-
 \item{pxum}{A data.frame object with columns for 'x', 'xend', 'y' and 'sample'
 used for facetted plots.}
 
@@ -67,6 +65,8 @@ used for facetted plots.}
 \item{dark.theme}{Switches color of scalebar to 'white'}
 
 \item{limits}{Sets the range of the colorbar values}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Parameters passed to geom_point()}
 }

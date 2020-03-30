@@ -10,9 +10,9 @@ ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
   pt.alpha = 1, pt.border = FALSE, shape.by = NULL, palette = NULL,
   cols = NULL, dark.theme = FALSE, highlight.edges = TRUE,
   ncol = NULL, grid.ncol = NULL, center.zero = FALSE,
-  channels.use = NULL, center.tissue = FALSE, theme = theme_void(),
-  verbose = FALSE, sb.size = 2.5, show.sb = TRUE,
-  value.scale = c("samplewise", "all"), ...)
+  channels.use = NULL, center.tissue = FALSE, verbose = FALSE,
+  sb.size = 2.5, show.sb = TRUE, value.scale = c("samplewise",
+  "all"), custom.theme = NULL, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -78,8 +78,6 @@ color names specified [default: c("red", "green", "blue)]}
 samples have been placed in very different parts of the capture area and you want to center the plots in the middle. This is however unnecessary if
 you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\link{WarpImages}} and \code{\link{ManualAlignImages}})}
 
-\item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
-
 \item{verbose}{Print messages}
 
 \item{sb.size}{Size of scalebar [default: 2.5]}
@@ -88,6 +86,8 @@ you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\
 
 \item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
 scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Extra parameters passed on to \code{\link{t}}}
 }

@@ -11,7 +11,7 @@ DimOverlay(object, dims = c(1:2), reduction = NULL, sampleids = 1,
   palette = "MaYl", cols = NULL, center.zero = TRUE,
   channels.use = NULL, dark.theme = FALSE, sample.label = TRUE,
   show.sb = TRUE, value.scale = c("samplewise", "all"),
-  verbose = FALSE, ...)
+  custom.theme = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -80,6 +80,8 @@ color names specified [default: c("red", "green", "blue)]}
 
 \item{value.scale}{Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
 scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 

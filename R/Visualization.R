@@ -107,10 +107,10 @@ ST.DimPlot <- function (
   channels.use = NULL,
   center.tissue = FALSE,
   verbose = FALSE,
-  theme = theme_void(),
   sb.size = 2.5,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
   ...
 ) {
 
@@ -208,7 +208,8 @@ ST.DimPlot <- function (
     p <- STPlot(data, data.type = "numeric", shape.by, NULL, pt.size, pt.alpha, pt.border,
                    palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "),
-                   dims.list, split.labels = FALSE, theme = theme, pxum = pxum, sb.size = sb.size, dark.theme, ...)
+                   dims.list, split.labels = FALSE, pxum = pxum, sb.size = sb.size,
+                   dark.theme, NULL, custom.theme, ...)
     if (dark.theme) {
       p <- p + dark_theme()
     }
@@ -222,8 +223,8 @@ ST.DimPlot <- function (
       plots <- lapply(X = dims, FUN = function(d) {
         plot <- STPlot(data, data.type = "numeric", shape.by, d, pt.size, pt.alpha, pt.border,
                        palette, cols, ncol, spot.colors, center.zero, center.tissue,
-                       d, dims.list, FALSE, theme = theme, pxum = pxum, sb.size = sb.size,
-                       dark.theme, limits, ...)
+                       d, dims.list, FALSE, pxum = pxum, sb.size = sb.size,
+                       dark.theme, limits, custom.theme, ...)
         if (dark.theme) {
           plot <- plot + dark_theme()
         }
@@ -378,11 +379,11 @@ ST.FeaturePlot <- function (
   center.zero = FALSE,
   channels.use = NULL,
   center.tissue = FALSE,
-  theme = theme_void(),
   verbose = FALSE,
   sb.size = 2.5,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
   ...
 ) {
   # Check to see if Staffli object is present
@@ -485,7 +486,7 @@ ST.FeaturePlot <- function (
     plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha, pt.border,
                    palette, cols, ncol, spot.colors, center.zero, center.tissue,
                    plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
-                   dims, FALSE, theme, pxum, sb.size, dark.theme, ...)
+                   dims, FALSE, pxum, sb.size, dark.theme, NULL, custom.theme, ...)
     if (dark.theme) {
       plot <- plot + dark_theme()
     }
@@ -500,8 +501,8 @@ ST.FeaturePlot <- function (
       plots <- lapply(X = features, FUN = function(ftr) {
             plot <- STPlot(data, data.type, shape.by, ftr, pt.size, pt.alpha, pt.border,
                            palette, cols, ncol, spot.colors, center.zero,
-                           center.tissue, ftr, dims, split.labels, theme, pxum,
-                           sb.size, dark.theme, limits, ...)
+                           center.tissue, ftr, dims, split.labels, pxum,
+                           sb.size, dark.theme, limits, custom.theme, ...)
 
             if (dark.theme) {
               plot <- plot + dark_theme()
@@ -573,7 +574,7 @@ ST.FeaturePlot <- function (
 #' this list of dimensions will be used to specify the limits along the x- and y-axis of the array for each sample.
 #' @param split.labels Only works if the features are specified by character vectors.
 #' The plot will be split into one plot for each group label, highlighting the labelled spots.
-#' @param theme Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})
+#' @param custom.theme Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})
 #' @param sb.size Defines the size of the scalebar
 #' @param limits Sets the range of the colorbar values
 #' @param ... Parameters passed to geom_point()
@@ -601,11 +602,11 @@ STPlot <- function (
   plot.title = NULL,
   dims = NULL,
   split.labels = FALSE,
-  theme = theme_void(),
   pxum = NULL,
   sb.size = 2.5,
   dark.theme = FALSE,
   limits = NULL,
+  custom.theme = NULL,
   ...
 ) {
 
@@ -751,8 +752,12 @@ STPlot <- function (
     labs(title = ifelse(!is.null(plot.title), plot.title, ""), fill = ifelse(all(data.type %in% c("numeric", "integer")), "value", "label"))
 
   # Set theme
-  p <- p + theme
+  p <- p + theme_void()
   p <- p + theme(plot.margin = unit(c(0.05, 0.05, 0.05, 0.05), "npc"))
+
+  if (!is.null(custom.theme)) {
+    p <- p + custom.theme
+  }
 
   # Facet plots by group variable
   if (!split.labels) {
@@ -1018,6 +1023,7 @@ spatial_dim_plot <- function (
   sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
   ...
 ) {
 
@@ -1136,7 +1142,7 @@ spatial_dim_plot <- function (
     plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE,
-                         dark.theme, pixels.per.um = pixels.per.um, ...)
+                         dark.theme, pixels.per.um = pixels.per.um, NULL, custom.theme, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1148,7 +1154,7 @@ spatial_dim_plot <- function (
     plots <- lapply(X = dims, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, palette, cols,
                            ncol = NULL, spot.colors, center.zero, plot.title = d, FALSE, dark.theme, pixels.per.um = pixels.per.um,
-                           limits[[d]], ...)
+                           limits[[d]], custom.theme, ...)
 
       return(plot)
     })
@@ -1217,6 +1223,7 @@ spatial_feature_plot <- function (
   sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
   ...
 ) {
 
@@ -1331,7 +1338,7 @@ spatial_feature_plot <- function (
     plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
-                         split.labels, dark.theme, pixels.per.um = pixels.per.um, ...)
+                         split.labels, dark.theme, pixels.per.um = pixels.per.um, NULL, custom.theme, ...)
     return(plot)
   } else {
     spot.colors <- NULL
@@ -1343,7 +1350,7 @@ spatial_feature_plot <- function (
     plots <- lapply(X = features, FUN = function(d) {
       plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, palette, cols,
                            ncol = ncol, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um,
-                           limits[[d]], ...)
+                           limits[[d]], custom.theme, ...)
 
       return(plot)
     })
@@ -1395,6 +1402,7 @@ ST.ImagePlot <- function (
   dark.theme = FALSE,
   pixels.per.um = NULL,
   limits = NULL,
+  custom.theme = NULL,
   ...
 ) {
 
@@ -1550,6 +1558,10 @@ ST.ImagePlot <- function (
       p <- p + dark_theme()
     }
 
+    if (!is.null(custom.theme)) {
+      p <- p + custom.theme
+    }
+
     return(p)
   })
 
@@ -1643,6 +1655,7 @@ DimOverlay <- function (
   sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
   verbose = FALSE,
   ...
 ) {
@@ -1693,7 +1706,7 @@ DimOverlay <- function (
                cols = cols, grid.ncol = ncols.dims,
                center.zero = center.zero, channels.use = channels.use, dark.theme = dark.theme,
                sample.label = sample.label, show.sb = show.sb,
-               value.scale = value.scale.list, verbose = verbose, ... = ...)
+               value.scale = value.scale.list, custom.theme = custom.theme, verbose = verbose, ... = ...)
   })
   p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
   if (dark.theme) p <- p + dark_theme()
@@ -1810,8 +1823,9 @@ FeatureOverlay <- function (
   sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
-  verbose = FALSE,
+  custom.theme = NULL,
   split.feature.ncol = NULL,
+  verbose = FALSE,
   ...
 ) {
 
@@ -1854,7 +1868,8 @@ FeatureOverlay <- function (
                    palette = palette, cols = cols, ncol = split.feature.ncol,
                    grid.ncol = ncols.features, center.zero = center.zero,
                    channels.use = channels.use, split.labels = split.labels, dark.theme = dark.theme,
-                   sample.label = sample.label, show.sb = show.sb, value.scale = value.scale.list, verbose = verbose, ... = ...)
+                   sample.label = sample.label, show.sb = show.sb, value.scale = value.scale.list,
+                   custom.theme = custom.theme, verbose = verbose, ... = ...)
   })
 
   p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)

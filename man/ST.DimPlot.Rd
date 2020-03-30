@@ -10,8 +10,8 @@ ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
   reduction = NULL, shape.by = NULL, palette = "MaYl", cols = NULL,
   dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
   center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
-  verbose = FALSE, theme = theme_void(), sb.size = 2.5,
-  show.sb = TRUE, value.scale = c("samplewise", "all"), ...)
+  verbose = FALSE, sb.size = 2.5, show.sb = TRUE,
+  value.scale = c("samplewise", "all"), custom.theme = NULL, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -71,14 +71,14 @@ you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\
 
 \item{verbose}{Print messages}
 
-\item{theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
-
 \item{sb.size}{Size of scalebar [default: 2.5]}
 
 \item{show.sb}{Should a scalebar be drawn? [default: TRUE]}
 
 \item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
 scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Extra parameters passed on to \code{\link{t}}}
 }

@@ -11,7 +11,8 @@ FeatureOverlay(object, features, sampleids = 1, spots = NULL,
   palette = NULL, cols = NULL, split.labels = FALSE,
   center.zero = FALSE, channels.use = NULL, dark.theme = FALSE,
   sample.label = TRUE, show.sb = TRUE, value.scale = c("samplewise",
-  "all"), verbose = FALSE, split.feature.ncol = NULL, ...)
+  "all"), custom.theme = NULL, split.feature.ncol = NULL,
+  verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -87,9 +88,11 @@ color names specified [default: c("red", "green", "blue)]}
 \item{value.scale}{Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
 scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
 
-\item{verbose}{Print messages}
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{split.feature.ncol}{Sets the number of columns on if split.labels is active}
+
+\item{verbose}{Print messages}
 
 \item{...}{Parameters passed to DimOverlay}
 }

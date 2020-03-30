@@ -11,7 +11,7 @@ spatial_feature_plot(object, features, sample.index = 1, spots = NULL,
   grid.ncol = NULL, center.zero = FALSE, channels.use = NULL,
   verbose = FALSE, split.labels = FALSE, dark.theme = FALSE,
   sample.label = TRUE, show.sb = TRUE, value.scale = c("samplewise",
-  "all"), ...)
+  "all"), custom.theme = NULL, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -84,6 +84,8 @@ The plot will be split into one plot for each group label, highlighting the labe
 
 \item{value.scale}{Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
 scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}
 }
