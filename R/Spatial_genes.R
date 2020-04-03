@@ -126,6 +126,7 @@ GetSpatNet <- function (
 #' @return data.frame with gene names and correlation scores
 #'
 #' @importFrom Matrix bdiag
+#' @importFrom spdep mat2listw
 #'
 #' @export
 #'
@@ -139,8 +140,8 @@ CorSpatialGenes <- function (
 ) {
 
   # Check if adespatial is installed
-  if (!requireNamespace("adespatial")) stop("R package adespatial is required to run this function ... \n")
-  if (!requireNamespace("spdep")) stop("R package spdep is required to run this function ... \n")
+  #if (!requireNamespace("adespatial")) stop("R package adespatial is required to run this function ... \n")
+  #if (!requireNamespace("spdep")) stop("R package spdep is required to run this function ... \n")
 
   # Collect Staffli object
   if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
