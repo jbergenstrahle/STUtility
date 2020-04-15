@@ -7,9 +7,10 @@
 spatial_hsv_plot(object, features, split.hsv = FALSE, sample.index = 1,
   rescale = TRUE, spots = NULL, type = NULL, min.cutoff = NA,
   max.cutoff = NA, slot = "data", pt.size = 2, pt.alpha = 1,
-  add.alpha = FALSE, shape.by = NULL, palette = NULL, cols = NULL,
-  grid.ncol = NULL, dark.theme = FALSE, sample.label = TRUE,
-  show.sb = TRUE, value.scale = c("samplewise", "all"),
+  pt.border = FALSE, add.alpha = FALSE, shape.by = NULL,
+  palette = NULL, cols = NULL, grid.ncol = NULL,
+  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
+  value.scale = c("samplewise", "all"), custom.theme = NULL,
   verbose = FALSE, ...)
 }
 \arguments{
@@ -47,6 +48,8 @@ is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values
 
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
 
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
+
 \item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
 
 \item{shape.by}{String specifying the column where the shaping label is stored}
@@ -68,6 +71,8 @@ option.}
 
 \item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
 scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 

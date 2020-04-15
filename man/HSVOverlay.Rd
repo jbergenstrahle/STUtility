@@ -10,7 +10,7 @@ HSVOverlay(object, features, sampleids = 1, rescale = TRUE,
   pt.size = 2, pt.alpha = 1, add.alpha = FALSE, shape.by = NULL,
   palette = NULL, cols = NULL, split.hsv = FALSE,
   dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
-  verbose = FALSE, ...)
+  custom.theme = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -72,6 +72,8 @@ option.}
 \item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
 \item{show.sb}{Should a scalebar be drawn? [default: TRUE]}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 

@@ -7,10 +7,10 @@
 HSVPlot(object, features, ncol = NULL, plot.type = "spots",
   split.hsv = FALSE, rescale = TRUE, indices = NULL, spots = NULL,
   min.cutoff = NA, max.cutoff = NA, slot = "data", pt.size = 1,
-  pt.alpha = 1, add.alpha = FALSE, shape.by = NULL, sigma = 2,
-  highlight.edges = FALSE, cols = NULL, dark.theme = TRUE,
-  grid.ncol = NULL, theme = theme_void(), scale.res = 1,
-  verbose = FALSE, ...)
+  pt.alpha = 1, pt.border = FALSE, add.alpha = FALSE,
+  shape.by = NULL, sigma = 2, highlight.edges = FALSE, cols = NULL,
+  dark.theme = TRUE, grid.ncol = NULL, theme = theme_void(),
+  scale.res = 1, custom.theme = NULL, verbose = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -43,6 +43,8 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 
 \item{pt.alpha}{Adjust opacity of spots.}
 
+\item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
+
 \item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
 
 \item{shape.by}{If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot}
@@ -64,6 +66,8 @@ option.}
 
 \item{scale.res}{Integer value setting the resolution of the output raster image. E.g. scale.res = 2 will double the
 resolution of the output but will also take longer to render. Only active if plot.type is set to 'smooth'.}
+
+\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 
