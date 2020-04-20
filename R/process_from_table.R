@@ -173,7 +173,7 @@ InputFromTable <- function (
         infotable[, "scaleVisium"] <- NULL
       } else if (class(scaleVisium) == "numeric" & length(scaleVisium) == 1) {
         scaleVisium <- rep(scaleVisium, nrow(infotable))
-        warning("Only 1 scaleVisium provided. Using this scalefactor for all samples ... \n", call = FALSE)
+        warning("Only 1 scaleVisium provided. Using this scalefactor for all samples ... \n", call. = FALSE)
       } else {
         warning("No scalefactors provided for Visium samples ... \n", call. = FALSE)
       }
@@ -205,8 +205,9 @@ InputFromTable <- function (
       if ("spotfiles" %in% colnames(infotable)) {
         spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = ","), stringsAsFactors = F)
         if (ncol(spotsData) == 1) {
-          spotsData <- setNames(data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = "\t"), stringsAsFactors = F),
-                                nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "selected"))
+          spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = "\t"), stringsAsFactors = F)
+          if (ncol(spotsData) == 6) nms <-  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y") else nms <- c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "selected")
+          spotsData <- setNames(spotsData, nm = nms)
           if (ncol(spotsData) == 7 & !disable.subset) {
             spotsData <- subset(spotsData, selected == 1)
           }
