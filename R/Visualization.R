@@ -1421,7 +1421,7 @@ ST.ImagePlot <- function (
       if (!is.null(cols)) {
         if (!length(cols) >= length(unique(data[, variable]))) stop("Not enough colors provided ... \n")
         if (is.null(names(cols))) {
-          label.colors <- cols[1:length(unique(data[, variable]))]
+          label.colors <- cols[1:length(unique(as.character(data[, variable])))]
         } else {
           if (!all(unique(as.character(data[, variable])) %in% names(cols))) stop("cols names must match variables. Please check the names of the cols parameter ...")
           label.colors <- cols[unique(as.character(data[, variable]))]
@@ -1431,7 +1431,11 @@ ST.ImagePlot <- function (
         label.colors <- gg_color_hue(length(levels(data[, variable])))
       }
       if (is.null(names(label.colors))) {
-        names(label.colors) <- levels(data[, variable])
+        if (length(label.colors) == length(levels(data[, variable]))) {
+          names(label.colors) <- levels(data[, variable])
+        } else {
+          names(label.colors) <- unique(as.character(data[, variable]))
+        }
       }
     } else if (class(data[, variable]) == "character") {
       if (!is.null(cols)) {
