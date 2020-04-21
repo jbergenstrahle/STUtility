@@ -1011,6 +1011,7 @@ spatial_dim_plot <- function (
   pt.size = 1,
   pt.alpha = 1,
   pt.border = FALSE,
+  add.alpha = FALSE,
   reduction = NULL,
   shape.by = NULL,
   palette = "MaYl",
@@ -1139,7 +1140,12 @@ spatial_dim_plot <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border,
+
+    if (add.alpha) {
+      pt.alpha <- apply(colored.data, 1, max)
+    }
+
+    plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border, add.alpha,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(dims, channels.use, sep = ":"), collapse = ", "), FALSE,
                          dark.theme, pixels.per.um = pixels.per.um, NULL, custom.theme, ...)
@@ -1152,7 +1158,7 @@ spatial_dim_plot <- function (
 
     # Create plots
     plots <- lapply(X = dims, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, palette, cols,
+      plot <- ST.ImagePlot(data, data.type = "numeric", shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, add.alpha, palette, cols,
                            ncol = NULL, spot.colors, center.zero, plot.title = d, FALSE, dark.theme, pixels.per.um = pixels.per.um,
                            limits[[d]], custom.theme, ...)
 
@@ -1210,6 +1216,7 @@ spatial_feature_plot <- function (
   pt.size = 2,
   pt.alpha = 1,
   pt.border = FALSE,
+  add.alpha = FALSE,
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
@@ -1335,7 +1342,12 @@ spatial_feature_plot <- function (
 
     spot.colors <- ColorBlender(colored.data, channels.use)
     data <- data[, (ncol(data) - 2):ncol(data)]
-    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border,
+
+    if (add.alpha) {
+      pt.alpha <- apply(colored.data, 1, max)
+    }
+
+    plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border, add.alpha,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
                          plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
                          split.labels, dark.theme, pixels.per.um = pixels.per.um, NULL, custom.theme, ...)
@@ -1348,7 +1360,7 @@ spatial_feature_plot <- function (
 
     # Create plots
     plots <- lapply(X = features, FUN = function(d) {
-      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, palette, cols,
+      plot <- ST.ImagePlot(data, data.type, shape.by, d, image, imdims, pt.size, pt.alpha, pt.border, add.alpha, palette, cols,
                            ncol = ncol, spot.colors, center.zero, d, split.labels, dark.theme, pixels.per.um = pixels.per.um,
                            limits[[d]], custom.theme, ...)
 
@@ -1392,6 +1404,7 @@ ST.ImagePlot <- function (
   pt.size = 2,
   pt.alpha = 1,
   pt.border = FALSE,
+  add.alpha = FALSE,
   palette = "MaYl",
   cols = NULL,
   ncol = NULL,
@@ -1504,6 +1517,10 @@ ST.ImagePlot <- function (
       }
 
     } else {
+
+      if (add.alpha) {
+        pt.alpha <- scales::rescale(data[data[, "sample"] == v, variable])
+      }
 
       # Add shape aesthetic only
       if (!is.null(shape.by)) {
@@ -1650,6 +1667,7 @@ DimOverlay <- function (
   pt.size = 1,
   pt.alpha = 1,
   pt.border = TRUE,
+  add.alpha = FALSE,
   shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
@@ -1706,7 +1724,7 @@ DimOverlay <- function (
   p.list <- lapply(remaining_samples, function(i) {
     spatial_dim_plot(object, dims = dims, sample.index = i, spots = spots, type = type, min.cutoff = min.cutoff,
                max.cutoff = max.cutoff, blend = blend, pt.size = pt.size, pt.alpha = pt.alpha, pt.border = pt.border,
-               reduction = reduction, shape.by = shape.by, palette = palette,
+               add.alpha = add.alpha, reduction = reduction, shape.by = shape.by, palette = palette,
                cols = cols, grid.ncol = ncols.dims,
                center.zero = center.zero, channels.use = channels.use, dark.theme = dark.theme,
                sample.label = sample.label, show.sb = show.sb,
@@ -1817,6 +1835,7 @@ FeatureOverlay <- function (
   pt.size = 2,
   pt.alpha = 1,
   pt.border = TRUE,
+  add.alpha = FALSE,
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
@@ -1868,8 +1887,8 @@ FeatureOverlay <- function (
   p.list <- lapply(remaining_samples, function(s) {
     spatial_feature_plot(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
-                   blend = blend, pt.size = pt.size, pt.alpha = pt.alpha, pt.border = pt.border, shape.by = shape.by,
-                   palette = palette, cols = cols, ncol = split.feature.ncol,
+                   blend = blend, pt.size = pt.size, pt.alpha = pt.alpha, pt.border = pt.border, add.alpha = add.alpha,
+                   shape.by = shape.by, palette = palette, cols = cols, ncol = split.feature.ncol,
                    grid.ncol = ncols.features, center.zero = center.zero,
                    channels.use = channels.use, split.labels = split.labels, dark.theme = dark.theme,
                    sample.label = sample.label, show.sb = show.sb, value.scale = value.scale.list,

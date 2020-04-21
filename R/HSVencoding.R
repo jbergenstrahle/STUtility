@@ -569,8 +569,8 @@ spatial_hsv_plot <- function (
   # Plot combined HSV
   if (!split.hsv) {
     plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, dims = imdims,
-                         pt.size, pt.alpha, pt.border = pt.border, palette,
-                         cols, ncol, spot.colors = data$cols,
+                         pt.size, pt.alpha, pt.border = pt.border, FALSE, palette,
+                         cols, NULL, spot.colors = data$cols,
                          FALSE, plot.title = "", FALSE, dark.theme,
                          pixels.per.um, NULL, custom.theme = custom.theme, ...)
     plot <- plot +
@@ -585,8 +585,8 @@ spatial_hsv_plot <- function (
     plots <- lapply(seq_along(data), function (i) {
       data <- data[[i]]
       plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, dims = imdims,
-                           pt.size, pt.alpha, pt.border = pt.border, palette,
-                           cols, ncol, spot.colors = data$cols,
+                           pt.size, pt.alpha, pt.border = pt.border, add.alpha = FALSE, palette,
+                           cols, NULL, spot.colors = data$cols,
                            FALSE, plot.title = features[i], FALSE, dark.theme,
                            pixels.per.um, NULL, custom.theme = custom.theme, ...)
       if (dark.theme) {
@@ -718,7 +718,7 @@ HSVOverlay <- function (
                      pt.size = pt.size, pt.alpha, pt.border = FALSE, add.alpha = add.alpha, shape.by = shape.by,
                      palette = palette, cols = cols, grid.ncol = ncols.features,
                      dark.theme = dark.theme, sample.label = sample.label, show.sb = show.sb,
-                     value.scale = value.scale.list, custom.theme = custom.theme, verbose = verbose, ... = ...)
+                     value.scale = value.scale.list, custom.theme = custom.theme, verbose = verbose)#, ... = ...)
   })
 
   p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)
@@ -832,7 +832,7 @@ create.cols.from.array <- function (
       }
       red.cols <- apply(full.data, 1, function (x) {
         hsvc <- hsv(h = x["h"], s = x["s"], v = x["v"])
-        if (add.alpha) hsvc <- scales::alpha(hsvc, x["v"])
+        if (add.alpha) hsvc <- scales::alpha(hsvc, ifelse(dark.theme, x["v"], x["s"]))
         return(hsvc)
       })
     } else {
@@ -842,7 +842,7 @@ create.cols.from.array <- function (
       }
       red.cols <- apply(full.data, 1, function (x) {
         hsvc <- cols[x["variable"]]
-        if (add.alpha) hsvc <- scales::alpha(hsvc, x["v"])
+        if (add.alpha) hsvc <- scales::alpha(hsvc, ifelse(dark.theme, x["v"], x["s"]))
         return(hsvc)
       })
     }
@@ -851,3 +851,4 @@ create.cols.from.array <- function (
     return(full.data.split)
   }
 }
+
