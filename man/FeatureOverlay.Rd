@@ -67,7 +67,11 @@ Disabled if a color vector is provided (see \code{cols} below).}
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
 
-\item{spot.colors}{Character vector with color names that overrides default coloring with ggplot2}
+\item{spot.colors}{A data.frame with custom colors for each spot. The data.frame must have rownames
+which are matched with the spot ids and matching dimensions. Note that the data.rame must also match
+the `sampleids` provided, e.g. if you set `sampleids` to 1 the spot.colors data.frame must match the
+spots that are present in sample 1. If the spot.colors data.frame contains more than 1 column, only
+the first column will be used.}
 
 \item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}

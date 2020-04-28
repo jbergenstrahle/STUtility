@@ -1806,6 +1806,11 @@ DimOverlay <- function (
 #' if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
 #' from \code{\link{FeatureOverlay}} plots into a 2x2 grid [default: `1`].
 #' (see \emph{Arrange plots*} for a detailed description)
+#' @param spot.colors A data.frame with custom colors for each spot. The data.frame must have rownames
+#' which are matched with the spot ids and matching dimensions. Note that the data.rame must also match
+#' the `sampleids` provided, e.g. if you set `sampleids` to 1 the spot.colors data.frame must match the
+#' spots that are present in sample 1. If the spot.colors data.frame contains more than 1 column, only
+#' the first column will be used.
 #' @param split.feature.ncol Sets the number of columns on if split.labels is active
 #' @param ... Parameters passed to DimOverlay
 #' @inheritParams spatial_feature_plot
