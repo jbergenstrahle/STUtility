@@ -166,10 +166,13 @@ CorSpatialGenes <- function (
   fun <- function (x) lag.listw(listw, x, TRUE)
 
   # Calculate the lag matrix from the network
-  tablag <- apply(t(data.use), 2, fun)
-
+  #tablag <- apply(t(data.use), 2, fun)
+  tablag <- lapply(1:nrow(data.use), function(i) {
+    fun(x = data.use[i, ])
+  })
+  tablag <- do.call(rbind, tablag)
   sp.cor <- unlist(lapply(1:nrow(data.use), function(i) {
-    cor(data.use[i, ], tablag[, i])
+    cor(data.use[i, ], tablag[i, ])
   }))
 
   res <- data.frame(gene = rownames(data.use), cor = sp.cor, stringsAsFactors = F)

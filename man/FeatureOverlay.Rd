@@ -8,7 +8,7 @@ FeatureOverlay(object, features, sampleids = 1, spots = NULL,
   ncols.features = NULL, ncols.samples = NULL, type = NULL,
   min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
   pt.size = 2, pt.alpha = 1, pt.border = TRUE, add.alpha = FALSE,
-  shape.by = NULL, palette = NULL, cols = NULL,
+  shape.by = NULL, palette = NULL, cols = NULL, spot.colors = NULL,
   split.labels = FALSE, center.zero = FALSE, channels.use = NULL,
   dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
   value.scale = c("samplewise", "all"), custom.theme = NULL,
@@ -66,6 +66,8 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
+
+\item{spot.colors}{Character vector with color names that overrides default coloring with ggplot2}
 
 \item{split.labels}{Only works if the features are specified by character vectors.
 The plot will be split into one plot for each group label, highlighting the labelled spots.}

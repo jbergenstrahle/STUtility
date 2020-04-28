@@ -7,7 +7,7 @@
 STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
   pt.alpha = 1, pt.border = FALSE, palette = "MaYl", cols = NULL,
   ncol = NULL, spot.colors = NULL, center.zero = TRUE,
-  center.tissue = F, plot.title = NULL, dims = NULL,
+  center.tissue = FALSE, plot.title = NULL, dims = NULL,
   split.labels = FALSE, pxum = NULL, sb.size = 2.5,
   dark.theme = FALSE, limits = NULL, custom.theme = NULL, ...)
 }

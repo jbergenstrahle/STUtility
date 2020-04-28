@@ -8,10 +8,11 @@ spatial_feature_plot(object, features, sample.index = 1, spots = NULL,
   type = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
   blend = FALSE, pt.size = 2, pt.alpha = 1, pt.border = FALSE,
   add.alpha = FALSE, shape.by = NULL, palette = NULL, cols = NULL,
-  ncol = NULL, grid.ncol = NULL, center.zero = FALSE,
-  channels.use = NULL, verbose = FALSE, split.labels = FALSE,
-  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
-  value.scale = c("samplewise", "all"), custom.theme = NULL, ...)
+  spot.colors = NULL, ncol = NULL, grid.ncol = NULL,
+  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
+  split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE,
+  show.sb = TRUE, value.scale = c("samplewise", "all"),
+  custom.theme = NULL, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -56,6 +57,8 @@ Disabled if a color vector is provided (see \code{cols} below).}
 \item{cols}{A vector of colors to use for colorscale, e.g. \code{cols = c("blue", "white", "red")} will
 create a gradient color scale going from blue to white to red. This options will deactivate the \code{palette}
 option.}
+
+\item{spot.colors}{Character vector with color names that overrides default coloring with ggplot2}
 
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}

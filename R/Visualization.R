@@ -598,7 +598,7 @@ STPlot <- function (
   ncol = NULL,
   spot.colors = NULL,
   center.zero = TRUE,
-  center.tissue = F,
+  center.tissue = FALSE,
   plot.title = NULL,
   dims = NULL,
   split.labels = FALSE,
@@ -696,7 +696,7 @@ STPlot <- function (
     limits_override <- c(limits_x, limits_y)
 
     # Invert y-axis by sample
-    split.data <- lapply(paste0(seq_along(unique(data[, "sample"]))), function(s) {
+    split.data <- lapply(unique(data[, "sample"]), function(s) {
       data[data[, "sample"] == s, ]
     })
     split.data <- lapply(seq_along(split.data), function(i) {
@@ -1016,6 +1016,7 @@ spatial_dim_plot <- function (
   shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
+
   grid.ncol = NULL,
   center.zero = TRUE,
   channels.use = NULL,
@@ -1220,6 +1221,7 @@ spatial_feature_plot <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
+  spot.colors = NULL,
   ncol = NULL,
   grid.ncol = NULL,
   center.zero = FALSE,
@@ -1235,11 +1237,11 @@ spatial_feature_plot <- function (
 ) {
 
   # Check to see if Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+  # if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
   st.object <- object@tools$Staffli
 
   # Obtain spots
-  spots <- spots %||% colnames(object)
+  # spots <- spots %||% colnames(object)
 
   # Check length of sample index
   if (length(sample.index) > 1) stop(paste0("Only one sample index can be selected."), call. = FALSE)
@@ -1276,8 +1278,13 @@ spatial_feature_plot <- function (
   if (length(spots) == 0) stop(paste0("All selected spots are missing from sample ", sample.index, " ... \n"), call. = FALSE)
   if (verbose) cat(paste0("Selected ", length(spots), " spots matching index ", sample.index))
 
-  data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
-  data.type <- unique(sapply(data, class))
+  if (!is.null(features) & is.null(spot.colors)) {
+    data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
+    data.type <- unique(sapply(data, class))
+  } else {
+    data <- data.frame(row.names = spots)
+    data.type <- "numeric"
+  }
 
   # Select colorscale
   palette.info <- palette.select(info = T)
@@ -1300,7 +1307,7 @@ spatial_feature_plot <- function (
     stop(paste0(paste(px.ids, collapse = " and "), " coordinates are not present in meta data."), call. = FALSE)
   }
 
-  if (ncol(x = data) < 3) {
+  if (ncol(x = data) < 3 & !is.null(features)) {
     stop("None of the requested features were found: ",
          paste(features, collapse = ", "),
          " in slot ",
@@ -1308,7 +1315,7 @@ spatial_feature_plot <- function (
          call. = FALSE)
   }
 
-  if (all(data.type %in% c("numeric", "integer"))) {
+  if (all(data.type %in% c("numeric", "integer")) & !is.null(features)) {
     data <- feature.scaler(data, features, min.cutoff, max.cutoff)
   }
 
@@ -1334,22 +1341,36 @@ spatial_feature_plot <- function (
     }
   }
 
-  if (blend) {
-    colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, scales::rescale)
-    channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
+  # Subset spot colors
+  if (!is.null(spot.colors)) {
+    plot.title <- colnames(spot.colors)[1]
+    spot.colors <- spot.colors[spots, 1]
+  }
 
-    if (verbose) cat(paste0("Blending colors from features ", paste(paste(features, channels.use, sep = ":"), collapse = ", ")))
+  if (blend | !is.null(spot.colors)) {
 
-    spot.colors <- ColorBlender(colored.data, channels.use)
-    data <- data[, (ncol(data) - 2):ncol(data)]
+    spot.colors <- spot.colors %||% {
+      colored.data <- apply(data[, 1:(ncol(data) - 3)], 2, scales::rescale)
+      channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
-    if (add.alpha) {
-      pt.alpha <- apply(colored.data, 1, max)
+      if (verbose) cat(paste0("Blending colors from features ", paste(paste(features, channels.use, sep = ":"), collapse = ", ")))
+
+      spot.colors <- ColorBlender(colored.data, channels.use)
+      data <- data[, (ncol(data) - 2):ncol(data)]
+
+      if (add.alpha) {
+        pt.alpha <- apply(colored.data, 1, max)
+      }
+      plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", ")
+      spot.colors
     }
+
+    # Check that spot.colors matches data
+    if (length(spot.colors) != nrow(data)) stop("Provided spot.colors do not match the number of spots")
 
     plot <- ST.ImagePlot(data, data.type, shape.by, variable, image, imdims, pt.size, pt.alpha, pt.border, add.alpha,
                          palette, cols, ncol = NULL, spot.colors, center.zero,
-                         plot.title = paste(paste(features, channels.use, sep = ":"), collapse = ", "),
+                         plot.title = plot.title,
                          split.labels, dark.theme, pixels.per.um = pixels.per.um, NULL, custom.theme, ...)
     return(plot)
   } else {
@@ -1839,6 +1860,7 @@ FeatureOverlay <- function (
   shape.by = NULL,
   palette = NULL,
   cols = NULL,
+  spot.colors = NULL,
   split.labels = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
@@ -1856,11 +1878,26 @@ FeatureOverlay <- function (
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
   st.object <- object@tools$Staffli
 
+  # Check that wither features or spot.colors are provided
+  if (missing(features)) {
+    if (is.null(spot.colors)) stop("No features or spot.colors provided")
+  } else if (!is.null(features) & !is.null(spot.colors)) {
+    warning("features and spot.colors cannot be provided at the same time. Setting spot.colors to NULL")
+    spot.colors <- NULL
+  }
+
   # Select spots
   Staffli_meta <- subset(st.object[[]], sample %in% paste0(sampleids))
   selected.spots <- rownames(Staffli_meta)
   spots <- spots %||% intersect(colnames(object), selected.spots)
   if (length(spots) == 0) stop(paste0("None of the selected spots are present in samples ", paste(sampleids, collapse = ", "), " ... \n"), call. = FALSE)
+
+  # Check that spot.colors are matched
+  if (!is.null(spot.colors) & missing(features)) {
+    if (class(spot.colors) != "data.frame" | !all(spots == rownames(spot.colors))) stop("spot.colors must be a data.frame with rownames matching the spot ids")
+    if (length(spots) != nrow(spot.colors)) stop(paste0("spot.colors must have the same number of rows (", nrow(spot.colors), ") as the number of spots (", length(spots), ")"))
+    features <- NULL
+  }
 
   # Check that spots are present in all sampleids samples
   Staffli_meta_subset <- Staffli_meta[spots, ]
@@ -1876,7 +1913,7 @@ FeatureOverlay <- function (
     value.scale.list <- rep(list(value.scale), length(features))
   } else {
     value.scale <- match.arg(value.scale, c("samplewise", "all"))
-    if (value.scale == "all") {
+    if (value.scale == "all" & !is.null(features)) {
       data <- FetchData(object = object, vars = c(features), cells = spots, slot = slot)
       value.scale.list <- lapply(data, range)
     } else {
@@ -1888,8 +1925,8 @@ FeatureOverlay <- function (
     spatial_feature_plot(object, features = features, sample.index = s, spots = spots, type = type,
                    min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
                    blend = blend, pt.size = pt.size, pt.alpha = pt.alpha, pt.border = pt.border, add.alpha = add.alpha,
-                   shape.by = shape.by, palette = palette, cols = cols, ncol = split.feature.ncol,
-                   grid.ncol = ncols.features, center.zero = center.zero,
+                   shape.by = shape.by, palette = palette, cols = cols, spot.colors = spot.colors,
+                   ncol = split.feature.ncol, grid.ncol = ncols.features, center.zero = center.zero,
                    channels.use = channels.use, split.labels = split.labels, dark.theme = dark.theme,
                    sample.label = sample.label, show.sb = show.sb, value.scale = value.scale.list,
                    custom.theme = custom.theme, verbose = verbose, ... = ...)
