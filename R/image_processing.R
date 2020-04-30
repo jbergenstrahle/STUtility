@@ -476,7 +476,7 @@ WarpImages.Staffli <- function (
     # center tissue
     tr <- rigid.transl(-center[1], -center[2])
     # apply rotation
-    alpha <- 2*pi*(angle/360)
+    alpha <- 2*pi*(-angle/360)
     tr <- rigid.transf(0, 0, alpha)%*%tr
     # Apply reflections
     tr <- rigid.refl(mirror.x, mirror.y)%*%tr
