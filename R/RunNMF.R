@@ -50,31 +50,41 @@ FactorGeneLoadingPlot <- function (
 #' @param nfactors Total Number of factors to compute and store (20 by default)
 #' @param reduction.name dimensional reduction name,  pca by default
 #' @param reduction.key dimensional reduction key, specifies the string before
-#' @param n.cores Number of threds to use in computation
+#' @param n.cores Number of threads to use in computation
 #' @param order.by.spcor Order factors by spatial correlation
+#'
+#' @importFrom parallel detectCores
 #'
 #' @export
 #'
 RunNMF <- function (
   object,
   assay = NULL,
+  slot = "scale.data",
   features = NULL,
   nfactors = 20,
+  rescale = TRUE,
   reduction.name = "NMF",
   reduction.key = "factor_",
-  n.cores = 7,
+  n.cores = NULL,
   order.by.spcor = FALSE,
   sort.spcor.by.var = FALSE,
   ...
 ) {
   assay <- assay %||% DefaultAssay(object = object)
   var.genes <- features %||% VariableFeatures(object)
-  norm.counts <- GetAssayData(object, slot = "scale.data", assay = assay)
-  norm.counts <- t(apply(norm.counts, 1, function(x) (x - min(x))/(max(x) - min(x))))
+  norm.counts <- GetAssayData(object, slot = slot, assay = assay)
+  if (rescale) {
+    norm.counts <- t(apply(norm.counts, 1, function(x) (x - min(x))/(max(x) - min(x))))
+  }
+  if (min(norm.counts) < 0) stop("Negative values are not allowed")
   nmf.results <- rnmf(A = norm.counts[var.genes, ], k = nfactors)
   #nmf.results$W <- swne::ProjectFeatures(norm.counts, nmf.results$H, n.cores = n.cores)
   feature.loadings <- nmf.results$W
   cell.embeddings <- t(nmf.results$H)
+
+  # Set cores
+  n.cores <- n.cores %||% {detectCores() - 1}
 
   # Order factors based on spatial correlation
   if (order.by.spcor) {

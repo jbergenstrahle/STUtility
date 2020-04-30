@@ -4,9 +4,10 @@
 \alias{RunNMF}
 \title{Run Non-negative Matrix Factorization}
 \usage{
-RunNMF(object, assay = NULL, features = NULL, nfactors = 20,
-  reduction.name = "NMF", reduction.key = "factor_", n.cores = 7,
-  order.by.spcor = FALSE, sort.spcor.by.var = FALSE, ...)
+RunNMF(object, assay = NULL, slot = "scale.data", features = NULL,
+  nfactors = 20, rescale = TRUE, reduction.name = "NMF",
+  reduction.key = "factor_", n.cores = NULL, order.by.spcor = FALSE,
+  sort.spcor.by.var = FALSE, ...)
 }
 \arguments{
 \item{object}{Seurat object}
@@ -21,7 +22,7 @@ RunNMF(object, assay = NULL, features = NULL, nfactors = 20,
 
 \item{reduction.key}{dimensional reduction key, specifies the string before}
 
-\item{n.cores}{Number of threds to use in computation}
+\item{n.cores}{Number of threads to use in computation}
 
 \item{order.by.spcor}{Order factors by spatial correlation}
 }

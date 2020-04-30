@@ -458,16 +458,34 @@ WarpImages.Staffli <- function (
     m <- masked.images[[i]]
 
     args <- transforms[[i]]
-    center.x <- args[["center.x"]] %||% FALSE
-    center.y <- args[["center.y"]] %||% FALSE
+    accepted.args <- c("angle", "mirror.x", "mirror.y", "shift.x", "shift.y")
+    if (!all(names(args) %in%  accepted.args)) stop(paste0("Invalid trasformations: '", paste(setdiff(names(args),  accepted.args), collapse = "', '"), "' for sample ", i))
     angle <- args[["angle"]] %||% 0
+    stopifnot(class(angle) %in% c("numeric", "integer"))
     mirror.x <- args[["mirror.x"]] %||% FALSE
+    stopifnot(class(mirror.x) == "logical")
     mirror.y <- args[["mirror.y"]] %||% FALSE
+    stopifnot(class(mirror.y) == "logical")
+    shift.x <- args[["shift.x"]] %||% 0
+    stopifnot(class(shift.x) %in% c("numeric", "integer"))
+    shift.y <- args[["shift.y"]] %||% 0
+    stopifnot(class(shift.y) %in% c("numeric", "integer"))
 
-    center <- apply(which(m == "#FFFFFF", arr.ind = T), 2, mean)
-    center.new <- rev(dim(m)/2)
-    center.new <- c(ifelse(center.x, center.new[1], center[1]), ifelse(center.y, center.new[2], center[2]))
-    tr <- combine.tr(center, center.new, alpha = angle, mirror.x = mirror.x, mirror.y = mirror.y)
+    center.new <- center <- rev(dim(m)/2)
+
+    # center tissue
+    tr <- rigid.transl(-center[1], -center[2])
+    # apply rotation
+    alpha <- 2*pi*(angle/360)
+    tr <- rigid.transf(0, 0, alpha)%*%tr
+    # Apply reflections
+    tr <- rigid.refl(mirror.x, mirror.y)%*%tr
+    # put back
+    tr <- rigid.transl(center.new[1], center.new[2])%*%tr
+    # Apply shifts
+    tr <- rigid.transl(shift.x, shift.y)%*%tr
+
+    # Save transformation matrix
     transformations[[i]] <- tr
 
     map.rot.backward <- generate.map.rot(tr)

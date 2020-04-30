@@ -124,8 +124,23 @@ MaskImages <- function (
 
 #' Warps images using various transformations
 #'
+#' This function can be used to apply rigid transformations on masked images including;
+#' rotations, reflections and translations. See details below for more information.
+#'
+#' @details
+#' The transformations are controlled by specifying verious rigid transformations
+#' for each sample using the transforms variable. The transforms variable should be a
+#' named list of lists with one element for each sample that you want to apply a transformation
+#' on. For example, if you want to rotate sample 1 90 degrees clockwise and reflect sample 2
+#' along its x axis you can pass `transforms <- list("1" = list("angle" = 90), "2" = list("mirror.x" = TRUE))`.
+#' When multiple transformations are passed, they are applied in the following order;
+#' rotation -> reflection -> translation.
+#'
+#'
+#'
 #' @param object Seurat object
-#' @param transforms List of arguments passed to warp function
+#' @param transforms List of arguments passed to warp function. The available options are
+#' "angle" [numeric], "mirror.x" [logical], "mirror.y" [logical], "shift.x" [numeric]and "shift.y" [numeric].
 #' @param verbose Print messages
 #'
 #' @return Seurat object with processed imaged
