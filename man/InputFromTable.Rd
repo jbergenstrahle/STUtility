@@ -4,11 +4,23 @@
 \alias{InputFromTable}
 \title{Create Seurat object from Spatial Transcriptomics data}
 \usage{
-InputFromTable(infotable, transpose = TRUE, min.gene.count = 0,
-  min.gene.spots = 0, min.spot.feature.count = 0, min.spot.count = 0,
-  topN = 0, annotation = NULL, id.column = NULL,
-  replace.column = NULL, platform = "Visium", scaleVisium = NULL,
-  disable.subset = FALSE, verbose = TRUE, ...)
+InputFromTable(
+  infotable,
+  transpose = TRUE,
+  min.gene.count = 0,
+  min.gene.spots = 0,
+  min.spot.feature.count = 0,
+  min.spot.count = 0,
+  topN = 0,
+  annotation = NULL,
+  id.column = NULL,
+  replace.column = NULL,
+  platform = "Visium",
+  scaleVisium = NULL,
+  disable.subset = FALSE,
+  verbose = TRUE,
+  ...
+)
 }
 \arguments{
 \item{infotable}{table with paths to count files and metadata. See details below for more information.}

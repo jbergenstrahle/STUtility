@@ -4,8 +4,14 @@
 \alias{create.array.from.feature.vals}
 \title{Creates an array of dimensions number_of_spots*3*number_of_features}
 \usage{
-create.array.from.feature.vals(data, features, hue_breaks, cols,
-  dark.theme, verbose)
+create.array.from.feature.vals(
+  data,
+  features,
+  hue_breaks,
+  cols,
+  dark.theme,
+  verbose
+)
 }
 \arguments{
 \item{data}{data.frame with feature values}

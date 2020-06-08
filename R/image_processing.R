@@ -17,7 +17,9 @@ LoadImages.Staffli <- function (
   object,
   image.paths = NULL,
   xdim = 400,
-  verbose = FALSE,
+  crop.to.fiducials = FALSE,
+  crop.scale.factors = c(9, 10, 10, 8),
+  verbose = TRUE,
   time.resolve = TRUE
 ) {
 
@@ -28,11 +30,16 @@ LoadImages.Staffli <- function (
 
   # Check that the image with is no more than 2000 pixels
   if (xdim > 2000) stop("xdim cannot be larger than 2000")
-
   if (verbose) cat(paste0("Loading images for ", length(x = object@samplenames), " samples: \n"))
+
+  # Check if crop.scale.factors has been provided
+  if (!all(crop.scale.factors == c(9, 10, 10, 8))) {
+    stopifnot(class(crop.scale.factors) == "numeric", length(crop.scale.factors) == 4)
+  }
 
   # Add dummy pixel_x, pixel_y columns if not provided
   if (!all(c("pixel_x", "pixel_y") %in% colnames(object[[]]))) {
+    if (crop.to.fiducials) stop("Cropping to fiducials is not possible if spotfiles haven't been provided when running InputFromTable... \n")
     object[[, c("pixel_x", "pixel_y")]] <- object[[, c("x", "y")]]
     convert.pixel.coords <- TRUE
   } else {
@@ -41,12 +48,58 @@ LoadImages.Staffli <- function (
 
   # Read images using the 'magick' library
   imgs <- c()
-  dims <- list()
+  if (length(object@dims) > 0) {
+    dims <- object@dims
+  } else {
+    dims <- list()
+  }
+
   for (i in seq_along(object@imgs)) {
     path <- object@imgs[i]
     if (verbose) cat("  Reading ", path , " for sample ", object@meta.data[, "sample"][i], " ... \n", sep = "")
     im <- image_read(path)
-    dims <- c(dims, list(image_info(im)))
+    # Add image data
+    ds <- image_info(im)
+    tr <- try(ncol(dims[[i]]), silent = TRUE)
+    if (class(tr) == "try-error" & crop.to.fiducials) {
+      stop("crop.to.fiducials options cannot be used because relevant image data is missing. To use this option, please reload the data using InputFromTable. \n")
+    }
+    if (tr >= 5 & !(class(tr) == "try-error")) {
+      ds <- cbind(ds, dims[[i]][, c("min_x", "max_x", "min_y", "max_y", "spot_diameter")])
+    }
+
+    # Crop image
+    if (crop.to.fiducials) {
+      if (all(c("min_x", "max_x", "min_y", "max_y", "spot_diameter") %in% colnames(ds))) {
+        c(min_x, max_x, min_y, max_y, spot_diameter) %<-% (ds[, c("min_x", "max_x", "min_y", "max_y", "spot_diameter"), drop = TRUE] %>% unlist())
+      } else {
+        stop("Missing capture area corners. Cannot crop data ... \n")
+      }
+
+      tl_x <- max(min_x - spot_diameter*crop.scale.factors[1], 0)
+      tl_y <- max(min_y - spot_diameter*crop.scale.factors[2], 0)
+      bl_x <- min(max_x + spot_diameter*crop.scale.factors[3], ds$width)
+      bl_y <- min(max_y + spot_diameter*crop.scale.factors[4], ds$height)
+      width_crop <- bl_x - tl_x
+      height_crop <- bl_y - tl_y
+      geometry <- geometry_area(width = width_crop, height = height_crop, x_off = tl_x, y_off = tl_y) #paste0(width_crop, "x", height_crop, "+", tl_x, "+", tl_y)
+      ds$geometry <- geometry
+
+      im <- im %>% image_crop(geometry)
+
+      # Crop xy coords
+      xy <- setNames(object[[object[[, "sample", drop = T]] == paste0(i), c("original_x", "original_y")]], c("pixel_x", "pixel_y"))
+      xy$pixel_x <- xy$pixel_x - tl_x
+      xy$pixel_y <- xy$pixel_y - tl_y
+      object[[object[[, "sample", drop = T]] == paste0(i), c("pixel_x", "pixel_y")]] <- xy
+
+      # Change image width and height
+      imnew_info <- image_info(im)
+      ds$width <- imnew_info$width
+      ds$height <- imnew_info$height
+    }
+
+    dims[[i]] <- ds
     if (verbose) {
       info <- dims[[i]]
       width <- as.numeric(info[2]); height <- as.numeric(info[3])
@@ -66,11 +119,12 @@ LoadImages.Staffli <- function (
       if (verbose) cat("converting coords")
       limits <- object@limits[[i]]
       im.limits <- dims[[i]][2:3] %>% as.numeric()
-      xy <- object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]]
+      xy <- object[[object[[, "sample", drop = T]] == paste0(i), c("pixel_x", "pixel_y")]]
       spot_intx <- im.limits[1]/(limits[1] - 1)
       spot_inty <- im.limits[2]/(limits[2] - 1)
       xy <- t(t(xy - 1)*c(spot_intx, spot_inty))
-      object[[object[[, "sample", drop = T]] == paste0(i), c(c("pixel_x", "pixel_y"))]] <- xy
+      object[[object[[, "sample", drop = T]] == paste0(i), c("original_x", "original_y")]] <- xy
+      object[[object[[, "sample", drop = T]] == paste0(i), c("pixel_x", "pixel_y")]] <- xy
     }
   }
 
@@ -115,12 +169,15 @@ LoadImages.Seurat <- function (
   object,
   image.paths = NULL,
   xdim = 400,
-  verbose = FALSE,
+  crop.to.fiducials = FALSE,
+  crop.scale.factors = c(9, 10, 10, 8),
+  verbose = TRUE,
   time.resolve = TRUE
 ) {
+
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
   st.object <- object@tools$Staffli
-  object@tools$Staffli <- LoadImages(object = st.object, image.paths, xdim, verbose, time.resolve)
+  object@tools$Staffli <- LoadImages(object = st.object, image.paths, xdim, crop.to.fiducials, crop.scale.factors, verbose, time.resolve)
   return(object)
 }
 
@@ -139,7 +196,6 @@ LoadImages.Seurat <- function (
 #' @param ncols Number of columns in output grid of images
 #' @param annotate Will put a unique id in the top left corner
 #' @param darken Switches the background to black
-#' @inheritParams LoadImages
 #'
 #' @importFrom magick image_append image_annotate image_scale
 #'
@@ -259,7 +315,7 @@ MaskImages.Staffli <- function (
 ) {
 
   # obtain Staffli object
-  if (!"raw" %in% names(object@rasterlists)) stop("Raw images not present in Staffli object, pelase run LoadImages() first ... \n", call. = FALSE)
+  if (!"raw" %in% names(object@rasterlists)) stop("Raw images not present in Staffli object, run LoadImages() first ... \n", call. = FALSE)
 
   rasters <- list()
   masks <- list()
@@ -450,7 +506,11 @@ WarpImages.Staffli <- function (
   }
 
   # Create a list of 3x3 identity matrices
-  transformations <- setNames(lapply(1:length(object@samplenames), function(i) {diag(c(1, 1, 1))}), nm = names(object))
+  if (length(object@transformations) > 0) {
+    transformations <- object@transformations
+  } else {
+    transformations <- setNames(lapply(1:length(object@samplenames), function(i) {diag(c(1, 1, 1))}), nm = names(object))
+  }
 
   for (i in names(transforms)) {
 
@@ -484,12 +544,14 @@ WarpImages.Staffli <- function (
     tr <- rigid.transl(center.new[1], center.new[2])%*%tr
     # Apply shifts
     tr <- rigid.transl(shift.x, shift.y)%*%tr
+    # Invert transformation matrix
+    tr <- solve(tr)
 
     # Save transformation matrix
     transformations[[i]] <- tr
 
-    map.rot.backward <- generate.map.rot(tr)
-    map.rot.forward <- generate.map.rot(tr, forward = TRUE)
+    map.rot.backward <- generate.map.affine(tr)
+    map.rot.forward <- generate.map.affine(tr, forward = TRUE)
 
     # Obtain scale factors
     dims.raw <- as.numeric(object@dims[[i]][2:3])

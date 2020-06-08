@@ -4,8 +4,15 @@
 \alias{draw_scalebar}
 \title{Draws a scalebar for ST plots}
 \usage{
-draw_scalebar(p, x = NULL, xend = NULL, y = NULL, pxum = NULL,
-  sb.size = 2.5, dark.theme = FALSE)
+draw_scalebar(
+  p,
+  x = NULL,
+  xend = NULL,
+  y = NULL,
+  pxum = NULL,
+  sb.size = 2.5,
+  dark.theme = FALSE
+)
 }
 \arguments{
 \item{p}{An object of class 'ggplot'}

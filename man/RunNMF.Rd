@@ -4,10 +4,20 @@
 \alias{RunNMF}
 \title{Run Non-negative Matrix Factorization}
 \usage{
-RunNMF(object, assay = NULL, slot = "scale.data", features = NULL,
-  nfactors = 20, rescale = TRUE, reduction.name = "NMF",
-  reduction.key = "factor_", n.cores = NULL, order.by.spcor = FALSE,
-  sort.spcor.by.var = FALSE, ...)
+RunNMF(
+  object,
+  assay = NULL,
+  slot = "scale.data",
+  features = NULL,
+  nfactors = 20,
+  rescale = TRUE,
+  reduction.name = "NMF",
+  reduction.key = "factor_",
+  n.cores = NULL,
+  order.by.spcor = FALSE,
+  sort.spcor.by.var = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

@@ -4,8 +4,14 @@
 \alias{CorSpatialGenes}
 \title{Find genes with high spatial autocorrelation}
 \usage{
-CorSpatialGenes(object, assay = NULL, slot = "scale.data",
-  features = NULL, nNeighbours = NULL, maxdist = NULL)
+CorSpatialGenes(
+  object,
+  assay = NULL,
+  slot = "scale.data",
+  features = NULL,
+  nNeighbours = NULL,
+  maxdist = NULL
+)
 }
 \arguments{
 \item{object}{Seurat object}

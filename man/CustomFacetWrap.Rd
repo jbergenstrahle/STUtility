@@ -4,7 +4,9 @@
 \name{CustomFacetWrap}
 \alias{CustomFacetWrap}
 \title{Custom ggproto object for facet wrap}
-\format{An object of class \code{CustomFacetWrap} (inherits from \code{FacetWrap}, \code{Facet}, \code{ggproto}, \code{gg}) of length 2.}
+\format{
+An object of class \code{CustomFacetWrap} (inherits from \code{FacetWrap}, \code{Facet}, \code{ggproto}, \code{gg}) of length 2.
+}
 \usage{
 CustomFacetWrap
 }

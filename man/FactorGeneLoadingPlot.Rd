@@ -4,8 +4,7 @@
 \alias{FactorGeneLoadingPlot}
 \title{Plot a bar chart with gene loadings}
 \usage{
-FactorGeneLoadingPlot(object, factor = 1, topn = 20,
-  dark.theme = FALSE)
+FactorGeneLoadingPlot(object, factor = 1, topn = 20, dark.theme = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}

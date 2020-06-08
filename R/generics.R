@@ -11,10 +11,15 @@
 #' @param object Seurat or Staffli object
 #' @param image.paths Paths to HE images. This is only required if image paths are missing in the Seurat object.
 #' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 2000 pixels)
+#' @param crop.to.fiducials Set to TRUE if you want to crop out background from the images outside the fiducials.
 #' @param time.resolve Activate to stop R from loading raw images into memory
 #' @param verbose Print messages
-#'
-#' @importFrom magick image_read
+#' @param crop.scale.factors Numeric vector of length 4 providing a scaling factor for each side of the image.
+#' The scaling factors define the number of spot widths away from the capture area to include in the cropped
+#' image if  `crop.to.fiducials` is set to TRUE. The default values are c(9, 10, 10, 8) which corresponds to
+#' left, top, right and bottom.
+#' @importFrom magick image_read geometry_area image_crop
+#' @importFrom imager magick2cimg
 #'
 #' @export
 #'
@@ -23,7 +28,9 @@ LoadImages <- function (
   object,
   image.paths = NULL,
   xdim = 400,
-  verbose = FALSE,
+  crop.to.fiducials = FALSE,
+  crop.scale.factors = c(9, 10, 10, 8),
+  verbose = TRUE,
   time.resolve = TRUE
 ) {
   UseMethod(generic = 'LoadImages', object = object)

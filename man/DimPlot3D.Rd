@@ -4,13 +4,28 @@
 \alias{DimPlot3D}
 \title{Plots a selected dimensionality reduction vector in 3D}
 \usage{
-DimPlot3D(object, spots = NULL, dims = 1, reduction = NULL,
-  mode = c("cloud", "spots"), pts.downsample = 5e+05, zcoords = NULL,
-  min.cutoff = NA, max.cutoff = NA, blend = FALSE, pt.size = NULL,
-  pt.alpha = 1, cols = c("navyblue", "cyan", "yellow", "red",
-  "dark red"), add.alpha = FALSE, add.margins = 0,
-  channels.use = NULL, scene = "scene1", return.data = FALSE,
-  dark.theme = FALSE, verbose = FALSE)
+DimPlot3D(
+  object,
+  spots = NULL,
+  dims = 1,
+  reduction = NULL,
+  mode = c("cloud", "spots"),
+  pts.downsample = 5e+05,
+  zcoords = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  blend = FALSE,
+  pt.size = NULL,
+  pt.alpha = 1,
+  cols = c("navyblue", "cyan", "yellow", "red", "dark red"),
+  add.alpha = FALSE,
+  add.margins = 0,
+  channels.use = NULL,
+  scene = "scene1",
+  return.data = FALSE,
+  dark.theme = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{object}{Seurat object}

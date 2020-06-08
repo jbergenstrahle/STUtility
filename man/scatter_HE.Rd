@@ -4,9 +4,15 @@
 \alias{scatter_HE}
 \title{Function used to generate a 2D set of points from an HE image}
 \usage{
-scatter_HE(object, type = "masked.masks", sample.index = NULL,
-  limit = 0.5, maxnum = 50000, edges = FALSE,
-  custom.edge.detector = NULL)
+scatter_HE(
+  object,
+  type = "masked.masks",
+  sample.index = NULL,
+  limit = 0.5,
+  maxnum = 50000,
+  edges = FALSE,
+  custom.edge.detector = NULL
+)
 }
 \arguments{
 \item{object}{Staffli object}

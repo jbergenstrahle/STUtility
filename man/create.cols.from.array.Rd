@@ -4,8 +4,15 @@
 \alias{create.cols.from.array}
 \title{Creates HSV colors from an array}
 \usage{
-create.cols.from.array(data, d, features, cols, split.hsv, dark.theme,
-  add.alpha)
+create.cols.from.array(
+  data,
+  d,
+  features,
+  cols,
+  split.hsv,
+  dark.theme,
+  add.alpha
+)
 }
 \arguments{
 \item{data}{data.frame with feature values}

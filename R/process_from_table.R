@@ -144,12 +144,14 @@ InputFromTable <- function (
   # Generate empty lists
   counts <- list()
   spotFileData <- list()
+  ranges.list <- NULL
+  spot.diamater.list <- NULL
   countPaths <- infotable[, "samples"]
   rownames(infotable) <- paste0(1:nrow(infotable))
 
   # Check if spotfiles are present
-  if ("spotfiles" %in% colnames(infotable)){
-    print("Using spotfiles to remove spots outside of tissue")
+  if ("spotfiles" %in% colnames(infotable) & !disable.subset){
+    cat("Using spotfiles to remove spots outside of tissue\n")
   }
 
   # Specify platform
@@ -166,6 +168,7 @@ InputFromTable <- function (
         suffs <- sapply(infotable[, "json"], getExtension)
         if (!all(suffs == "json")) stop("Incorrect format of json files in infotable ...", call. = FALSE)
         scaleVisium <- sapply(infotable[, "json"], function(f) {read_json(f)$tissue_hires_scalef})
+        spot.diamater.list <- sapply(infotable[, "json"], function(f) {read_json(f)$spot_diameter_fullres})*scaleVisium
         infotable[, "json"] <- NULL
       } else if ("scaleVisium" %in% colnames(infotable)) {
         if (!class(infotable[, "scaleVisium"]) == "numeric") stop("Column scaleVisium is not numeric ... \n", call. = FALSE)
@@ -224,27 +227,34 @@ InputFromTable <- function (
           }
           if (ncol(spotsData) == 6) {
             colnames(spotsData) <- c("barcode", "selection", "adj_y", "adj_x", "pixel_y", "pixel_x")
-            if (!disable.subset) {
-              spotsData <- subset(spotsData, selection == 1)
-            }
+            #if (!disable.subset) {
+            #  spotsData <- subset(spotsData, selection == 1)
+            #}
           } else if (ncol(spotsData) == 7 & !getExtension(path) %in% c("tsv", "tsv.gz")) {
             colnames(spotsData) <- c("barcode", "visium", "adj_y", "adj_x", "pixel_y", "pixel_x")
           } else if (ncol(spotsData) %in% c(6, 7) & getExtension(path) %in% c("tsv", "tsv.gz")) {
-            colnames(spotsData) <- c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "selected")
-            if (!disable.subset) {
-              spotsData <- subset(spotsData, selected == 1)
-            }
+            colnames(spotsData) <- c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "selection")
+            #if (!disable.subset) {
+            #  spotsData <- subset(spotsData, selected == 1)
+            #}
           } else {
             stop("Spotfiles format not recognized ... \n", call. = FALSE)
           }
-          #OBS, what is column nr2,3,4?
+
+          # Subset data
           spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")] <- apply(spotsData[, c("adj_y", "adj_x", "pixel_y", "pixel_x")], 2, as.numeric)
+          spotsData$pixel_x <- spotsData$pixel_x * scaleVisium[i]
+          spotsData$pixel_y <- spotsData$pixel_y * scaleVisium[i]
+          # Save ranges
+          ranges.list[[i]] <- sapply(spotsData[, c("pixel_x", "pixel_y")], range)
+          if (!disable.subset & "selection" %in% colnames(spotsData)) {
+            spotsData <- subset(spotsData, selection == 1)
+          }
+
           spotsData[, c("x", "y")] <- spotsData[, c("adj_x", "adj_y")]
           spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y")]
           spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
           counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
-          spotsData$pixel_x <- as.numeric(spotsData$pixel_x) * scaleVisium[i]
-          spotsData$pixel_y <- as.numeric(spotsData$pixel_y) * scaleVisium[i]
           spotFileData[[i]] <- spotsData
         }
       } else {
@@ -327,6 +337,10 @@ InputFromTable <- function (
   # Add column samples to meta_data used for Staffli object
   meta_data_staffli[, "sample"] <- samples
 
+  # Add uncropped coordinates
+  meta_data_staffli$original_x <- meta_data_staffli$pixel_x
+  meta_data_staffli$original_y <- meta_data_staffli$pixel_y
+
   # Create an empty meta data table for Seurat
   meta_data_seurat <- data.frame(row.names = rownames(meta_data_staffli))
 
@@ -402,7 +416,17 @@ InputFromTable <- function (
                                            meta.data = meta_data_staffli,
                                            platforms = platforms)
 
-  #Add info for manual annotation tool:
+  # Add ranges.list if available
+  if (!is.null(ranges.list) & !is.null(spot.diamater.list)) {
+    if (verbose) cat("Saving capture area ranges to Staffli object \n")
+    dims.list <- lapply(seq_along(ranges.list), function(i) {
+      rs <- ranges.list[[i]]
+      data.frame(min_x = rs[1, 1], max_x = rs[2, 1], min_y = rs[1, 2], max_y = rs[2, 2], spot_diameter = spot.diamater.list[i])
+    })
+    m@tools$Staffli@dims <- dims.list
+  }
+
+  # Add info for manual annotation tool:
   m@meta.data$id <- seq(1:dim(m)[2])
   m@meta.data$labels <- "Default"
 

@@ -67,10 +67,11 @@ Suggests:
 	spData (>= 0.3.2),
 	spdep (>= 1.1)
 VignetteBuilder: knitr
-RoxygenNote: 6.1.1
+RoxygenNote: 7.1.0
 Collate: 
     '2D_point_pattern.R'
     '3D_viusalization.R'
+    'CMYK.R'
     'HSVencoding.R'
     'Image_resolution_switch.R'
     'Mask_functions.R'

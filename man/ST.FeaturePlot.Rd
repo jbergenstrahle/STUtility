@@ -4,15 +4,37 @@
 \alias{ST.FeaturePlot}
 \title{Feature plot on ST coordinates}
 \usage{
-ST.FeaturePlot(object, features, split.labels = FALSE, indices = NULL,
-  spots = NULL, plot.type = "spots", min.cutoff = NA,
-  max.cutoff = NA, slot = "data", blend = FALSE, pt.size = 1,
-  pt.alpha = 1, pt.border = FALSE, shape.by = NULL, palette = NULL,
-  cols = NULL, dark.theme = FALSE, highlight.edges = TRUE,
-  ncol = NULL, grid.ncol = NULL, center.zero = FALSE,
-  channels.use = NULL, center.tissue = FALSE, verbose = FALSE,
-  sb.size = 2.5, show.sb = TRUE, value.scale = c("samplewise",
-  "all"), custom.theme = NULL, ...)
+ST.FeaturePlot(
+  object,
+  features,
+  split.labels = FALSE,
+  indices = NULL,
+  spots = NULL,
+  plot.type = "spots",
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  blend = FALSE,
+  pt.size = 1,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  shape.by = NULL,
+  palette = NULL,
+  cols = NULL,
+  dark.theme = FALSE,
+  highlight.edges = TRUE,
+  ncol = NULL,
+  grid.ncol = NULL,
+  center.zero = FALSE,
+  channels.use = NULL,
+  center.tissue = FALSE,
+  verbose = FALSE,
+  sb.size = 2.5,
+  show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

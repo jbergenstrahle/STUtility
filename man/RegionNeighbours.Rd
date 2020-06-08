@@ -4,8 +4,14 @@
 \alias{RegionNeighbours}
 \title{Autodetect region neighbours}
 \usage{
-RegionNeighbours(object, id, column.key = "nbs_", keep.idents = FALSE,
-  keep.within.id = FALSE, verbose = FALSE)
+RegionNeighbours(
+  object,
+  id,
+  column.key = "nbs_",
+  keep.idents = FALSE,
+  keep.within.id = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{object}{Seurat object.}

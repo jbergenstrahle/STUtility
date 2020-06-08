@@ -5,11 +5,23 @@
 \alias{icpmat}
 \title{Match two point sets using iterative closest point search}
 \usage{
-icpmat(set1, set2, iterations, mindist = 1e+15, type = c("rigid",
-  "similarity", "affine"), threads = 1)
+icpmat(
+  set1,
+  set2,
+  iterations,
+  mindist = 1e+15,
+  type = c("rigid", "similarity", "affine"),
+  threads = 1
+)
 
-icpmat(set1, set2, iterations, mindist = 1e+15, type = c("rigid",
-  "similarity", "affine"), threads = 1)
+icpmat(
+  set1,
+  set2,
+  iterations,
+  mindist = 1e+15,
+  type = c("rigid", "similarity", "affine"),
+  threads = 1
+)
 }
 \arguments{
 \item{set1, set2}{Point set from image to be aligned with reference and point set from reference image}
@@ -25,14 +37,6 @@ icpmat(set1, set2, iterations, mindist = 1e+15, type = c("rigid",
 \item{threads}{number of trheads to use}
 
 \item{set1}{Point set from image to be aligned with reference}
-
-\item{iterations}{Number of iterations}
-
-\item{mindist}{Minimum distance that definces valid points}
-
-\item{type}{Select type of transform to be applied}
-
-\item{threads}{number of trheads to use}
 }
 \value{
 list with transformed x, y coordinates and list of transformation matrices

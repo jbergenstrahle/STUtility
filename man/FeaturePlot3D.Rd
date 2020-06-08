@@ -4,13 +4,28 @@
 \alias{FeaturePlot3D}
 \title{Plots the values of a selected feature in 3D}
 \usage{
-FeaturePlot3D(object, spots = NULL, features, mode = c("cloud",
-  "spots"), pts.downsample = 5e+05, zcoords = NULL, slot = "data",
-  min.cutoff = NA, max.cutoff = NA, blend = FALSE, pt.size = NULL,
-  pt.alpha = 1, cols = c("navyblue", "cyan", "yellow", "red",
-  "dark red"), add.alpha = FALSE, add.margins = 0,
-  channels.use = NULL, scene = "scene1", return.data = FALSE,
-  dark.theme = FALSE, verbose = FALSE)
+FeaturePlot3D(
+  object,
+  spots = NULL,
+  features,
+  mode = c("cloud", "spots"),
+  pts.downsample = 5e+05,
+  zcoords = NULL,
+  slot = "data",
+  min.cutoff = NA,
+  max.cutoff = NA,
+  blend = FALSE,
+  pt.size = NULL,
+  pt.alpha = 1,
+  cols = c("navyblue", "cyan", "yellow", "red", "dark red"),
+  add.alpha = FALSE,
+  add.margins = 0,
+  channels.use = NULL,
+  scene = "scene1",
+  return.data = FALSE,
+  dark.theme = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{object}{Seurat object}

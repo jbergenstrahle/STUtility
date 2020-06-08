@@ -4,12 +4,30 @@
 \alias{ST.ImagePlot}
 \title{Graphs ST spots colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
-ST.ImagePlot(data, data.type, shape.by, variable, image, dims,
-  pt.size = 2, pt.alpha = 1, pt.border = FALSE, add.alpha = FALSE,
-  palette = "MaYl", cols = NULL, ncol = NULL, spot.colors = NULL,
-  center.zero = TRUE, plot.title = NULL, split.labels = FALSE,
-  dark.theme = FALSE, pixels.per.um = NULL, limits = NULL,
-  custom.theme = NULL, ...)
+ST.ImagePlot(
+  data,
+  data.type,
+  shape.by,
+  variable,
+  image,
+  dims,
+  pt.size = 2,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  add.alpha = FALSE,
+  palette = "MaYl",
+  cols = NULL,
+  ncol = NULL,
+  spot.colors = NULL,
+  center.zero = TRUE,
+  plot.title = NULL,
+  split.labels = FALSE,
+  dark.theme = FALSE,
+  pixels.per.um = NULL,
+  limits = NULL,
+  custom.theme = NULL,
+  ...
+)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample

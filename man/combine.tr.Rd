@@ -4,8 +4,7 @@
 \alias{combine.tr}
 \title{Combines rigid tranformation matrices}
 \usage{
-combine.tr(center.cur, center.new, alpha, mirror.x = FALSE,
-  mirror.y = FALSE)
+combine.tr(center.cur, center.new, alpha, mirror.x = FALSE, mirror.y = FALSE)
 }
 \arguments{
 \item{center.cur}{(x, y) image pixel coordinates specifying the current center of the tissue (stored in slot "tools" as "centers")}

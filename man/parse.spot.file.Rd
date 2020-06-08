@@ -7,15 +7,13 @@
 parse.spot.file(path, delim = "\\t")
 }
 \arguments{
-\item{path}{Path to count files}
+\item{path}{Path to spot files}
 
 \item{delim}{delimiter}
 
 \item{suffix}{add suffix to path}
 
 \item{row.names}{set column as row.names}
-
-\item{path}{Path to spot files}
 }
 \description{
 load count files

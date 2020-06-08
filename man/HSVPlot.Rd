@@ -4,13 +4,34 @@
 \alias{HSVPlot}
 \title{HSV encoded plots}
 \usage{
-HSVPlot(object, features, ncol = NULL, plot.type = "spots",
-  split.hsv = FALSE, rescale = TRUE, indices = NULL, spots = NULL,
-  min.cutoff = NA, max.cutoff = NA, slot = "data", pt.size = 1,
-  pt.alpha = 1, pt.border = FALSE, add.alpha = FALSE,
-  shape.by = NULL, sigma = 2, highlight.edges = FALSE, cols = NULL,
-  dark.theme = TRUE, grid.ncol = NULL, theme = theme_void(),
-  scale.res = 1, custom.theme = NULL, verbose = FALSE, ...)
+HSVPlot(
+  object,
+  features,
+  ncol = NULL,
+  plot.type = "spots",
+  split.hsv = FALSE,
+  rescale = TRUE,
+  indices = NULL,
+  spots = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  pt.size = 1,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  add.alpha = FALSE,
+  shape.by = NULL,
+  sigma = 2,
+  highlight.edges = FALSE,
+  cols = NULL,
+  dark.theme = TRUE,
+  grid.ncol = NULL,
+  theme = theme_void(),
+  scale.res = 1,
+  custom.theme = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

@@ -4,7 +4,7 @@
 \alias{make.plot}
 \title{Used for the manual annotation tool, returns plot and coordinate IDs for selected sample}
 \usage{
-make.plot(object, sampleNr, spotAlpha, Labels, SpotSize, res)
+make.plot(object, sampleNr, spotAlpha, Labels, SpotSize, res, ann)
 }
 \arguments{
 \item{object}{Seurat object}

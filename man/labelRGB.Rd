@@ -4,9 +4,18 @@
 \alias{labelRGB}
 \title{Select spots by rgb values after ST.DimPlot}
 \usage{
-labelRGB(object, dimPlot, label1 = "label1", label2 = NULL,
-  red1 = c(0, 255), green1 = c(0, 255), blue1 = c(0, 255),
-  red2 = c(0, 255), green2 = c(0, 255), blue2 = c(0, 255))
+labelRGB(
+  object,
+  dimPlot,
+  label1 = "label1",
+  label2 = NULL,
+  red1 = c(0, 255),
+  green1 = c(0, 255),
+  blue1 = c(0, 255),
+  red2 = c(0, 255),
+  green2 = c(0, 255),
+  blue2 = c(0, 255)
+)
 }
 \arguments{
 \item{object}{A Seurat object}

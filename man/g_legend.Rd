@@ -4,8 +4,15 @@
 \alias{g_legend}
 \title{Create legend}
 \usage{
-g_legend(data, data.type = "numeric", variable, center.zero, cols,
-  val.limits, dark.theme = TRUE)
+g_legend(
+  data,
+  data.type = "numeric",
+  variable,
+  center.zero,
+  cols,
+  val.limits,
+  dark.theme = TRUE
+)
 }
 \arguments{
 \item{data}{data.frame with values that should be mapped onto colorscale}

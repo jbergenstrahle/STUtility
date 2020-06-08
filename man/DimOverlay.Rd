@@ -4,14 +4,35 @@
 \alias{DimOverlay}
 \title{Overlay dimensionality reduction vectors on HE images}
 \usage{
-DimOverlay(object, dims = c(1:2), reduction = NULL, sampleids = 1,
-  spots = NULL, ncols.dims = NULL, ncols.samples = NULL,
-  type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
-  pt.size = 1, pt.alpha = 1, pt.border = TRUE, add.alpha = FALSE,
-  shape.by = NULL, palette = "MaYl", cols = NULL,
-  center.zero = TRUE, channels.use = NULL, dark.theme = FALSE,
-  sample.label = TRUE, show.sb = TRUE, value.scale = c("samplewise",
-  "all"), custom.theme = NULL, verbose = FALSE, ...)
+DimOverlay(
+  object,
+  dims = c(1:2),
+  reduction = NULL,
+  sampleids = 1,
+  spots = NULL,
+  ncols.dims = NULL,
+  ncols.samples = NULL,
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  blend = FALSE,
+  pt.size = 1,
+  pt.alpha = 1,
+  pt.border = TRUE,
+  add.alpha = FALSE,
+  shape.by = NULL,
+  palette = "MaYl",
+  cols = NULL,
+  center.zero = TRUE,
+  channels.use = NULL,
+  dark.theme = FALSE,
+  sample.label = TRUE,
+  show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

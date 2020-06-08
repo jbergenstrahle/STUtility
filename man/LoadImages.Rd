@@ -6,14 +6,35 @@
 \alias{LoadImages.Seurat}
 \title{Function used to read HE images in jpeg or png format}
 \usage{
-LoadImages(object, image.paths = NULL, xdim = 400, verbose = FALSE,
-  time.resolve = TRUE)
+LoadImages(
+  object,
+  image.paths = NULL,
+  xdim = 400,
+  crop.to.fiducials = FALSE,
+  crop.scale.factors = c(9, 10, 10, 8),
+  verbose = TRUE,
+  time.resolve = TRUE
+)
 
-\method{LoadImages}{Staffli}(object, image.paths = NULL, xdim = 400,
-  verbose = FALSE, time.resolve = TRUE)
+\method{LoadImages}{Staffli}(
+  object,
+  image.paths = NULL,
+  xdim = 400,
+  crop.to.fiducials = FALSE,
+  crop.scale.factors = c(9, 10, 10, 8),
+  verbose = TRUE,
+  time.resolve = TRUE
+)
 
-\method{LoadImages}{Seurat}(object, image.paths = NULL, xdim = 400,
-  verbose = FALSE, time.resolve = TRUE)
+\method{LoadImages}{Seurat}(
+  object,
+  image.paths = NULL,
+  xdim = 400,
+  crop.to.fiducials = FALSE,
+  crop.scale.factors = c(9, 10, 10, 8),
+  verbose = TRUE,
+  time.resolve = TRUE
+)
 }
 \arguments{
 \item{object}{Seurat or Staffli object}
@@ -21,6 +42,13 @@ LoadImages(object, image.paths = NULL, xdim = 400, verbose = FALSE,
 \item{image.paths}{Paths to HE images. This is only required if image paths are missing in the Seurat object.}
 
 \item{xdim}{Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 2000 pixels)}
+
+\item{crop.to.fiducials}{Set to TRUE if you want to crop out background from the images outside the fiducials.}
+
+\item{crop.scale.factors}{Numeric vector of length 4 providing a scaling factor for each side of the image.
+The scaling factors define the number of spot widths away from the capture area to include in the cropped
+image if  `crop.to.fiducials` is set to TRUE. The default values are c(9, 10, 10, 8) which corresponds to
+left, top, right and bottom.}
 
 \item{verbose}{Print messages}
 

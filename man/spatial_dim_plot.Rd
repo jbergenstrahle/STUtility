@@ -4,14 +4,34 @@
 \alias{spatial_dim_plot}
 \title{Dimensional reduction plot on ST coordinates on top of HE image}
 \usage{
-spatial_dim_plot(object, dims = 1:2, sample.index = 1, spots = NULL,
-  type = NULL, min.cutoff = NA, max.cutoff = NA, blend = FALSE,
-  pt.size = 1, pt.alpha = 1, pt.border = FALSE, add.alpha = FALSE,
-  reduction = NULL, shape.by = NULL, palette = "MaYl", cols = NULL,
-  grid.ncol = NULL, center.zero = TRUE, channels.use = NULL,
-  verbose = FALSE, dark.theme = FALSE, sample.label = TRUE,
-  show.sb = TRUE, value.scale = c("samplewise", "all"),
-  custom.theme = NULL, ...)
+spatial_dim_plot(
+  object,
+  dims = 1:2,
+  sample.index = 1,
+  spots = NULL,
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  blend = FALSE,
+  pt.size = 1,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  add.alpha = FALSE,
+  reduction = NULL,
+  shape.by = NULL,
+  palette = "MaYl",
+  cols = NULL,
+  grid.ncol = NULL,
+  center.zero = TRUE,
+  channels.use = NULL,
+  verbose = FALSE,
+  dark.theme = FALSE,
+  sample.label = TRUE,
+  show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

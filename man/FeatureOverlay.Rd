@@ -4,15 +4,38 @@
 \alias{FeatureOverlay}
 \title{Overlay features on HE images}
 \usage{
-FeatureOverlay(object, features, sampleids = 1, spots = NULL,
-  ncols.features = NULL, ncols.samples = NULL, type = NULL,
-  min.cutoff = NA, max.cutoff = NA, slot = "data", blend = FALSE,
-  pt.size = 2, pt.alpha = 1, pt.border = TRUE, add.alpha = FALSE,
-  shape.by = NULL, palette = NULL, cols = NULL, spot.colors = NULL,
-  split.labels = FALSE, center.zero = FALSE, channels.use = NULL,
-  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
-  value.scale = c("samplewise", "all"), custom.theme = NULL,
-  split.feature.ncol = NULL, verbose = FALSE, ...)
+FeatureOverlay(
+  object,
+  features,
+  sampleids = 1,
+  spots = NULL,
+  ncols.features = NULL,
+  ncols.samples = NULL,
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  blend = FALSE,
+  pt.size = 2,
+  pt.alpha = 1,
+  pt.border = TRUE,
+  add.alpha = FALSE,
+  shape.by = NULL,
+  palette = NULL,
+  cols = NULL,
+  spot.colors = NULL,
+  split.labels = FALSE,
+  center.zero = FALSE,
+  channels.use = NULL,
+  dark.theme = FALSE,
+  sample.label = TRUE,
+  show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
+  split.feature.ncol = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

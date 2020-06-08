@@ -38,7 +38,7 @@ NULL
 
 ManualAnnotation <- function (
   object,
-  res = 1500,
+  res = 1000,
   verbose = FALSE
 ) {
 
@@ -52,23 +52,23 @@ ManualAnnotation <- function (
 
 
 
-    sidebarPanel(
+    sidebarPanel(width = 3,
       actionButton(inputId="info", label="Instructions"),  #icon = shiny::icon("info", lib="glyphicon")),
       shiny::hr(),
       selectInput(inputId = "sampleInput", label = "Select sample", choices = sampleChoice, selected = "1"),
       shiny::hr(),
       textInput(inputId = "labelInput", label = "Choose label name", value="", placeholder = "Default"),
       shiny::hr(),
-      sliderInput(inputId="alphaValue", label="Opacity [0-1]", min=0, max=1, value=0.2, step=0.2),
+      sliderInput(inputId="alphaValue", label="Opacity [0-1]", min=0, max=1, value=0.7, step=0.2),
       shiny::hr(),
-      sliderInput(inputId="spotSize", label="Capture-Spot Size [1-5]", min=0, max=5, value=2, step=1),
+      sliderInput(inputId="spotSize", label="Capture-Spot Size [1-5]", min=0, max=6, value=3, step=1),
       shiny::hr(),
       actionButton(inputId = "confirm", label="Confirm selection"),
       shiny::hr(),
       actionButton(inputId = "stopApp", label="Quit annotation tool")
     ),
     mainPanel(
-      ggiraphOutput("Plot1", height = res)
+      ggiraphOutput("Plot1", width = "100%", height = paste0(res, "px"))
     )
   )
 
@@ -79,19 +79,29 @@ ManualAnnotation <- function (
                          id = object@meta.data$id,
                          sample = st.object[[, "sample", drop = T]])
 
+    rv <- reactiveValues(sNr = "1", ann = NULL)
+    observeEvent(input$sampleInput, {
+      rv$sNr = input$sampleInput
+      rv$ann <- Create_annotation(object, input$sampleInput)
+    })
+
     output$Plot1 <- ggiraph::renderGirafe({
 
+     # print(table(df$label[which(df$sample == input$sampleInput)]))
+      withProgress(message = "Updating plot", value = 0, {
       x <- ggiraph::girafe(ggobj = make.plot(object,
-                                             sampleNr = input$sampleInput,
+                                             sampleNr = rv$sNr,
                                              spotAlpha = input$alphaValue,
-                                             Labels = df$label[which(df$sample == input$sampleInput)],
+                                             Labels = df$label[which(df$sample == rv$sNr)],
                                              res = res,
-                                             SpotSize = input$spotSize))
+                                             SpotSize = input$spotSize,
+                                             ann = rv$ann), width_svg = 12, height_svg = 10)
       x <- ggiraph::girafe_options(x,
-                                   ggiraph::opts_zoom(max=5),
+                                   ggiraph::opts_zoom(max = 5),
                                    ggiraph::opts_selection(type = "multiple",
-                                                           css = "fill:red;stroke:black;r:2pt;" ))
+                                                           css = "fill:cyan;stroke:black;opacity:0.7;"))
       x
+      })
     })
 
     observeEvent(input$confirm, {
@@ -103,7 +113,7 @@ ManualAnnotation <- function (
     observe({
       if(input$stopApp > 0){
         print("Stopped")
-        object@meta.data$labels <-df$label
+        object@meta.data$labels <- df$label
         stopApp(returnValue = object)
       }
     })
@@ -147,16 +157,42 @@ make.plot <- function (
   spotAlpha,
   Labels,
   SpotSize,
-  res
+  res,
+  ann
 ) {
-  object.use <- rownames(subset(object@tools$Staffli@meta.data, sample == sampleNr))
-  object <- SubsetSTData(object, spots = object.use)
+
+  c(ann, coordinates, xmin, xmax, ymin, ymax) %<-% ann
+
+  coordinates$Labels <- Labels
+
+  gg <- ggplot(coordinates, aes(x = x, y = y, data_id = id)) +
+    ann +
+    ggiraph::geom_point_interactive(size = SpotSize, alpha = spotAlpha, aes(col = Labels)) +
+    coord_fixed() +
+    scale_x_continuous(expand = c(0, 0), limits = c(xmin, xmax)) +
+    scale_y_continuous(expand = c(0, 0), limits = c(ymin, ymax)) +
+    theme_minimal() +
+    theme(
+      panel.background = element_rect(fill = "transparent", colour = NA),
+      legend.position = "bottom",
+      axis.text = element_blank(),
+      axis.title = element_blank(),
+      axis.ticks = element_blank(),
+      panel.grid = element_blank()
+    )
+  return(gg)
+}
+
+
+Create_annotation <- function (
+  object,
+  sampleNr
+) {
   st.object <- GetStaffli(object)
-  coordinates <- data.frame(x = st.object[[, "pixel_x", drop = T]],
-                            y = st.object[[, "pixel_y", drop = T]],
-                            id = object@meta.data$id,
-                            Labels = object@meta.data$labels)
-  image <- image_read(st.object@imgs)
+  st.meta <- subset(cbind(st.object@meta.data[, c("pixel_x", "pixel_y", "sample")], id = object[[]][, "id", drop = T]), sample %in% paste0(sampleNr))
+  coordinates <- setNames(st.meta[, c("pixel_x", "pixel_y", "id")], nm = c("x", "y", "id"))
+
+  image <- image_read(st.object@imgs[as.integer(sampleNr)])
   old_width <- image_info(image)$width
   image <- image_scale(image, geometry_size_pixels(width = res, preserve_aspect = T))
   coordinates[, c("x","y")] <- coordinates[, c("x","y")]*(res/old_width)
@@ -192,21 +228,6 @@ make.plot <- function (
     annotation <- NULL
   }
 
-  coordinates$y <- ymax - coordinates$y+ ymin
-  gg <- ggplot(coordinates, aes(x = x, y = y, data_id = id)) +
-    annotation +
-    ggiraph::geom_point_interactive(size = SpotSize, alpha = spotAlpha, aes(col = Labels)) +
-    #coord_fixed() +
-    scale_x_continuous(expand = c(0, 0), limits = c(xmin,xmax)) +
-    scale_y_continuous(expand = c(0, 0), limits = c(ymin,ymax)) +
-    theme_minimal() +
-    theme(
-      panel.background = element_rect(fill = "transparent", colour = NA),
-      legend.position = "bottom",
-      axis.text = element_blank(),
-      axis.title = element_blank(),
-      axis.ticks = element_blank(),
-      panel.grid = element_blank()
-    )
-  return(gg)
+  coordinates$y <- ymax - coordinates$y + ymin
+  return(list(annotation, coordinates, xmin, xmax, ymin, ymax))
 }

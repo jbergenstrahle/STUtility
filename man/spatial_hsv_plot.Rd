@@ -4,14 +4,33 @@
 \alias{spatial_hsv_plot}
 \title{Overlay HSVplot on one selected HE image}
 \usage{
-spatial_hsv_plot(object, features, split.hsv = FALSE, sample.index = 1,
-  rescale = TRUE, spots = NULL, type = NULL, min.cutoff = NA,
-  max.cutoff = NA, slot = "data", pt.size = 2, pt.alpha = 1,
-  pt.border = FALSE, add.alpha = FALSE, shape.by = NULL,
-  palette = NULL, cols = NULL, grid.ncol = NULL,
-  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
-  value.scale = c("samplewise", "all"), custom.theme = NULL,
-  verbose = FALSE, ...)
+spatial_hsv_plot(
+  object,
+  features,
+  split.hsv = FALSE,
+  sample.index = 1,
+  rescale = TRUE,
+  spots = NULL,
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  pt.size = 2,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  add.alpha = FALSE,
+  shape.by = NULL,
+  palette = NULL,
+  cols = NULL,
+  grid.ncol = NULL,
+  dark.theme = FALSE,
+  sample.label = TRUE,
+  show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

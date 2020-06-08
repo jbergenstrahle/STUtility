@@ -4,8 +4,14 @@
 \alias{SubsetSTData}
 \title{Subset a Seurat object containing Staffli image data}
 \usage{
-SubsetSTData(object, expression, spots = NULL, features = NULL,
-  idents = NULL, ...)
+SubsetSTData(
+  object,
+  expression,
+  spots = NULL,
+  features = NULL,
+  idents = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{A Seurat object containing Staffli data}

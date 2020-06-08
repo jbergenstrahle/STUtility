@@ -6,17 +6,38 @@
 \alias{MaskImages.Seurat}
 \title{Image masking}
 \usage{
-MaskImages(object, thresholding = FALSE, iso.blur = 2,
-  channels.use = NULL, compactness = 1, add.contrast = NULL,
-  verbose = FALSE, custom.msk.fkn = NULL)
+MaskImages(
+  object,
+  thresholding = FALSE,
+  iso.blur = 2,
+  channels.use = NULL,
+  compactness = 1,
+  add.contrast = NULL,
+  verbose = FALSE,
+  custom.msk.fkn = NULL
+)
 
-\method{MaskImages}{Staffli}(object, thresholding = TRUE, iso.blur = 2,
-  channels.use = NULL, compactness = 1, add.contrast = NULL,
-  verbose = FALSE, custom.msk.fkn = NULL)
+\method{MaskImages}{Staffli}(
+  object,
+  thresholding = TRUE,
+  iso.blur = 2,
+  channels.use = NULL,
+  compactness = 1,
+  add.contrast = NULL,
+  verbose = FALSE,
+  custom.msk.fkn = NULL
+)
 
-\method{MaskImages}{Seurat}(object, thresholding = TRUE, iso.blur = 2,
-  channels.use = NULL, compactness = 1, add.contrast = NULL,
-  verbose = FALSE, custom.msk.fkn = NULL)
+\method{MaskImages}{Seurat}(
+  object,
+  thresholding = TRUE,
+  iso.blur = 2,
+  channels.use = NULL,
+  compactness = 1,
+  add.contrast = NULL,
+  verbose = FALSE,
+  custom.msk.fkn = NULL
+)
 }
 \arguments{
 \item{object}{Seurat or Staffli object o pre-procesing step [default: TRUE]}

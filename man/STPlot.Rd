@@ -4,12 +4,30 @@
 \alias{STPlot}
 \title{Graphs ST spots colored by continuous or categorical features}
 \usage{
-STPlot(data, data.type = NULL, shape.by, variable, pt.size = 1,
-  pt.alpha = 1, pt.border = FALSE, palette = "MaYl", cols = NULL,
-  ncol = NULL, spot.colors = NULL, center.zero = TRUE,
-  center.tissue = FALSE, plot.title = NULL, dims = NULL,
-  split.labels = FALSE, pxum = NULL, sb.size = 2.5,
-  dark.theme = FALSE, limits = NULL, custom.theme = NULL, ...)
+STPlot(
+  data,
+  data.type = NULL,
+  shape.by,
+  variable,
+  pt.size = 1,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  palette = "MaYl",
+  cols = NULL,
+  ncol = NULL,
+  spot.colors = NULL,
+  center.zero = TRUE,
+  center.tissue = FALSE,
+  plot.title = NULL,
+  dims = NULL,
+  split.labels = FALSE,
+  pxum = NULL,
+  sb.size = 2.5,
+  dark.theme = FALSE,
+  limits = NULL,
+  custom.theme = NULL,
+  ...
+)
 }
 \arguments{
 \item{data}{Object of class 'data.frame' containing at least (x, y) coordinates, a "sample" vector with labels for each sample

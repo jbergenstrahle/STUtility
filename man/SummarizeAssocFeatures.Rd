@@ -4,8 +4,12 @@
 \alias{SummarizeAssocFeatures}
 \title{Summarize features associated with cselected factors}
 \usage{
-SummarizeAssocFeatures(object, dims = NULL, features.return = 10,
-  features.use = NULL)
+SummarizeAssocFeatures(
+  object,
+  dims = NULL,
+  features.return = 10,
+  features.use = NULL
+)
 }
 \arguments{
 \item{object}{Seurat object}

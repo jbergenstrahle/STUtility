@@ -4,8 +4,15 @@
 \alias{ImagePlot}
 \title{Function used to plot HE images obtained with \code{\link{LoadImages}}}
 \usage{
-ImagePlot(object, indices = NULL, type = NULL, method = "viewer",
-  ncols = NULL, annotate = TRUE, darken = FALSE)
+ImagePlot(
+  object,
+  indices = NULL,
+  type = NULL,
+  method = "viewer",
+  ncols = NULL,
+  annotate = TRUE,
+  darken = FALSE
+)
 }
 \arguments{
 \item{object}{Seurat object}

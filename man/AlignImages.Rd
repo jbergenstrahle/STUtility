@@ -6,14 +6,29 @@
 \alias{AlignImages.Seurat}
 \title{Automatic alignment of HE stained tissue images}
 \usage{
-AlignImages(object, indices = NULL, reference.index = NULL,
-  use.masked = FALSE, verbose = FALSE)
+AlignImages(
+  object,
+  indices = NULL,
+  reference.index = NULL,
+  use.masked = FALSE,
+  verbose = FALSE
+)
 
-\method{AlignImages}{Staffli}(object, indices = NULL,
-  reference.index = NULL, use.masked = FALSE, verbose = FALSE)
+\method{AlignImages}{Staffli}(
+  object,
+  indices = NULL,
+  reference.index = NULL,
+  use.masked = FALSE,
+  verbose = FALSE
+)
 
-\method{AlignImages}{Seurat}(object, indices = NULL,
-  reference.index = NULL, use.masked = FALSE, verbose = FALSE)
+\method{AlignImages}{Seurat}(
+  object,
+  indices = NULL,
+  reference.index = NULL,
+  use.masked = FALSE,
+  verbose = FALSE
+)
 }
 \arguments{
 \item{object}{A Seurat object}

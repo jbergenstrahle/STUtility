@@ -5,7 +5,7 @@
 \title{Manual annotation tool via shiny
 This function takes a seurat object with stored image locations and opens up the manual selection tool in the default browser}
 \usage{
-ManualAnnotation(object, res = 1500, verbose = FALSE)
+ManualAnnotation(object, res = 1000, verbose = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}

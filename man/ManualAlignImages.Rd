@@ -6,17 +6,35 @@
 \alias{ManualAlignImages.Seurat}
 \title{Manual alignment of images}
 \usage{
-ManualAlignImages(object, type = NULL, reference.index = 1,
-  edges = TRUE, verbose = FALSE, custom.edge.detector = NULL,
-  maxnum = 1000)
+ManualAlignImages(
+  object,
+  type = NULL,
+  reference.index = 1,
+  edges = TRUE,
+  verbose = FALSE,
+  custom.edge.detector = NULL,
+  maxnum = 1000
+)
 
-\method{ManualAlignImages}{Staffli}(object, type = "masked.masks",
-  reference.index = 1, edges = TRUE, verbose = FALSE,
-  maxnum = 1000, custom.edge.detector = NULL)
+\method{ManualAlignImages}{Staffli}(
+  object,
+  type = "masked.masks",
+  reference.index = 1,
+  edges = TRUE,
+  verbose = FALSE,
+  maxnum = 1000,
+  custom.edge.detector = NULL
+)
 
-\method{ManualAlignImages}{Seurat}(object, type = "masked.masks",
-  reference.index = 1, edges = TRUE, verbose = FALSE,
-  maxnum = 1000, custom.edge.detector = NULL)
+\method{ManualAlignImages}{Seurat}(
+  object,
+  type = "masked.masks",
+  reference.index = 1,
+  edges = TRUE,
+  verbose = FALSE,
+  maxnum = 1000,
+  custom.edge.detector = NULL
+)
 }
 \arguments{
 \item{object}{Seurat object}

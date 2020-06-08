@@ -4,13 +4,32 @@
 \alias{HSVOverlay}
 \title{Overlay HSV encoded features on HE images}
 \usage{
-HSVOverlay(object, features, sampleids = 1, rescale = TRUE,
-  spots = NULL, ncols.features = NULL, ncols.samples = NULL,
-  type = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
-  pt.size = 2, pt.alpha = 1, add.alpha = FALSE, shape.by = NULL,
-  palette = NULL, cols = NULL, split.hsv = FALSE,
-  dark.theme = FALSE, sample.label = TRUE, show.sb = TRUE,
-  custom.theme = NULL, verbose = FALSE, ...)
+HSVOverlay(
+  object,
+  features,
+  sampleids = 1,
+  rescale = TRUE,
+  spots = NULL,
+  ncols.features = NULL,
+  ncols.samples = NULL,
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  pt.size = 2,
+  pt.alpha = 1,
+  add.alpha = FALSE,
+  shape.by = NULL,
+  palette = NULL,
+  cols = NULL,
+  split.hsv = FALSE,
+  dark.theme = FALSE,
+  sample.label = TRUE,
+  show.sb = TRUE,
+  custom.theme = NULL,
+  verbose = FALSE,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

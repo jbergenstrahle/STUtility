@@ -4,15 +4,37 @@
 \alias{spatial_feature_plot}
 \title{Visualize 'features' on one selected HE image}
 \usage{
-spatial_feature_plot(object, features, sample.index = 1, spots = NULL,
-  type = NULL, min.cutoff = NA, max.cutoff = NA, slot = "data",
-  blend = FALSE, pt.size = 2, pt.alpha = 1, pt.border = FALSE,
-  add.alpha = FALSE, shape.by = NULL, palette = NULL, cols = NULL,
-  spot.colors = NULL, ncol = NULL, grid.ncol = NULL,
-  center.zero = FALSE, channels.use = NULL, verbose = FALSE,
-  split.labels = FALSE, dark.theme = FALSE, sample.label = TRUE,
-  show.sb = TRUE, value.scale = c("samplewise", "all"),
-  custom.theme = NULL, ...)
+spatial_feature_plot(
+  object,
+  features,
+  sample.index = 1,
+  spots = NULL,
+  type = NULL,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  slot = "data",
+  blend = FALSE,
+  pt.size = 2,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  add.alpha = FALSE,
+  shape.by = NULL,
+  palette = NULL,
+  cols = NULL,
+  spot.colors = NULL,
+  ncol = NULL,
+  grid.ncol = NULL,
+  center.zero = FALSE,
+  channels.use = NULL,
+  verbose = FALSE,
+  split.labels = FALSE,
+  dark.theme = FALSE,
+  sample.label = TRUE,
+  show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

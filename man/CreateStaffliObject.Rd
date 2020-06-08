@@ -4,8 +4,7 @@
 \alias{CreateStaffliObject}
 \title{Create a Staffli object}
 \usage{
-CreateStaffliObject(imgs = NULL, meta.data, xdim = 400,
-  platforms = NULL)
+CreateStaffliObject(imgs = NULL, meta.data, xdim = 400, platforms = NULL)
 }
 \arguments{
 \item{imgs}{Character vector specifying paths to images in jpg or png format.}

@@ -5,8 +5,7 @@
 \title{Finds edges of a mask and returns a set of x,y coordinates
 aligned along the edges}
 \usage{
-\method{get.edges}{Staffli}(object, index = 1, verbose = FALSE,
-  type = "masked.masks")
+\method{get.edges}{Staffli}(object, index = 1, verbose = FALSE, type = "masked.masks")
 }
 \arguments{
 \item{object}{Seurat object}

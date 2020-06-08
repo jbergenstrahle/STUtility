@@ -141,11 +141,10 @@ SubsetSTData <- function (
   st.object <- GetStaffli(object)
 
   if (!missing(x = expression)) {
-    expression <- deparse(expr = substitute(expr = expression))
-    object <- subset(object, subset = expression, features = features, cells = spots, idents = idents, ...)
-  } else {
-    object <- subset(object, features = features, cells = spots, idents = idents)#, ...)
+    expression <- enquo(expression)
+    spots <- WhichCells(object, cells = spots, idents = idents, expression = expression, ...)
   }
+  object <- subset(object, features = features, cells = spots, idents = idents, ...)
 
   # Check spots of new object
   kept.spots <- colnames(object)

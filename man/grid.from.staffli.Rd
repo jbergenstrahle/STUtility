@@ -4,8 +4,14 @@
 \alias{grid.from.staffli}
 \title{Creates 2D point patterns for a set of images}
 \usage{
-grid.from.staffli(object, type, limit = 0.3, maxnum = 1000,
-  edges = FALSE, custom.edge.detector = NULL)
+grid.from.staffli(
+  object,
+  type,
+  limit = 0.3,
+  maxnum = 1000,
+  edges = FALSE,
+  custom.edge.detector = NULL
+)
 }
 \arguments{
 \item{object}{Staffli object}

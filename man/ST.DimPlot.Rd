@@ -4,14 +4,35 @@
 \alias{ST.DimPlot}
 \title{Dimensional reduction plot on ST coordinates}
 \usage{
-ST.DimPlot(object, dims = c(1, 2), spots = NULL, indices = NULL,
-  plot.type = "spots", blend = FALSE, min.cutoff = NA,
-  max.cutoff = NA, pt.size = 1, pt.alpha = 1, pt.border = FALSE,
-  reduction = NULL, shape.by = NULL, palette = "MaYl", cols = NULL,
-  dark.theme = FALSE, ncol = NULL, grid.ncol = NULL,
-  center.zero = TRUE, channels.use = NULL, center.tissue = FALSE,
-  verbose = FALSE, sb.size = 2.5, show.sb = TRUE,
-  value.scale = c("samplewise", "all"), custom.theme = NULL, ...)
+ST.DimPlot(
+  object,
+  dims = c(1, 2),
+  spots = NULL,
+  indices = NULL,
+  plot.type = "spots",
+  blend = FALSE,
+  min.cutoff = NA,
+  max.cutoff = NA,
+  pt.size = 1,
+  pt.alpha = 1,
+  pt.border = FALSE,
+  reduction = NULL,
+  shape.by = NULL,
+  palette = "MaYl",
+  cols = NULL,
+  dark.theme = FALSE,
+  ncol = NULL,
+  grid.ncol = NULL,
+  center.zero = TRUE,
+  channels.use = NULL,
+  center.tissue = FALSE,
+  verbose = FALSE,
+  sb.size = 2.5,
+  show.sb = TRUE,
+  value.scale = c("samplewise", "all"),
+  custom.theme = NULL,
+  ...
+)
 }
 \arguments{
 \item{object}{Seurat object}

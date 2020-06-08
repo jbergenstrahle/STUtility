@@ -4,9 +4,20 @@
 \alias{SmoothPlot}
 \title{Graphs a smooth interpolation heatmap colored by continuous variable, e.g. dimensional reduction vector}
 \usage{
-SmoothPlot(st.object, data, image.type, data.type = NULL, variable,
-  palette = "MaYl", cols = NULL, ncol = NULL, center.zero = TRUE,
-  dark.theme = FALSE, highlight.edges = TRUE, ...)
+SmoothPlot(
+  st.object,
+  data,
+  image.type,
+  data.type = NULL,
+  variable,
+  palette = "MaYl",
+  cols = NULL,
+  ncol = NULL,
+  center.zero = TRUE,
+  dark.theme = FALSE,
+  highlight.edges = TRUE,
+  ...
+)
 }
 \arguments{
 \item{st.object}{A Staffli object}

@@ -4,8 +4,16 @@
 \alias{prep.sb}
 \title{Prep scalebar}
 \usage{
-prep.sb(st.object, data, data.type, indices, split.labels, features, dims,
-  show.sb)
+prep.sb(
+  st.object,
+  data,
+  data.type,
+  indices,
+  split.labels,
+  features,
+  dims,
+  show.sb
+)
 }
 \arguments{
 \item{st.object}{An object of class 'Staffli'}
