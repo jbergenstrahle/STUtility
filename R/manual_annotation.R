@@ -44,6 +44,7 @@ ManualAnnotation <- function (
 
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object not present in Seurat object", call. = FALSE)
   st.object <- GetStaffli(object)
+  img <- st.object@imgs[1]
   sampleChoice <- unique(st.object[[, "sample", drop = T]])
 
   # ===================== UI =======================
@@ -61,13 +62,14 @@ ManualAnnotation <- function (
       shiny::hr(),
       sliderInput(inputId="alphaValue", label="Opacity [0-1]", min=0, max=1, value=0.7, step=0.2),
       shiny::hr(),
-      sliderInput(inputId="spotSize", label="Capture-Spot Size [1-5]", min=0, max=6, value=3, step=1),
+      sliderInput(inputId="spotSize", label="Capture-Spot Size [1-5]", min=0, max=5, value=2.5, step=0.5),
       shiny::hr(),
       actionButton(inputId = "confirm", label="Confirm selection"),
       shiny::hr(),
       actionButton(inputId = "stopApp", label="Quit annotation tool")
     ),
     mainPanel(
+      #tags$img(src = jsonlite::base64_enc(img)),
       ggiraphOutput("Plot1", width = "100%", height = paste0(res, "px"))
     )
   )
@@ -188,6 +190,7 @@ Create_annotation <- function (
   object,
   sampleNr
 ) {
+
   st.object <- GetStaffli(object)
   st.meta <- subset(cbind(st.object@meta.data[, c("pixel_x", "pixel_y", "sample")], id = object[[]][, "id", drop = T]), sample %in% paste0(sampleNr))
   coordinates <- setNames(st.meta[, c("pixel_x", "pixel_y", "id")], nm = c("x", "y", "id"))

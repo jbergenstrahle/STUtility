@@ -1016,7 +1016,6 @@ spatial_dim_plot <- function (
   shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
-
   grid.ncol = NULL,
   center.zero = TRUE,
   channels.use = NULL,
@@ -1570,7 +1569,13 @@ ST.ImagePlot <- function (
     if (!is.null(pixels.per.um)) {
       hewidth <- dims[1]
       sb500 <- pixels.per.um*500
-      p <- draw_scalebar(p, x = 7*hewidth/9, xend = 7*hewidth/9 + sb500, y = dims[2] - dims[2]/8, dark.theme = dark.theme)
+      x_start <- 7*hewidth/9; x_end <- 7*hewidth/9 + sb500
+      y_start <- dims[2] - dims[2]/8
+      dx <- hewidth - x_end
+      if (dx < 0) {
+        x_start <- x_start + dx*2; x_end <- x_end + dx*2
+      }
+      p <- draw_scalebar(p, x = x_start, xend = x_end, y = y_start, dark.theme = dark.theme)
     }
 
     # Center colorscale at 0

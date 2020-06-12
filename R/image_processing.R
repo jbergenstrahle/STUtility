@@ -65,7 +65,9 @@ LoadImages.Staffli <- function (
       stop("crop.to.fiducials options cannot be used because relevant image data is missing. To use this option, please reload the data using InputFromTable. \n")
     }
     if (tr >= 5 & !(class(tr) == "try-error")) {
-      ds <- cbind(ds, dims[[i]][, c("min_x", "max_x", "min_y", "max_y", "spot_diameter")])
+      if (all(c("min_x", "max_x", "min_y", "max_y", "spot_diameter") %in% colnames(ds))) {
+        ds <- cbind(ds, dims[[i]][, c("min_x", "max_x", "min_y", "max_y", "spot_diameter")])
+      }
     }
 
     # Crop image
@@ -1063,7 +1065,7 @@ ManualAlignImages.Staffli <- function (
 #' @method ManualAlignImages Seurat
 #'
 #' @export
-#' @return  A Seurat object
+#' @return A Seurat object
 #' @examples
 #' # Load, mask, align and plot images (will start an interactive shiny session)
 #' se <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% ManualAlignImages()
@@ -1081,5 +1083,130 @@ ManualAlignImages.Seurat <- function (
   # Check if masked images are available
   if (!"masked" %in% rasterlists(object)) warning(paste0("Masked images are not present in Seurat object"), call. = FALSE)
   object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, maxnum, custom.edge.detector)
+  return(object)
+}
+
+
+#' @rdname CropImages
+#' @method CropImages Staffli
+#'
+#' @export
+#' @return A Staffli object
+#' @examples
+#' # Load images
+#' st.object <- GetStaffli(se)
+#'
+#' # Crop section 1 to a size of 500x500 pixels offset by (500, 500) pixels from the top left corner
+#' st.object<- CropImages(st.object, crop.geometry.list = list("1" = "500x500+500+500"))
+#'
+CropImages.Staffli <- function (
+  object,
+  crop.geometry.list,
+  xdim = NULL,
+  time.resolve = FALSE,
+  verbose = FALSE
+) {
+
+  # Check if ultiple samples are available
+  if (length(x = object@samplenames) == 1) stop("Only one sample present in the Staffli object. At least 2 samples are required for alignment ... \n", call. = FALSE)
+
+  sampleids <- names(crop.geometry.list)
+  if (!all(sampleids %in% object@samplenames)) {
+    stop("Invalid sample ids ", paste(sampleids, ccollapse = ", "), "... \n")
+  }
+
+  # Set xdim
+  xdim <- xdim %||% {
+    object@xdim
+  }
+
+  imgs <- object@rasterlists$raw
+  if (length(object@dims) > 0) {
+    dims <- object@dims
+  } else {
+    dims <- list()
+  }
+
+  spots.keep <- rownames(object@meta.data)
+
+  for (i in sampleids) {
+    path <- object@imgs[as.integer(i)]
+    if (verbose) cat("  Reading ", path , " for sample ", object@meta.data[, "sample"][i], " ... \n", sep = "")
+    im <- image_read(path)
+    # Add image data
+    ds <- image_info(im)
+    geometry <- crop.geometry.list[[i]]
+    c(width_crop, height_crop, tl_x, tl_y) %<-% as.numeric(unlist(strsplit(geometry, "x|\\+")))
+    im <- im %>% image_crop(geometry)
+
+    # Crop xy coords
+    xy <- setNames(object[[object[[, "sample", drop = T]] == paste0(i), c("original_x", "original_y")]], c("pixel_x", "pixel_y"))
+    xy$pixel_x <- xy$pixel_x - tl_x
+    xy$pixel_y <- xy$pixel_y - tl_y
+    object[[object[[, "sample", drop = T]] == paste0(i), c("pixel_x", "pixel_y")]] <- xy
+
+    # Change image width and height
+    imnew_info <- image_info(im)
+    ds$width <- imnew_info$width
+    ds$height <- imnew_info$height
+
+    # Define spots to keep
+    k1 <- 0 > xy$pixel_x | xy$pixel_x > ds$width
+    k2 <- 0 > xy$pixel_y | xy$pixel_y > ds$height
+    k <- (k1 | k2)
+
+    spots <- rownames(object@meta.data)[object[[, "sample", drop = T]] == paste0(i)]
+    spots.keep <- setdiff(spots.keep, spots[k])
+
+    dims[[i]] <- ds
+
+    if (imnew_info$width > xdim) {
+      im <- image_scale(im, paste0(xdim))
+    }
+
+    imgs[[i]] <- as.raster(im)
+    if (time.resolve) {
+      gc()
+      sleepy(5)
+    }
+  }
+
+  object@rasterlists <- object@rasterlists["raw"]
+  object@rasterlists[["raw"]] <- imgs
+  object@dims <- dims
+  object@xdim <- xdim
+
+  object@meta.data <- object@meta.data[spots.keep, ]
+
+  return(object)
+}
+
+
+#' @rdname CropImages
+#' @method CropImages Seurat
+#'
+#' @export
+#' @return A Seurat object
+#' @examples
+#' # Load images
+#' se <- LoadImages(se)
+#'
+#' # Crop section 1 to a size of 500x500 pixels offset by (500, 500) pixels from the top left corner
+#' se <- CropImages(se, crop.geometry.list = list("1" = "500x500+500+500"))
+#'
+CropImages.Seurat <- function (
+  object,
+  crop.geometry.list,
+  xdim = NULL,
+  time.resolve = FALSE,
+  verbose = FALSE
+) {
+
+  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
+
+  st.object <- GetStaffli(object)
+  st.object <- CropImages.Staffli(object = st.object, crop.geometry.list = crop.geometry.list, xdim = xdim, time.resolve = time.resolve, verbose = verbose)
+  object <- SubsetSTData(object, spots = rownames(st.object@meta.data))
+  object@tools$Staffli <- st.object
   return(object)
 }

@@ -383,11 +383,18 @@ prep.sb <- function (
         hewidths <- lapply(dims, function(x) x[1]) %>% unlist()
         heheights <- lapply(dims, function(x) x[2]) %>% unlist()
       }
+
       pxum$sb500 <- pxum$pixels.per.um*500
       pxum$hewidth <-  hewidths
       pxum$x <- 7*pxum$hewidth/9
       pxum$xend <- 7*pxum$hewidth/9 + pxum$sb500
       pxum$y <- heheights - heheights/8
+
+      # Check that the scale bar is inside plot
+      dx <- pxum$hewidth - pxum$xend
+      pxum$x <- ifelse(dx < 0, pxum$x + dx*2, pxum$x)
+      pxum$xend <- ifelse(dx < 0, pxum$xend + dx*2, pxum$xend)
+
     } else {
       pxum <- NULL
     }

@@ -2,7 +2,7 @@
 % Please edit documentation in R/generics.R
 \name{get.edges}
 \alias{get.edges}
-\title{Obtain edges of binaryh mask stores in masked.masks list}
+\title{Obtain edges of binary mask stores in masked.masks list}
 \usage{
 get.edges(object, index = 1, verbose = FALSE, type = "masked.masks")
 }
@@ -16,5 +16,5 @@ get.edges(object, index = 1, verbose = FALSE, type = "masked.masks")
 \item{Input}{image type to run edge detection on [default: 'masked.masks']}
 }
 \description{
-Obtain edges of binaryh mask stores in masked.masks list
+Obtain edges of binary mask stores in masked.masks list
 }

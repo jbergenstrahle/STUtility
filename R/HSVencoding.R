@@ -565,7 +565,6 @@ spatial_hsv_plot <- function (
   if (verbose) cat("Selecting HSV colors for each spot ... \n")
   data <- create.cols.from.array(data, d, features, cols, split.hsv, dark.theme, add.alpha)
 
-
   # Plot combined HSV
   if (!split.hsv) {
     plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, dims = imdims,
@@ -832,7 +831,7 @@ create.cols.from.array <- function (
       }
       red.cols <- apply(full.data, 1, function (x) {
         hsvc <- hsv(h = x["h"], s = x["s"], v = x["v"])
-        if (add.alpha) hsvc <- scales::alpha(hsvc, ifelse(dark.theme, x["v"], x["s"]))
+        if (add.alpha) hsvc <- scales::alpha(hsvc, as.numeric(ifelse(dark.theme, x["v"], x["s"])))
         return(hsvc)
       })
     } else {

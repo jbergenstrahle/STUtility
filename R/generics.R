@@ -239,11 +239,55 @@ ManualAlignImages <- function (
 }
 
 
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+# Crop Images
+#%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+#' Manual cropping of images
+#'
+#' Takes a predefined list of crop windows and cuts each image
+#'
+#' @details
+#' Let's say that you want to crop out a smaller piece of secttion 1 that should be 500x500 pixels
+#' and should be offset by 400 pixels along the x axis and 400 pixels along the y axis. The y axis
+#' starts from the top of the image so the offset will essentially determine the top left corner
+#' of the output cropped image. To do this, you can set `crop.geometry.list = list("1" = "500x500+400+400")`.
+#' If `xdim` is not specified, the function will collect the predefined `xdim` that was set when
+#' running `LoadImages`. The `xdim` value determines the maximum allowed width of the cropped image,
+#' so if you for example set a large crop window from the original image, e.g. "2000x2000+1000+1000"
+#' the output image will still be downscaled to a width of `xdim` to keep the output image in low
+#' resolution.
+#'
+#' @param object Seurat object
+#' @param crop.geometry.list List of crop windows. Each element of the list should be named by a section number that
+#' the cropping should be applied to, e.g. "1", "2", "3", etc. The crop window is defined by a string speficying the
+#' size of the output window and the offset in pixels; "_width_x_height_+_offsetx_+_offsety_". Note that the cropping
+#' will be applied to the original HE images, i.e. the images that were loaded when running `LoadImages`. See details
+#' below for more information.
+#' @param xdim Maximum width of cropped window
+#' @param time.resolve Activate to stop R from loading raw images into memory
+#' @param verbose Print messages
+#'
+#' @importFrom magick image_read image_crop image_info image_scale
+#'
+#' @export
+
+CropImages <- function (
+  object,
+  crop.geometry.list,
+  xdim = NULL,
+  time.resolve = FALSE,
+  verbose = FALSE
+) {
+  UseMethod(generic = "CropImages", object = object)
+}
+
+
 # ----------------------------------
 # --- Image processing utilities ---
 # ----------------------------------
 
-#' Obtain edges of binaryh mask stores in masked.masks list
+#' Obtain edges of binary mask stores in masked.masks list
 #'
 #' @param object Seurat object
 #' @param index Sample index
