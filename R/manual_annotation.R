@@ -84,7 +84,7 @@ ManualAnnotation <- function (
     rv <- reactiveValues(sNr = "1", ann = NULL)
     observeEvent(input$sampleInput, {
       rv$sNr = input$sampleInput
-      rv$ann <- Create_annotation(object, input$sampleInput)
+      rv$ann <- Create_annotation(object, input$sampleInput, res)
     })
 
     output$Plot1 <- ggiraph::renderGirafe({
@@ -188,7 +188,8 @@ make.plot <- function (
 
 Create_annotation <- function (
   object,
-  sampleNr
+  sampleNr,
+  res
 ) {
 
   st.object <- GetStaffli(object)
