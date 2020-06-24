@@ -149,6 +149,9 @@ InputFromTable <- function (
   countPaths <- infotable[, "samples"]
   rownames(infotable) <- paste0(1:nrow(infotable))
 
+  #
+  if (!is.null(scaleVisium) & length(scaleVisium) == 1) scaleVisium <- rep(scaleVisium, nrow(infotable))
+
   # Check if spotfiles are present
   if ("spotfiles" %in% colnames(infotable) & !disable.subset){
     cat("Using spotfiles to remove spots outside of tissue\n")
@@ -167,7 +170,7 @@ InputFromTable <- function (
       if ("json" %in% colnames(infotable)) {
         suffs <- sapply(infotable[, "json"], getExtension)
         if (!all(suffs == "json")) stop("Incorrect format of json files in infotable ...", call. = FALSE)
-        scaleVisium <- sapply(infotable[, "json"], function(f) {read_json(f)$tissue_hires_scalef})
+        scaleVisium <- scaleVisium %||% sapply(infotable[, "json"], function(f) {read_json(f)$tissue_hires_scalef})
         spot.diamater.list <- sapply(infotable[, "json"], function(f) {read_json(f)$spot_diameter_fullres})*scaleVisium
         infotable[, "json"] <- NULL
       } else if ("scaleVisium" %in% colnames(infotable)) {

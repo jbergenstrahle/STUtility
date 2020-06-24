@@ -65,7 +65,7 @@ LoadImages.Staffli <- function (
       stop("crop.to.fiducials options cannot be used because relevant image data is missing. To use this option, please reload the data using InputFromTable. \n")
     }
     if (tr >= 5 & !(class(tr) == "try-error")) {
-      if (all(c("min_x", "max_x", "min_y", "max_y", "spot_diameter") %in% colnames(ds))) {
+      if (all(c("min_x", "max_x", "min_y", "max_y", "spot_diameter") %in% colnames(dims[[i]]))) {
         ds <- cbind(ds, dims[[i]][, c("min_x", "max_x", "min_y", "max_y", "spot_diameter")])
       }
     }
