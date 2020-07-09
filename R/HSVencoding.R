@@ -216,7 +216,7 @@ HSVPlot <- function (
       plots <- lapply(seq_along(data), function (i) {
         data <- data[[i]]
         plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha, pt.border = pt.border,
-               palette = NULL, cols = NULL, ncol = ncol, spot.colors = data$cols,
+               palette = "Reds", cols = NULL, ncol = ncol, spot.colors = data$cols,
                center.zero = F, center.tissue = F, plot.title = features[i],
                dims = dims, split.labels = FALSE, dark.theme = dark.theme,
                pxum = NULL, sb.size = 2.5, custom.theme = custom.theme, ...)
@@ -490,10 +490,10 @@ spatial_hsv_plot <- function (
   data.type <- unique(sapply(data, class))
 
   # Select colorscale
-  palette.info <- palette.select(info = T)
-  palette <- palette %||% {
-    palette <- subset(palette.info, category == "seq")$palette[1]
-  }
+  # palette.info <- palette.select(info = T)
+  # palette <- palette %||% {
+  #   palette <- subset(palette.info, category == "seq")$palette[1]
+  # }
 
   # Obtain array coordinates
   px.ids <- ifelse(rep(type %in% c("raw", "masked", "masked.masks"), 2), c("pixel_x", "pixel_y"), c("warped_x", "warped_y"))
@@ -568,7 +568,7 @@ spatial_hsv_plot <- function (
   # Plot combined HSV
   if (!split.hsv) {
     plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, dims = imdims,
-                         pt.size, pt.alpha, pt.border = pt.border, FALSE, palette,
+                         pt.size, pt.alpha, pt.border = pt.border, FALSE, palette = "Reds",
                          cols, NULL, spot.colors = data$cols,
                          FALSE, plot.title = "", FALSE, dark.theme,
                          pixels.per.um, NULL, custom.theme = custom.theme, ...)
@@ -584,7 +584,7 @@ spatial_hsv_plot <- function (
     plots <- lapply(seq_along(data), function (i) {
       data <- data[[i]]
       plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, dims = imdims,
-                           pt.size, pt.alpha, pt.border = pt.border, add.alpha = FALSE, palette,
+                           pt.size, pt.alpha, pt.border = pt.border, add.alpha = FALSE, palette = "Reds",
                            cols, NULL, spot.colors = data$cols,
                            FALSE, plot.title = features[i], FALSE, dark.theme,
                            pixels.per.um, NULL, custom.theme = custom.theme, ...)

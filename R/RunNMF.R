@@ -44,12 +44,20 @@ FactorGeneLoadingPlot <- function (
 
 #' Run Non-negative Matrix Factorization
 #'
+#' Decompose an expression matrix A with non-negative elements into matrices WxH, also with
+#' non-negative elements. W is the feature loading matrix (features x factors) and H is the
+#' low dimensional embedding of the spots (factors x spots).
+#'
 #' @param object Seurat object
-#' @param assay assay Name of Assay PCA is being run on
-#' @param features features to compute the NMF for
+#' @param assay Assay Name of Assay NMF is being run on
+#' @param features Features to compute the NMF for. Note that these features must be present in the
+#' slot used to compute the NMF. By default, the `features` is set to `VariableFeatures(object)`
+#' to include the most variable features selected in the normalization step.
 #' @param nfactors Total Number of factors to compute and store (20 by default)
-#' @param reduction.name dimensional reduction name,  pca by default
-#' @param reduction.key dimensional reduction key, specifies the string before
+#' @param rescale Rescale data to make sure that values of the input matrix are non-n
+#' @param reduction.name Dimensional reduction name, "NMF" by default
+#' @param reduction.key Dimensional reduction key, specifies the prefix of the factor ids, e.g.
+#' "factor_1", "factor_2", etc.
 #' @param n.cores Number of threads to use in computation
 #' @param order.by.spcor Order factors by spatial correlation
 #'

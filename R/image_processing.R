@@ -1107,9 +1107,6 @@ CropImages.Staffli <- function (
   verbose = FALSE
 ) {
 
-  # Check if ultiple samples are available
-  if (length(x = object@samplenames) == 1) stop("Only one sample present in the Staffli object. At least 2 samples are required for alignment ... \n", call. = FALSE)
-
   sampleids <- names(crop.geometry.list)
   if (!all(sampleids %in% object@samplenames)) {
     stop("Invalid sample ids ", paste(sampleids, ccollapse = ", "), "... \n")

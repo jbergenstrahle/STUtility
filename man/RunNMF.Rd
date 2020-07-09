@@ -22,20 +22,27 @@ RunNMF(
 \arguments{
 \item{object}{Seurat object}
 
-\item{assay}{assay Name of Assay PCA is being run on}
+\item{assay}{Assay Name of Assay NMF is being run on}
 
-\item{features}{features to compute the NMF for}
+\item{features}{Features to compute the NMF for. Note that these features must be present in the
+slot used to compute the NMF. By default, the `features` is set to `VariableFeatures(object)`
+to include the most variable features selected in the normalization step.}
 
 \item{nfactors}{Total Number of factors to compute and store (20 by default)}
 
-\item{reduction.name}{dimensional reduction name,  pca by default}
+\item{rescale}{Rescale data to make sure that values of the input matrix are non-n}
 
-\item{reduction.key}{dimensional reduction key, specifies the string before}
+\item{reduction.name}{Dimensional reduction name, "NMF" by default}
+
+\item{reduction.key}{Dimensional reduction key, specifies the prefix of the factor ids, e.g.
+"factor_1", "factor_2", etc.}
 
 \item{n.cores}{Number of threads to use in computation}
 
 \item{order.by.spcor}{Order factors by spatial correlation}
 }
 \description{
-Run Non-negative Matrix Factorization
+Decompose an expression matrix A with non-negative elements into matrices WxH, also with
+non-negative elements. W is the feature loading matrix (features x factors) and H is the
+low dimensional embedding of the spots (factors x spots).
 }
