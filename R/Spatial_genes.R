@@ -181,3 +181,97 @@ CorSpatialGenes <- function (
   return(res)
 }
 
+
+
+# TODO: fix imported libs (spdep not loaded), fix factor in output
+
+#' Find dims with high spatial autocorrelation
+#'
+#' This function can be used to find dims with spatial structure in ST datasets.
+#' A more detailed decription of the algorithm is outlined in the Details section below.
+#'
+#' overview of method:
+#' \itemize{
+#'    \item{Build a connection network from the array x,y coordinates for each sample. For a 'Visium' array, this would typically be 6 neighbours
+#'    because of the hexagonal structure of spots.}
+#'    \item{Combine connection networks from multiple samples}
+#'    \item{Compute the lag vector for each feature}
+#'    \item{Compute the correlation between the lag vector and the original vector}
+#' }
+#' The connection network is build by defining edges between each spot and its `nNeighborurs` closest
+#' neighbours that are within a maximum distance defined by `maxdist`. This is to make sure that spots
+#' along the tissue edges or holes have the correct number of neighbours. A connection network is built for
+#' each section separately but they are then combined into one large connection network so that the
+#' autocorrelation can be computed for the whole dataset.
+#'
+#' Now that we have a neighbour group defined for
+#' each spot, we can calculate the lag vector for each feature. The lag vector of a features is essentially
+#' the summed expression of that feature in the neighbour groups, computed for all spots and can be thought
+#' of as a "smoothing" estimate.
+#'
+#' If we consider a spot A and its neighbours nbA, a feature with high spatial
+#' corelation should have similar expression levels in both groups. We can therefore compute the a
+#' correlation score between the lag vector and the "normal" expression vector to get an estimate of
+#' the spatial autocorrelation.
+#'
+#' @param object Seurat object
+#' @param dims dims to rank by spatial autocorrelation. If no dims are provided, the
+#' all dims will be used
+#' @param reduction dimensionality reduction object to pull data from
+#' @param nNeighbours Number of neighbours to find for each spot, For Visium data, this parameter is set to
+#' 6 because of the spots are arranged in a hexagonal pattern and should have maximum 6 neighbors.
+#' @param maxdist Maximum allowed distance to define neighbouring spots [default: 1.5]. If not provided, a
+#' maximum distance is automatically selected depending on the platform. For Visium data, this maximum distance
+#' is set to 150 microns.
+#'
+#' @return data.frame with gene names and correlation scores
+#'
+#' @importFrom Matrix bdiag
+#' @importFrom spdep mat2listw
+#'
+CorSpatialDims <- function (
+  object,
+  dims = NULL,
+  reduction = "pca",
+  nNeighbours = NULL,
+  maxdist = NULL
+) {
+
+  # Check if adespatial is installed
+  #if (!requireNamespace("adespatial")) stop("R package adespatial is required to run this function ... \n")
+  #if (!requireNamespace("spdep")) stop("R package spdep is required to run this function ... \n")
+
+  # Collect Staffli object
+  if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
+  st.object <- GetStaffli(object)
+
+  # Obtain data
+  dims <- dims %||% Reductions(object)[1]
+  data.use <- t(object[[reduction]]@cell.embeddings)
+
+  # Create a combined network for the samples
+  CN <- do.call(rbind, GetSpatNet(object = object, nNeighbours = nNeighbours, maxdist = maxdist))
+  resCN <- as.matrix(data.frame(reshape2::dcast(CN, formula = from ~ to, value.var = "distance", fill = 0), row.names = 1))
+  resCN[resCN > 0] <- 1
+  empty.CN <- matrix(0, nrow = ncol(data.use), ncol = ncol(data.use), dimnames = list(colnames(data.use), colnames(data.use)))
+  colnames(resCN) <- gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))
+  colnames(resCN) <- gsub(pattern = "^X", replacement = "", x = colnames(resCN))
+  empty.CN[rownames(resCN), colnames(resCN)] <- resCN
+  listw <- mat2listw(empty.CN)
+  fun <- function (x) lag.listw(listw, x, TRUE)
+
+  # Calculate the lag matrix from the network
+  #tablag <- apply(t(data.use), 2, fun)
+  tablag <- lapply(1:nrow(data.use), function(i) {
+    fun(x = data.use[i, ])
+  })
+  tablag <- do.call(rbind, tablag)
+  sp.cor <- unlist(lapply(1:nrow(data.use), function(i) {
+    cor(data.use[i, ], tablag[i, ])
+  }))
+
+  res <- data.frame(gene = rownames(data.use), cor = sp.cor, stringsAsFactors = F)
+  res <- res[order(sp.cor, decreasing = T), ]
+  rownames(res) <- res$gene
+  return(res)
+}

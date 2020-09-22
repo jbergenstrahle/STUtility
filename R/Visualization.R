@@ -1305,7 +1305,6 @@ spatial_feature_plot <- function (
   } else {
     stop(paste0(paste(px.ids, collapse = " and "), " coordinates are not present in meta data."), call. = FALSE)
   }
-
   if (ncol(x = data) < 3 & !is.null(features)) {
     stop("None of the requested features were found: ",
          paste(features, collapse = ", "),

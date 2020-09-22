@@ -1111,36 +1111,46 @@ CropImages.Staffli <- function (
   if (!all(sampleids %in% object@samplenames)) {
     stop("Invalid sample ids ", paste(sampleids, ccollapse = ", "), "... \n")
   }
+  new_sampleids <- paste0(1:length(sampleids))
 
   # Set xdim
   xdim <- xdim %||% {
     object@xdim
   }
 
-  imgs <- object@rasterlists$raw
+  img_files <- setNames(object@imgs, nm = paste0(1:length(object@imgs)))[sampleids]
+  imgs <- object@rasterlists$raw[sampleids]
   if (length(object@dims) > 0) {
-    dims <- object@dims
+    dims <- object@dims[sampleids]
   } else {
     dims <- list()
   }
 
-  spots.keep <- rownames(object@meta.data)
+  # Rename all lists with new sampleids
+  img_files <- setNames(img_files, nm = new_sampleids)
+  dims <- setNames(dims, nm = new_sampleids)
+  crop.geometry.list <- setNames(crop.geometry.list, nm = new_sampleids)
 
-  for (i in sampleids) {
-    path <- object@imgs[as.integer(i)]
-    if (verbose) cat("  Reading ", path , " for sample ", object@meta.data[, "sample"][i], " ... \n", sep = "")
+  # Create mepty imgge list
+  imgs <- list()
+  new.meta.data <- data.frame()
+
+  for (i in seq_along(new_sampleids)) {
+    s <- new_sampleids[i]
+    path <- img_files[s]
+    if (verbose) cat("  Reading ", path , " for sample ", sampleids[i], " ... \n", sep = "")
     im <- image_read(path)
     # Add image data
     ds <- image_info(im)
-    geometry <- crop.geometry.list[[i]]
+    geometry <- crop.geometry.list[[s]]
     c(width_crop, height_crop, tl_x, tl_y) %<-% as.numeric(unlist(strsplit(geometry, "x|\\+")))
     im <- im %>% image_crop(geometry)
 
     # Crop xy coords
-    xy <- setNames(object[[object[[, "sample", drop = T]] == paste0(i), c("original_x", "original_y")]], c("pixel_x", "pixel_y"))
+    xy <- setNames(object[[object[[, "sample", drop = T]] == sampleids[i], c("original_x", "original_y")]], c("pixel_x", "pixel_y"))
     xy$pixel_x <- xy$pixel_x - tl_x
     xy$pixel_y <- xy$pixel_y - tl_y
-    object[[object[[, "sample", drop = T]] == paste0(i), c("pixel_x", "pixel_y")]] <- xy
+    #meta.data[meta.data[, "sample", drop = T] == sampleids[i], c("pixel_x", "pixel_y")] <- xy
 
     # Change image width and height
     imnew_info <- image_info(im)
@@ -1152,28 +1162,34 @@ CropImages.Staffli <- function (
     k2 <- 0 > xy$pixel_y | xy$pixel_y > ds$height
     k <- (k1 | k2)
 
-    spots <- rownames(object@meta.data)[object[[, "sample", drop = T]] == paste0(i)]
-    spots.keep <- setdiff(spots.keep, spots[k])
+    spots <- rownames(object@meta.data)[object[[, "sample", drop = T]] == sampleids[i]]
+    mdat <- xy[spots[!k], ]
+    mdat$sample <- s
+    new.meta.data <- rbind(new.meta.data, mdat)
 
-    dims[[i]] <- ds
+    dims[[s]] <- ds
 
     if (imnew_info$width > xdim) {
       im <- image_scale(im, paste0(xdim))
     }
 
-    imgs[[i]] <- as.raster(im)
+    imgs[[s]] <- as.raster(im)
     if (time.resolve) {
       gc()
       sleepy(5)
     }
   }
 
+  object@platforms <- setNames(setNames(object@platforms, object@samplenames)[sampleids], nm = new_sampleids)
+  object@pixels.per.um <- setNames(object@pixels.per.um[sampleids], nm = new_sampleids)
   object@rasterlists <- object@rasterlists["raw"]
   object@rasterlists[["raw"]] <- imgs
   object@dims <- dims
   object@xdim <- xdim
-
-  object@meta.data <- object@meta.data[spots.keep, ]
+  object@samplenames <- new_sampleids
+  object@transformations <- list()
+  object@limits <- list()
+  object@meta.data <- new.meta.data
 
   return(object)
 }
