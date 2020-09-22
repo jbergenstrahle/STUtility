@@ -80,6 +80,7 @@ Collate:
     'generics.R'
     'Staffli.R'
     'RunNMF.R'
+    'Spatial_LR.R'
     'Spatial_genes.R'
     'Visualization_utilities.R'
     'Visualization.R'

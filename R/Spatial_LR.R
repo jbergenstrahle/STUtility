@@ -24,7 +24,7 @@
 #' @importFrom pbmcapply pbmclapply
 #' @importFrom parallel detectCores
 #' @importFrom stats fisher.test p.adjust
-#' @importFrom %<-%
+#' @importFrom zeallot %<-%
 #'
 SpatialLR <- function (
   object,
