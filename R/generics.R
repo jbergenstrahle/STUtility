@@ -265,10 +265,13 @@ ManualAlignImages <- function (
 #' will be applied to the original HE images, i.e. the images that were loaded when running `LoadImages`. See details
 #' below for more information.
 #' @param xdim Maximum width of cropped window
+#' @param return.spots.vec Returns a list with `object` as the first element and a list of spots used to convert
+#' between old and new ids.
 #' @param time.resolve Activate to stop R from loading raw images into memory
 #' @param verbose Print messages
 #'
 #' @importFrom magick image_read image_crop image_info image_scale
+#' @importFrom zeallot %<-%
 #'
 #' @export
 
@@ -276,6 +279,7 @@ CropImages <- function (
   object,
   crop.geometry.list,
   xdim = NULL,
+  return.spots.vec = FALSE,
   time.resolve = FALSE,
   verbose = FALSE
 ) {

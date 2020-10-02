@@ -1,3 +1,10 @@
+# TODO: add imports
+#' importFrom spdep lee
+#' importFrom pbmcapply pbmclapply
+#' importFrom parallel detectCores
+#' importFrom stats fisher.test p.adjust
+#' importFrom zeallot %<-%
+
 #' Detect ligand-receptor interactions
 #'
 #' This function can be used to find ligand-receptor pairs that are expressed
@@ -19,12 +26,6 @@
 #' @param verbose Print messages
 #'
 #' @return data.frame with ligand-receptor interactions
-#'
-#' @importFrom spdep lee
-#' @importFrom pbmcapply pbmclapply
-#' @importFrom parallel detectCores
-#' @importFrom stats fisher.test p.adjust
-#' @importFrom zeallot %<-%
 #'
 SpatialLR <- function (
   object,

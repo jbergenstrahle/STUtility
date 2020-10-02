@@ -2,7 +2,12 @@
 % Please edit documentation in R/Spatial_LR.R
 \name{SpatialLR}
 \alias{SpatialLR}
-\title{Detect ligand-receptor interactions}
+\title{importFrom spdep lee
+importFrom pbmcapply pbmclapply
+importFrom parallel detectCores
+importFrom stats fisher.test p.adjust
+importFrom zeallot %<-%
+Detect ligand-receptor interactions}
 \usage{
 SpatialLR(
   object,

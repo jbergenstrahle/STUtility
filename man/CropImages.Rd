@@ -10,6 +10,7 @@ CropImages(
   object,
   crop.geometry.list,
   xdim = NULL,
+  return.spots.vec = FALSE,
   time.resolve = FALSE,
   verbose = FALSE
 )
@@ -18,6 +19,7 @@ CropImages(
   object,
   crop.geometry.list,
   xdim = NULL,
+  return.spots.vec = FALSE,
   time.resolve = FALSE,
   verbose = FALSE
 )
@@ -40,6 +42,9 @@ will be applied to the original HE images, i.e. the images that were loaded when
 below for more information.}
 
 \item{xdim}{Maximum width of cropped window}
+
+\item{return.spots.vec}{Returns a list with `object` as the first element and a list of spots used to convert
+between old and new ids.}
 
 \item{time.resolve}{Activate to stop R from loading raw images into memory}
 

@@ -1103,6 +1103,7 @@ CropImages.Staffli <- function (
   object,
   crop.geometry.list,
   xdim = NULL,
+  return.spots.vec = FALSE,
   time.resolve = FALSE,
   verbose = FALSE
 ) {
@@ -1134,6 +1135,7 @@ CropImages.Staffli <- function (
   # Create mepty imgge list
   imgs <- list()
   new.meta.data <- data.frame()
+  all_new_spots <- list()
 
   for (i in seq_along(new_sampleids)) {
     s <- new_sampleids[i]
@@ -1143,6 +1145,8 @@ CropImages.Staffli <- function (
     # Add image data
     ds <- image_info(im)
     geometry <- crop.geometry.list[[s]]
+    crw <- as.numeric(unlist(strsplit(geometry, "x|\\+")))
+    if (any(is.na(crw))) stop(paste0("Invalid crop geometry ", geometry, "..."))
     c(width_crop, height_crop, tl_x, tl_y) %<-% as.numeric(unlist(strsplit(geometry, "x|\\+")))
     im <- im %>% image_crop(geometry)
 
@@ -1165,6 +1169,9 @@ CropImages.Staffli <- function (
     spots <- rownames(object@meta.data)[object[[, "sample", drop = T]] == sampleids[i]]
     mdat <- xy[spots[!k], ]
     mdat$sample <- s
+    new_spots <- gsub(pattern = "_1", replacement = paste0("_", s), x = rownames(mdat))
+    rownames(mdat) <- new_spots
+    all_new_spots <- c(all_new_spots, list(data.frame(olds = spots[!k], news = new_spots)))
     new.meta.data <- rbind(new.meta.data, mdat)
 
     dims[[s]] <- ds
@@ -1181,7 +1188,29 @@ CropImages.Staffli <- function (
   }
 
   object@platforms <- setNames(setNames(object@platforms, object@samplenames)[sampleids], nm = new_sampleids)
-  object@pixels.per.um <- setNames(object@pixels.per.um[sampleids], nm = new_sampleids)
+  # Compute minimum spot distance
+  if (length(object@pixels.per.um) == 0) {
+    pixels.per.um <- c()
+    for (i in seq_along(new_sampleids)) {
+      xy <- subset(object[[]], sample == i)[, c("pixel_x", "pixel_y")]
+      d <- dist(xy) %>% as.matrix()
+      diag(d) <- Inf
+      min.distance <- apply(d, 2, min) %>% median() %>% round(digits = 1)
+      if (object@platforms[i] == "1k") {
+        min.spot.distance <- 200
+      } else if (object@platforms[i] == "2k") {
+        min.spot.distance <- 141
+      } else if (object@platforms[i] == "Visium") {
+        min.spot.distance <- 100
+      }
+      pixels.per.um[i] <- min.distance/min.spot.distance
+    }
+    names(pixels.per.um) <- new_sampleids
+    object@pixels.per.um <- pixels.per.um
+  } else {
+    object@pixels.per.um <- setNames(object@pixels.per.um[sampleids], nm = new_sampleids)
+  }
+
   object@rasterlists <- object@rasterlists["raw"]
   object@rasterlists[["raw"]] <- imgs
   object@dims <- dims
@@ -1191,7 +1220,11 @@ CropImages.Staffli <- function (
   object@limits <- list()
   object@meta.data <- new.meta.data
 
-  return(object)
+  if (return.spots.vec) {
+    return(list(object, all_new_spots))
+  } else {
+    return(object)
+  }
 }
 
 
@@ -1218,8 +1251,54 @@ CropImages.Seurat <- function (
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
 
   st.object <- GetStaffli(object)
-  st.object <- CropImages.Staffli(object = st.object, crop.geometry.list = crop.geometry.list, xdim = xdim, time.resolve = time.resolve, verbose = verbose)
-  object <- SubsetSTData(object, spots = rownames(st.object@meta.data))
-  object@tools$Staffli <- st.object
-  return(object)
+  c(st.object, all_spots) %<-% CropImages.Staffli(object = st.object, crop.geometry.list = crop.geometry.list, xdim = xdim, return.spots.vec = TRUE, time.resolve = time.resolve, verbose = verbose)
+  new_objects <- lapply(seq_along(all_spots), function(i) {
+    spots <- all_spots[[i]]
+    ob <- subset(object, cells = spots$olds)
+    # Assays
+    nmat <- ob@assays$RNA@counts
+    colnames(nmat) <- spots$news
+    mdat <- ob@meta.data
+    rownames(mdat) <- spots$news
+    ob.new <- CreateSeuratObject(counts = nmat, meta.data = mdat)
+    all.assays <- names(ob@assays)
+    if (length(all.assays) > 0) {
+      for (as in all.assays) {
+        assay <- ob[[as]]
+        if (length(assay@counts) > 0) {
+          colnames(assay@counts) <- spots$news
+          nassay <- CreateAssayObject(counts = assay@counts)
+        }
+        if (length(assay@data) > 0) {
+          colnames(assay@data) <- spots$news
+          if (length(assay@counts) > 0) {
+            nassay <- CreateAssayObject(data = assay@data)
+          } else {
+            nassay@data <- assay@data
+          }
+        }
+        if (length(assay@scale.data) > 0) {
+          colnames(assay@scale.data) <- spots$news
+          nassay@data <- as(assay@scale.data, "dgCMatrix")
+        }
+        ob.new[[as]] <- nassay
+      }
+    }
+    # Reducs
+    all.reduc <- Reductions(ob)
+    if (length(all.reduc) > 0) {
+      for (red in all.reduc) {
+        ob.new[[red]] <- RenameCells(ob[[red]], new.names = spots$news)
+      }
+    }
+    return(ob.new)
+  })
+
+  if (length(new_objects) > 1) {
+    big_ob <- merge(x = new_objects[[1]], y = new_objects[2:length(new_objects)])
+  } else {
+    big_ob <- new_objects[[1]]
+  }
+  big_ob@tools$Staffli <- st.object
+  return(big_ob)
 }
