@@ -482,7 +482,15 @@ WarpImages.Staffli <- function (
 ) {
 
   # Check if masked images are available
-  if (!"masked" %in% rasterlists(object)) stop(paste0("Masked images are not present in Seurat object"), call. = FALSE)
+  if (!"masked" %in% rasterlists(object)) {
+    if (verbose) cat("Creating dummy masks ...")
+    raw.images <- object["raw"]
+    raw.images.masks <- setNames(lapply(raw.images, function(im) {
+      as.raster(matrix(1, nrow = nrow(im), ncol = ncol(im)))
+    }), nm = names(raw.images))
+    object@rasterlists$masked <- raw.images
+    object@rasterlists$masked.masks <- raw.images.masks
+  }
 
   # Check if the transform list is OK
   if (!all(names(transforms) %in% samplenames(object))) stop(paste0("transforms does not match the sample labels"))
