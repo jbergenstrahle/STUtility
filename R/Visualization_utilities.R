@@ -379,7 +379,7 @@ prep.sb <- function (
         hewidths <- rep(dims[[1]][1], length(unique(data[, features])))
         heheights <- rep(dims[[1]][2], length(unique(data[, features])))
       } else {
-        pxum <- data.frame(pixels.per.um, sample = paste0(indices))
+        pxum <- data.frame(pixels.per.um, sample = factor(paste0(indices), levels = unique(paste0(indices))))
         hewidths <- lapply(dims, function(x) x[1]) %>% unlist()
         heheights <- lapply(dims, function(x) x[2]) %>% unlist()
       }
