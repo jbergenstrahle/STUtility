@@ -35,7 +35,7 @@ GetSpatNet <- function (
   xys = setNames(st.object@meta.data[, c("pixel_x", "pixel_y", "sample")], c("x", "y", "sample"))
 
   # Split x, y, s
-  xys.list <- split(xys, xys$sample)
+  xys.list <- split(xys, xys$sample)[unique(xys$sample)]
 
   # Obtain platforms
   platforms <- st.object@platforms

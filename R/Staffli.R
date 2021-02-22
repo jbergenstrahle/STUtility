@@ -327,7 +327,12 @@ MergeSTData <- function (
   }
 
   # Merge limits
-  limits <- setNames(Reduce(c, lapply(st.objects, function(x) x@limits)), nm = samplenames)
+  check <- Reduce(c, lapply(st.objects, function(x) x@limits))
+  if (length(check) > 0) {
+    limits <- setNames(Reduce(c, lapply(st.objects, function(x) x@limits)), nm = samplenames)
+  } else {
+    limits <- list()
+  }
 
   # Merge dims
   check.dims <- unlist(lapply(st.objects, function(x) length(x@dims)))

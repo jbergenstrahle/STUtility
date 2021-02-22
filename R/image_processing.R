@@ -1159,7 +1159,7 @@ CropImages.Staffli <- function (
     im <- im %>% image_crop(geometry)
 
     # Crop xy coords
-    xy <- setNames(object[[object[[, "sample", drop = T]] == sampleids[i], c("original_x", "original_y")]], c("pixel_x", "pixel_y"))
+    xy <- setNames(object[[object[[, "sample", drop = T]] == sampleids[i], c("x", "y", "original_x", "original_y")]], c("x", "y", "pixel_x", "pixel_y"))
     xy$pixel_x <- xy$pixel_x - tl_x
     xy$pixel_y <- xy$pixel_y - tl_y
     #meta.data[meta.data[, "sample", drop = T] == sampleids[i], c("pixel_x", "pixel_y")] <- xy
@@ -1177,7 +1177,7 @@ CropImages.Staffli <- function (
     spots <- rownames(object@meta.data)[object[[, "sample", drop = T]] == sampleids[i]]
     mdat <- xy[spots[!k], ]
     mdat$sample <- s
-    new_spots <- gsub(pattern = "_1", replacement = paste0("_", s), x = rownames(mdat))
+    new_spots <- gsub(pattern = paste0("_", i), replacement = paste0("_", s), x = rownames(mdat))
     rownames(mdat) <- new_spots
     all_new_spots <- c(all_new_spots, list(data.frame(olds = spots[!k], news = new_spots)))
     new.meta.data <- rbind(new.meta.data, mdat)
@@ -1263,43 +1263,51 @@ CropImages.Seurat <- function (
   new_objects <- lapply(seq_along(all_spots), function(i) {
     spots <- all_spots[[i]]
     ob <- subset(object, cells = spots$olds)
-    # Assays
-    nmat <- ob@assays$RNA@counts
-    colnames(nmat) <- spots$news
-    mdat <- ob@meta.data
-    rownames(mdat) <- spots$news
-    ob.new <- CreateSeuratObject(counts = nmat, meta.data = mdat)
-    all.assays <- names(ob@assays)
-    if (length(all.assays) > 0) {
-      for (as in all.assays) {
-        assay <- ob[[as]]
-        if (length(assay@counts) > 0) {
-          colnames(assay@counts) <- spots$news
-          nassay <- CreateAssayObject(counts = assay@counts)
-        }
-        if (length(assay@data) > 0) {
-          colnames(assay@data) <- spots$news
-          if (length(assay@counts) > 0) {
-            nassay <- CreateAssayObject(data = assay@data)
-          } else {
-            nassay@data <- assay@data
-          }
-        }
-        if (length(assay@scale.data) > 0) {
-          colnames(assay@scale.data) <- spots$news
-          nassay@data <- as(assay@scale.data, "dgCMatrix")
-        }
-        ob.new[[as]] <- nassay
-      }
+    if ("SCT" %in% names(ob)) {
+      DefaultAssay(ob) <- "RNA"
+      ob@assays$SCT <- NULL
     }
+    ob@assays <- lapply(ob@assays, function(assay) {
+      assay <- RenameCells(object = assay, new.names = spots$news)
+    })
+    ob@reductions <- lapply(ob@reductions, function(reduc) {
+      reduc <- RenameCells(object = reduc, new.names = spots$news)
+    })
+    ob@graphs <- list()
+    ob@neighbors <- list()
+    rownames(ob@meta.data) <- spots$news
+    #ob.new <- CreateSeuratObject(counts = nmat, meta.data = mdat)
+    # all.assays <- names(ob@assays)
+    # if (length(all.assays) > 0) {
+    #   for (as in all.assays) {
+    #     assay <- ob[[as]]
+    #     if (length(assay@counts) > 0) {
+    #       colnames(assay@counts) <- spots$news
+    #       nassay <- CreateAssayObject(counts = assay@counts)
+    #     }
+    #     if (length(assay@data) > 0) {
+    #       colnames(assay@data) <- spots$news
+    #       if (length(assay@counts) > 0) {
+    #         nassay <- CreateAssayObject(data = assay@data)
+    #       } else {
+    #         nassay@data <- assay@data
+    #       }
+    #     }
+    #     if (length(assay@scale.data) > 0) {
+    #       colnames(assay@scale.data) <- spots$news
+    #       nassay@data <- as(assay@scale.data, "dgCMatrix")
+    #     }
+    #     ob.new[[as]] <- nassay
+    #   }
+    # }
     # Reducs
-    all.reduc <- Reductions(ob)
-    if (length(all.reduc) > 0) {
-      for (red in all.reduc) {
-        ob.new[[red]] <- RenameCells(ob[[red]], new.names = spots$news)
-      }
-    }
-    return(ob.new)
+    #all.reduc <- Reductions(ob)
+    #if (length(all.reduc) > 0) {
+    #  for (red in all.reduc) {
+    #    ob.new[[red]] <- RenameCells(ob[[red]], new.names = spots$news)
+    #  }
+    #}
+    return(ob)
   })
 
   if (length(new_objects) > 1) {
@@ -1308,5 +1316,17 @@ CropImages.Seurat <- function (
     big_ob <- new_objects[[1]]
   }
   big_ob@tools$Staffli <- st.object
+  
+  # Reductions
+  if (length(object@reductions) > 0 & length(new_objects) > 1) {
+    big_ob@reductions <- setNames(lapply(names(object@reductions), function(reduc.name) {
+      reduc <- new_objects[[1]][[reduc.name]]
+      for (ob in new_objects[2:length(new_objects)]) {
+        reduc@cell.embeddings <- rbind(reduc@cell.embeddings, ob[[reduc.name]]@cell.embeddings)
+      }
+      return(reduc)
+    }), names(object@reductions))
+  }
+  
   return(big_ob)
 }

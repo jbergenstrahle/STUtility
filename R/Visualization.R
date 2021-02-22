@@ -832,9 +832,16 @@ SmoothPlot <- function (
   if (image.type == "processed") {
     msk.type <- paste0(image.type, ".masks")
     image.masks <- st.object[msk.type]
-  } else if ("masked.masks" %in% names(object@tools)) {
+  } else if ("masked.masks" %in% names(st.object@rasterlists)) {
     msk.type <- paste0(image.type, ".masks")
     image.masks <- st.object[msk.type]
+  } else {
+    cat("Creating dummy masks ...")
+    raw.images <- st.object["raw"]
+    raw.images.masks <- setNames(lapply(raw.images, function(im) {
+      as.raster(matrix(1, nrow = nrow(im), ncol = ncol(im)))
+    }), nm = names(raw.images))
+    image.masks <- raw.images.masks
   }
   samplenames <- names(st.object@samplenames)
 
@@ -858,8 +865,8 @@ SmoothPlot <- function (
   edges.list <- list()
   p.list <- lapply(1:length(unique(data[, "sample"])), function(i) {
     data_subset <- subset(data, sample == i)
-    dims <- st.object@rasterlists$processed.masks[[i]] %>% dim()
     if (image.type %in% c('raw', 'masked', 'processed')) {
+      dims <- st.object@rasterlists$raw[[i]] %>% dim()
       extents <- st.object@dims[[i]][2:3] %>% as.numeric()
       data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/(extents[1]/dims[2])
     } else {
@@ -887,7 +894,7 @@ SmoothPlot <- function (
       p <- m %>% as.cimg()
     }
   })
-
+  
   # Draw on new device
   ncol <- ncol %||% ceiling(sqrt(length(p.list)))
   nrow <- ceiling(length(p.list)/ncol)

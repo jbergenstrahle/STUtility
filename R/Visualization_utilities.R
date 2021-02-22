@@ -274,7 +274,7 @@ obtain.array.coords <- function (
     image.type <- "processed"
   } else if ("raw" %in% names(st.object@rasterlists)) {
     data <- cbind(data, setNames(st.object[[spots, c("pixel_x", "pixel_y")]], nm = c("x", "y")))
-    image.type <- "processed"
+    image.type <- "raw"
   } else if (all(c("adj_x", "adj_y") %in% colnames(st.object[[]]))) {
     data <- cbind(data, setNames(st.object[[spots, c("adj_x", "adj_y")]], nm = c("x", "y")))
   } else if (all(c("x", "y") %in% colnames(st.object[[]]))) {
