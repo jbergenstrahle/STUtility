@@ -196,9 +196,9 @@ InputFromTable <- function (
     if (platforms[i] == "Visium") {
       # Load data
       if (getExtension(path) %in% c("h5", "mtx") | dir.exists(path)) {
-        counts[[path]] <- st.load.matrix(path, visium = TRUE)
+        counts[[i]] <- st.load.matrix(path, visium = TRUE)
       } else if (getExtension(path) %in% c("tsv", "tsv.gz")) {
-        counts[[path]] <- t(st.load.matrix(path))
+        counts[[i]] <- t(st.load.matrix(path))
       } else {
         stop("Currently only .h5, .mtx and .tsv formats are supported for Visium samples")
       }
@@ -209,17 +209,17 @@ InputFromTable <- function (
       # Check that spotfiles are provided
       #if (!"spotfiles" %in% colnames(infotable)) stop("Spotfiles are required for 10X Visium samples", call. = FALSE)
       if ("spotfiles" %in% colnames(infotable)) {
-        spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = ","), stringsAsFactors = F)
+        spotsData <- data.frame(parse.spot.file(infotable[i, "spotfiles"], delim = ","), stringsAsFactors = F)
         if (ncol(spotsData) == 1) {
-          spotsData <- data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"], delim = "\t"), stringsAsFactors = F)
+          spotsData <- data.frame(parse.spot.file(infotable[i, "spotfiles"], delim = "\t"), stringsAsFactors = F)
           if (ncol(spotsData) == 6) nms <-  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y") else nms <- c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y", "selected")
           spotsData <- setNames(spotsData, nm = nms)
           if (ncol(spotsData) == 7 & !disable.subset) {
             spotsData <- subset(spotsData, selected == 1)
           }
           rownames(spotsData) <- paste(spotsData[, "x"], spotsData[, "y"], sep = "x")
-          spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
-          counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+          spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[i]])), ]
+          counts[[i]] <- counts[[i]][, intersect(rownames(spotsData), colnames(counts[[i]]))]
           spotFileData[[i]] <- spotsData
         } else {
           rownames(spotsData) <- as.character(spotsData[, 1])
@@ -256,8 +256,8 @@ InputFromTable <- function (
 
           spotsData[, c("x", "y")] <- spotsData[, c("adj_x", "adj_y")]
           spotsData <- spotsData[,  c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y")]
-          spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[path]])), ]
-          counts[[path]] <- counts[[path]][, intersect(rownames(spotsData), colnames(counts[[path]]))]
+          spotsData <- spotsData[intersect(rownames(spotsData), colnames(counts[[i]])), ]
+          counts[[i]] <- counts[[i]][, intersect(rownames(spotsData), colnames(counts[[i]]))]
           spotFileData[[i]] <- spotsData
         }
       } else {
@@ -267,34 +267,34 @@ InputFromTable <- function (
         warning(paste0("Extracting spot coordinates from gene count matrix headers. It is highly recommended to use spotfiles."), call. = FALSE)
 
         # Check if headers can be extracted
-        spotsData <- GetCoords(colnames(counts[[path]]), delim = "x|_")
+        spotsData <- GetCoords(colnames(counts[[i]]), delim = "x|_")
         if (ncol(spotsData) != 2) stop("Headers are not valid. You have to provide spotfiles or make sure that headers contains (x, y) coordinates", call. = FALSE)
         spotFileData[[i]] <- spotsData
       }
     } else {
       if (transpose) {
-        counts[[path]] <- t(st.load.matrix(path))
+        counts[[i]] <- t(st.load.matrix(path))
       } else{
-        counts[[path]] <- st.load.matrix(path)
+        counts[[i]] <- st.load.matrix(path)
       }
 
       # Load spotdata
       # ------------------------------------------------
       if ("spotfiles" %in% colnames(infotable)){
-        spotsData <- as.data.frame(parse.spot.file(infotable[which(infotable$samples == path), "spotfiles"]))
+        spotsData <- as.data.frame(parse.spot.file(infotable[i, "spotfiles"]))
         if ("selected" %in% colnames(spotsData)) {
           spotsData <- subset(spotsData, selected == 1)
           spotsData$selected <- NULL
         }
         spotsData <- setNames(spotsData, nm = c("x", "y", "adj_x", "adj_y", "pixel_x", "pixel_y"))
         rownames(spotsData) <- paste(spotsData$x, spotsData$y, sep = "x")
-        intersecting.spots <- intersect(rownames(spotsData), colnames(counts[[path]]))
+        intersecting.spots <- intersect(rownames(spotsData), colnames(counts[[i]]))
         spotsData <- spotsData[intersecting.spots, ]
-        counts[[path]] <- counts[[path]][, intersecting.spots]
+        counts[[i]] <- counts[[i]][, intersecting.spots]
         spotFileData[[i]] <- spotsData #Save pixel coords etc
       } else {
         # Obtain x/y coordinates from headers
-        spotsData <- GetCoords(colnames(counts[[path]]), delim = "x|_")
+        spotsData <- GetCoords(colnames(counts[[i]]), delim = "x|_")
         if (ncol(spotsData) != 2) stop("No spotfiles provided and the headers are invalid. Please make sure that the count matrices are correct.")
         spotFileData[[i]] <- spotsData
       }
@@ -415,6 +415,7 @@ InputFromTable <- function (
   } else {
     imgs <- NULL
   }
+  
   m@tools$Staffli <- CreateStaffliObject(imgs = imgs,
                                            meta.data = meta_data_staffli,
                                            platforms = platforms)
