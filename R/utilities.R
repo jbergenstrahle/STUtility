@@ -139,7 +139,7 @@ palette.select <- function(palette, info = F) {
 #'
 #' @return A Seurat object with covnerted gene ids
 #' @export
-ConvertGeneNames <- function(
+ConvertGeneNames <- function (
   exprMat,
   annotation,
   id.column,
