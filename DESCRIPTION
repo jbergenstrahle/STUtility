@@ -24,6 +24,7 @@ Depends:
   Seurat (>= 3.0.0),
 	ggplot2 (>= 3.2.0)
 Imports:
+
   RColorBrewer,
   cowplot,
   dplyr,
