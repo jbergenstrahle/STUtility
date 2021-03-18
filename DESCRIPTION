@@ -42,7 +42,7 @@ Imports:
   akima (>= 0.6),
   imager (>= 0.41),
   shiny (>= 1.3.0),
-	raster (>= 3.0),
+  raster (>= 3.0),
   magick (>= 2.0),
   Morpho (>= 2.7),
   Rvcg (>= 0.18),
