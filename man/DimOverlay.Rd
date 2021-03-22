@@ -10,8 +10,8 @@ DimOverlay(
   reduction = NULL,
   sampleids = 1,
   spots = NULL,
-  ncols.dims = NULL,
-  ncols.samples = NULL,
+  ncols = NULL,
+  layout.by.dims = TRUE,
   type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
@@ -46,13 +46,10 @@ should be a vector of length 2 specifying the dimensions of the original HE imag
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{ncols.dims}{Number of columns passed to \code{\link{DimOverlay}}. For example,
-if you are plotting 4 dims, `ncols.dims = 2` will arrange the \code{\link{DimOverlay}}
-plots into a 2x2 grid [default: `length(dims)`]. (see \emph{Arrange plots*} for a detailed description)}
-
-\item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
-if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots into a 2x2 grid [default: `1`].
+\item{ncols}{Number of columns in the subplot layout grid. 
 (see \emph{Arrange plots} for a detailed description)}
+
+\item{layout.by.dims}{Flip the arrangement of the subplot layout grid.}
 
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
@@ -130,11 +127,10 @@ where a 50/50 mixture gives yellow color.
 \section{Arrange plots}{
 
 
-The `ncols.dims` argument will determine how each subplot called using
-\code{\link{DimOverlay}} is arranged and will by default put all dims in 1 row, i.e.
-`ncols.dims = length(dims)`. The `ncols.samples` argument will determine how these subplots
-are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
-The output layout matrix would then be `length(samples)*length(dims)`
+The `ncols` argument will determine the number of columns in the grid of subplots layout output by
+\code{\link{DimOverlay}}. By default, the subplots are arranged with dimensions in columns and sections
+in rows where `ncols = length(dims)`. The `layout.by.dims` can be used to flip the arrangement
+so that the sections are put in columns and dimensions along rows.
 }
 
 \examples{
@@ -158,6 +154,6 @@ DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, type = "masked")
 
 }
 \seealso{
-\code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
+\code{\link{turePlot}} and \code{\link{ST.DimPlot}} for how to plot features
 without the HE image and \code{\link{FeatureOverlay}} for how to overlay feature plots on the HE images.
 }

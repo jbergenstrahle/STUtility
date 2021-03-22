@@ -80,7 +80,7 @@ option.}
 
 \item{dark.theme}{Switches color of scalebar to 'white'}
 
-\item{highlight.edges}{SHould edges be highlighted? [default: TRUE]}
+\item{highlight.edges}{Should edges be highlighted? [default: TRUE]}
 
 \item{ncol}{Number of columns to arrange the samples into. This can for example be useful to adjust if you want to visualize the samples
 in just in one row or one column.}

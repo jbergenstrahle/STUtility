@@ -21,7 +21,6 @@ ST.ImagePlot(
   spot.colors = NULL,
   center.zero = TRUE,
   plot.title = NULL,
-  split.labels = FALSE,
   dark.theme = FALSE,
   pixels.per.um = NULL,
   limits = NULL,
@@ -69,9 +68,6 @@ If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradien
 the interpretaion of the output plot.}
 
 \item{plot.title}{String specifying the title of the plot}
-
-\item{split.labels}{Only works if the features are specified by character vectors.
-The plot will be split into one plot for each group label, highlighting the labelled spots.}
 
 \item{dark.theme}{Switches color of scalebar to 'white'}
 

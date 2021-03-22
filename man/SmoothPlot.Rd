@@ -49,7 +49,7 @@ the interpretaion of the output plot.}
 
 \item{dark.theme}{Switches color of scalebar to 'white'}
 
-\item{highlight.edges}{SHould edges be highlighted? [default: TRUE]}
+\item{highlight.edges}{Should edges be highlighted? [default: TRUE]}
 
 \item{...}{Parameters passed to geom_point()}
 }

@@ -9,8 +9,8 @@ FeatureOverlay(
   features,
   sampleids = 1,
   spots = NULL,
-  ncols.features = NULL,
-  ncols.samples = NULL,
+  ncols = NULL,
+  layout.by.feature = TRUE,
   type = NULL,
   min.cutoff = NA,
   max.cutoff = NA,
@@ -24,7 +24,6 @@ FeatureOverlay(
   palette = NULL,
   cols = NULL,
   spot.colors = NULL,
-  split.labels = FALSE,
   center.zero = FALSE,
   channels.use = NULL,
   dark.theme = FALSE,
@@ -32,7 +31,6 @@ FeatureOverlay(
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
   custom.theme = NULL,
-  split.feature.ncol = NULL,
   verbose = FALSE,
   ...
 )
@@ -49,14 +47,8 @@ FeatureOverlay(
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
 
-\item{ncols.features}{Number of columns passed to \code{\link{FeatureOverlay}}. For example,
-if you are plotting 4 features, `ncols.features = 2` will arrange the \code{\link{FeatureOverlay}}
-plots into a 2x2 grid [default: `length(features)`]. (see \emph{Arrange plots*} for a detailed description)}
-
-\item{ncols.samples}{Number of columns in the layout grid for the samples. For example,
-if you are plotting 4 samples, `ncols.samples = 2` will arrange the plots obtained
-from \code{\link{FeatureOverlay}} plots into a 2x2 grid [default: `1`].
-(see \emph{Arrange plots*} for a detailed description)}
+\item{ncols}{Number of columns in the subplot layout grid. 
+(see \emph{Arrange plots} for a detailed description)}
 
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
@@ -96,9 +88,6 @@ the `sampleids` provided, e.g. if you set `sampleids` to 1 the spot.colors data.
 spots that are present in sample 1. If the spot.colors data.frame contains more than 1 column, only
 the first column will be used.}
 
-\item{split.labels}{Only works if the features are specified by character vectors.
-The plot will be split into one plot for each group label, highlighting the labelled spots.}
-
 \item{center.zero}{Specifies whther or not the colorscale should be centered around 0. For some values, such as Principal Component vectors,
 the distribution of values is centered at 0 and in that case it can be appropriate to use a divergent colorscale with a predefined value for 0.
 If this parameter is set to TRUE, the ggplot2 function \code{scale_color_gradient2} will be used to control the coloring instead of
@@ -119,11 +108,11 @@ scaled independently and if `value.scale = "all"` the features will all have the
 
 \item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
-\item{split.feature.ncol}{Sets the number of columns on if split.labels is active}
-
 \item{verbose}{Print messages}
 
-\item{...}{Parameters passed to DimOverlay}
+\item{...}{Parameters passed to FeatureOverlay}
+
+\item{layout.by.features}{Flip the arrangement of the subplot layout grid.}
 }
 \description{
 Graphs the selected features on a 2D grid of spots overlaid on top of an HE images.
@@ -151,24 +140,10 @@ where a 50/50 mixture gives yellow color.
 \section{Arrange plots}{
 
 
-The `ncols.features` argument will determine how each subplot called using
-\code{\link{DimOverlay}} is arranged and will by default put all dims in 1 row, i.e.
-`ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
-are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
-The output layout matrix would then have the dimensions `length(samples)xlength(features)`
-
-
-
-The `ncols.features` argument will determine how each subplot is arranged and will by default put all features in 1 row, i.e.
-`ncols.features = length(features)`. The `ncols.samples` argument will determine how these subplots
-are arranged and will by default use 1 column, meaning that each subplot is put in its own row.
-The output layout matrix would then have the dimensions `length(samples)xlength(features)`
-}
-
-\section{Splitting categorical features}{
-
-If you are plotting a categorical feature, e.g.cluster labels, you have the option to split each label into facets using \code{split.labels=TRUE}.
-This is very useful if you have many different labels which can make it difficult to distinguish the different colors.
+The `ncols` argument will determine the number of columns in the grid of subplots layout output by
+\code{\link{FeatureOverlay}}. By default, the subplots are arranged with features in columns and sections
+in rows where `ncols = length(features)`. The `layout.by.feature` can be used to flip the arrangement
+so that the sections are put in columns and dimensions along rows.
 }
 
 \examples{
