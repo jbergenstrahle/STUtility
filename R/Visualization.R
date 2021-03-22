@@ -878,8 +878,8 @@ SmoothPlot <- function (
       data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/(extents[1]/dims[2])
     }
 
-    ow <- owin(xrange = c(0, dims[2]), yrange = c(0, dims[1]))
-    p <- ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, variable])
+    ow <- spatstat::owin(xrange = c(0, dims[2]), yrange = c(0, dims[1]))
+    p <- spatstat::ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, variable])
     suppressWarnings({s <- spatstat::Smooth(p, 2, dimyx = dims)})
     m <-  as.matrix(s)
     m[m < 0] <- 0
