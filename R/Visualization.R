@@ -234,7 +234,7 @@ ST.DimPlot <- function (
 
       # Draw plots
       grid.ncol <- grid.ncol %||% length(dims)
-      p <- wrap_plots(plots, ncol = grid.ncol)
+      p <- patchwork::wrap_plots(plots, ncol = grid.ncol)
       if (dark.theme) {
         p <- p & dark_theme()
       }
@@ -321,7 +321,6 @@ ST.DimPlot <- function (
 #'
 #' @inheritParams STPlot
 #' @inheritParams SmoothPlot
-#' @importFrom cowplot plot_grid
 #' @importFrom ggplot2 ggplot theme theme_void
 #' @importFrom zeallot %<-%
 #'
@@ -513,7 +512,7 @@ ST.FeaturePlot <- function (
             return(plot)
           })
       grid.ncol <- grid.ncol %||% length(features)
-      p <- wrap_plots(plots, ncol = grid.ncol)
+      p <- patchwork::wrap_plots(plots, ncol = grid.ncol)
       if (dark.theme) {
           p <- p & dark_theme()
       }
@@ -809,7 +808,7 @@ STPlot <- function (
 #'
 #' @param st.object A Staffli object
 #' @param image.type Specifies the image is "processed", otherwise NULL
-#' @param highlight.edges SHould edges be highlighted? [default: TRUE]
+#' @param highlight.edges Should edges be highlighted? [default: TRUE]
 #'
 #' @inheritParams STPlot
 #'
@@ -881,7 +880,7 @@ SmoothPlot <- function (
 
     ow <- owin(xrange = c(0, dims[2]), yrange = c(0, dims[1]))
     p <- ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, variable])
-    suppressWarnings({s <- Smooth(p, 2, dimyx = dims)})
+    suppressWarnings({s <- spatstat::Smooth(p, 2, dimyx = dims)})
     m <-  as.matrix(s)
     m[m < 0] <- 0
     m <- m/max(m)
@@ -1010,7 +1009,6 @@ SmoothPlot <- function (
 #'
 #' @inheritParams ST.ImagePlot
 #' @inheritParams ST.DimPlot
-#' @importFrom cowplot plot_grid
 #'
 #' @return A ggplot object
 #'
@@ -1215,7 +1213,6 @@ spatial_dim_plot <- function (
 #'
 #' @inheritParams ST.ImagePlot
 #' @inheritParams ST.FeaturePlot
-#' @importFrom cowplot plot_grid
 #'
 #' @return A ggplot object
 #'
