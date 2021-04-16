@@ -580,10 +580,11 @@ setMethod (
 #' @param x A Staffli object
 #' @param type Image type to draw on
 #' @param ... Additional aprameters passed to points
+#' @export
 setMethod (
   f = "plot",
-  signature = "Staffli",
-  definition = function(x, type = NULL, ...) {
+  signature = signature(x = "Staffli", y = "missing"),
+  definition = function(x, y = NULL, type = NULL, ...) {
     object <- x
     ncols <- ceiling(sqrt(length(x = names(object)))); nrows <- ceiling(length(x = names(object))/ncols)
     if (length(object@rasterlists) == 0) {
@@ -618,7 +619,7 @@ setMethod (
         d <- subset(object[[]], sample == s)
         im <- object[type][[s]] %>% as.cimg()
         plot(im, axes = FALSE)
-        points(d[, xy]/(iminfo(object)[[s]]$width/object@xdim), ...)
+        points(d[, xy]/(object@dims[[s]]$width/object@xdim), ...)
       }
     }
   }
