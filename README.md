@@ -15,10 +15,6 @@ BiocManager::install(version = "3.11") #OBS! Require R >4.0.0
 The following packages needs to be manually installed via BiocManager:
 
 ```
-BiocManager::install("SingleCellExperiment")
-
-BiocManager::install("multtest")
-
 BiocManager::install("spdep")
 ```
 
@@ -28,12 +24,26 @@ To install STUtility from github (currently only option), you need to have devto
 install.packages("devtools")
 ```
 
-Additionaly, the package `NNLM` currently needs to be installed via github:
+Finally, install STUtility:
 
 ```
-install_github('linxihui/NNLM')
+devtools::install_github(
+    "jbergenstrahle/STUtility"
+)
 ```
-Finally, install STUtility:
+
+### Install STUtility in an anaconda environment (Mac OS)
+
+From the terminal
+
+```
+conda create -n R4.0
+conda activate R4.0
+conda install -c conda-forge r-essentials r-base r-devtools r-spdep r-hdf5r
+conda install -c bioconda r-fftwtools
+```
+
+From R
 
 ```
 devtools::install_github(
