@@ -1,4 +1,3 @@
-#' Create 3D stack
 #'
 #' Creates a stack of point patterns with aligned data and stores it in a
 #' `Staffli` object.
