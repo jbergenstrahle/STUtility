@@ -8,6 +8,7 @@ ST.DimPlot(
   object,
   dims = c(1, 2),
   spots = NULL,
+  indices = NULL,
   plot.type = "spots",
   blend = FALSE,
   min.cutoff = NA,
@@ -39,6 +40,8 @@ ST.DimPlot(
 \item{dims}{Dimensions to plot [default: 1, 2]}
 
 \item{spots}{Character vector with spot IDs to plot [default: all spots]}
+
+\item{indices}{Indices to subset data by}
 
 \item{plot.type}{Specify the type of plot to use [default: "spots"]. Available options are; "spots" (a "smooth" options will be added soon)}
 
@@ -99,8 +102,6 @@ scale each feature independantly while `value.scale = "all"` will use the same v
 \item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{...}{Extra parameters passed on to \code{\link{t}}}
-
-\item{indices}{Indices to subset data by}
 }
 \value{
 A ggplot object

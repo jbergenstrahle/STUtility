@@ -88,6 +88,7 @@ ST.DimPlot <- function (
   object,
   dims = c(1, 2),
   spots = NULL,
+  indices = NULL,
   plot.type = "spots",
   blend = FALSE,
   min.cutoff = NA,

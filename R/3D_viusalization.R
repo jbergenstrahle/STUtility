@@ -53,6 +53,7 @@ Create3DStack <- function (
     return(coords)
   }))
 
+  if (verbose) cat("Running approximative segmentation of nuclei ... \n")
   scatters <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
     scatter <- scatter_HE(st.object, type = "processed", sample.index = s, maxnum = maxnum, limit = limit, edges = FALSE)
