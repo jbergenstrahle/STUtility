@@ -97,11 +97,11 @@ parse.spot.file = function(path, delim = "\t") {
 #'
 #' @param infotable table with paths to count files and metadata. See details below for more information.
 #' @param transpose transposes the gene expression matrices [default: TRUE]. Only active when reading data
-#' from platforms '1k' or '2k'
-#' @param min.gene.count filter away genes that has a total read count below this threshold
-#' @param min.gene.spots filter away genes that is not expressed below this number of capture spots
-#' @param min.spot.feature.count filter away capture spots that contains a total feature count below this threshold
-#' @param min.spot.count filter away capture spots that contains a total read count below this threshold
+#' from platforms '1k' or '2k'ld
+#' @param minUMICountsPerGene filter away genes that has a total UMI count below this threshold (previously called "min.gene.count")
+#' @param minSpotsPerGene filter away genes that is not expressed below this number of capture spots (previously called "min.gene.spots)
+#' @param minGenesPerSpot ilter away capture spots that contains a total gene count below this threshold (previously called "min.spot.feature.count")
+#' @param minUMICountsPerSpot filter away capture spots that contains a total UMI count below this threshold (previously called "min.spot.count")
 #' @param topN OPTIONAL: Filter out the top most expressed genes
 #' @param annotation data.frame containing columns needed for gene id conversion. See the gene id conversion section
 #' for more information.
@@ -113,7 +113,7 @@ parse.spot.file = function(path, delim = "\t") {
 #' column named "scaleVisium" can be provided with a scaling factor for each sample, or a column named "json" with paths to
 #' the "scalefactors_json.json" files.
 #' @param verbose Print messages
-#' @param ... parameters passed to \code{\link{CreateSeuratObject}}
+#' @param ... additional parameters
 #'
 #' @inheritParams ConvertGeneNames
 #'
@@ -124,10 +124,10 @@ parse.spot.file = function(path, delim = "\t") {
 InputFromTable <- function (
   infotable,
   transpose = TRUE,
-  min.gene.count = 0,
-  min.gene.spots = 0,
-  min.spot.feature.count = 0,
-  min.spot.count = 0,
+  minUMICountsPerGene = 0,
+  minSpotsPerGene = 0,
+  minGenesPerSpot = 0,
+  minUMICountsPerSpot = 0,
   topN = 0,
   annotation = NULL,
   id.column = NULL,
@@ -138,6 +138,25 @@ InputFromTable <- function (
   verbose = TRUE,
   ...
 ){
+  
+  # Check deprecated arguments
+  additional_args <- list(...)
+  if ("min.gene.count" %in% names(additional_args)) {
+    warning("min.gene.counts has been deprecated, please use minUMICountsPerGene instead")
+    minUMICountsPerGene <- additional_args[["min.gene.count"]]
+  }
+  if ("min.gene.spots" %in% names(additional_args)) {
+    warning("min.gene.spots has been deprecated, please use minUMICountsPerGene instead")
+    minSpotsPerGene  <- additional_args[["min.gene.spots"]]
+  }
+  if ("min.spot.feature.count" %in% names(additional_args)) {
+    warning("min.spot.feature.count has been deprecated, please use minGenesPerSpot instead")
+    minGenesPerSpot <- additional_args[["min.spot.feature.count"]]
+  }
+  if ("min.spot.count" %in% names(additional_args)) {
+    warning("min.spot.count has been deprecated, please use minUMICountsPerSpot instead")
+    minUMICountsPerSpot <- additional_args[["min.spot.count"]]
+  }
 
   if (!"samples" %in% colnames(infotable)) stop("No samples have been provided ... \n", call. = FALSE)
 
@@ -377,10 +396,10 @@ InputFromTable <- function (
 
     cnt <- ConvertGeneNames(cnt, annotation, id.column, replace.column)
   }
-
+  
   # ---- pre filtering
-  keep.genes <- rowSums(cnt) >= min.gene.count & rowSums(cnt > 0) > min.gene.spots
-  keep.spots <- colSums(cnt) >= min.spot.count & colSums(cnt > 0) > min.spot.feature.count
+  keep.genes <- rowSums(cnt) >= minUMICountsPerGene & rowSums(cnt > 0) > minSpotsPerGene
+  keep.spots <- colSums(cnt) >= minUMICountsPerSpot & colSums(cnt > 0) > minGenesPerSpot
 
   before <- dim(cnt)
   cnt <- cnt[keep.genes, keep.spots]

@@ -2,7 +2,8 @@
 % Please edit documentation in R/3D_viusalization.R
 \name{Create3DStack}
 \alias{Create3DStack}
-\title{Create 3D stack}
+\title{Creates a stack of point patterns with aligned data and stores it in a
+`Staffli` object.}
 \usage{
 Create3DStack(object, limit = 0.4, maxnum = 50000, nx = 200, verbose = TRUE)
 }

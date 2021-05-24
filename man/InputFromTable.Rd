@@ -7,10 +7,10 @@
 InputFromTable(
   infotable,
   transpose = TRUE,
-  min.gene.count = 0,
-  min.gene.spots = 0,
-  min.spot.feature.count = 0,
-  min.spot.count = 0,
+  minUMICountsPerGene = 0,
+  minSpotsPerGene = 0,
+  minGenesPerSpot = 0,
+  minUMICountsPerSpot = 0,
   topN = 0,
   annotation = NULL,
   id.column = NULL,
@@ -26,15 +26,15 @@ InputFromTable(
 \item{infotable}{table with paths to count files and metadata. See details below for more information.}
 
 \item{transpose}{transposes the gene expression matrices [default: TRUE]. Only active when reading data
-from platforms '1k' or '2k'}
+from platforms '1k' or '2k'ld}
 
-\item{min.gene.count}{filter away genes that has a total read count below this threshold}
+\item{minUMICountsPerGene}{filter away genes that has a total UMI count below this threshold (previously called "min.gene.count")}
 
-\item{min.gene.spots}{filter away genes that is not expressed below this number of capture spots}
+\item{minSpotsPerGene}{filter away genes that is not expressed below this number of capture spots (previously called "min.gene.spots)}
 
-\item{min.spot.feature.count}{filter away capture spots that contains a total feature count below this threshold}
+\item{minGenesPerSpot}{ilter away capture spots that contains a total gene count below this threshold (previously called "min.spot.feature.count")}
 
-\item{min.spot.count}{filter away capture spots that contains a total read count below this threshold}
+\item{minUMICountsPerSpot}{filter away capture spots that contains a total UMI count below this threshold (previously called "min.spot.count")}
 
 \item{topN}{OPTIONAL: Filter out the top most expressed genes}
 
@@ -54,7 +54,7 @@ the "scalefactors_json.json" files.}
 
 \item{verbose}{Print messages}
 
-\item{...}{parameters passed to \code{\link{CreateSeuratObject}}}
+\item{...}{additional parameters}
 }
 \description{
 This function is a wrapper to create a complete S4 Seurat object with all the samples and metadata.

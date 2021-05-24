@@ -45,7 +45,7 @@ Create3DStack <- function (
   coords <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
     coords <- subset(st.object[[]], sample == s)[, c("warped_x", "warped_y")]
-    dims.raw <- iminfo(st.object)[[i]][2:3] %>% as.numeric()
+    dims.raw <- st.object@dims[[i]][2:3] %>% as.numeric()
     dims.scaled <- scaled.imdims(st.object)[[i]]
     sf.xy <- dims.raw[2]/dims.scaled[1]
     coords <- coords/sf.xy
@@ -53,7 +53,6 @@ Create3DStack <- function (
     return(coords)
   }))
 
-  if (verbose) cat("Running approximative segmentation of nuclei ... \n")
   scatters <- do.call(rbind, lapply(seq_along(st.object@samplenames), function(i) {
     s <- st.object@samplenames[i]
     scatter <- scatter_HE(st.object, type = "processed", sample.index = s, maxnum = maxnum, limit = limit, edges = FALSE)
