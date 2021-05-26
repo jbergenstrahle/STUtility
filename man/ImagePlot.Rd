@@ -11,7 +11,8 @@ ImagePlot(
   method = "viewer",
   ncols = NULL,
   annotate = TRUE,
-  darken = FALSE
+  darken = FALSE,
+  fix.axes = FALSE
 )
 }
 \arguments{
@@ -28,6 +29,8 @@ ImagePlot(
 \item{annotate}{Will put a unique id in the top left corner}
 
 \item{darken}{Switches the background to black}
+
+\item{fix.axes}{Fix axes limits to be the same as section 1}
 }
 \description{
 Function used to plot HE images obtained with \code{\link{LoadImages}}

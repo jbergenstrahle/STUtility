@@ -232,8 +232,9 @@ ManualAlignImages <- function (
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
-  custom.edge.detector = NULL,
-  maxnum = 1e3
+  maxnum = 1e3,
+  fix.axes = FALSE,
+  custom.edge.detector = NULL
 ) {
   UseMethod(generic = "ManualAlignImages", object = object)
 }

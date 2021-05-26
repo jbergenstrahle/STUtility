@@ -198,6 +198,7 @@ LoadImages.Seurat <- function (
 #' @param ncols Number of columns in output grid of images
 #' @param annotate Will put a unique id in the top left corner
 #' @param darken Switches the background to black
+#' @param fix.axes Fix axes limits to be the same as section 1
 #'
 #' @importFrom magick image_append image_annotate image_scale
 #'
@@ -210,7 +211,8 @@ ImagePlot <- function (
   method = "viewer",
   ncols = NULL,
   annotate = TRUE,
-  darken = FALSE
+  darken = FALSE,
+  fix.axes = FALSE
 ) {
   # obtain Staffli object
   if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
@@ -270,7 +272,6 @@ ImagePlot <- function (
     final_img <- image_append(Reduce(c, stack), stack = T)
     print(final_img)
   } else if (method == "raster"){
-    #par(mar = c(0, 0.2, 0, 0.2), mfrow = c(nrows, ncols))
     layout.matrix <- t(matrix(c(1:length(images), rep(0, nrows*ncols - length(images))), nrow = ncols, ncol = nrows))
     graphics::layout(mat = layout.matrix)
 
@@ -280,7 +281,12 @@ ImagePlot <- function (
       } else {
         par(mar = c(0, 0.2, 0, 0.2))
       }
-      plot(rst)
+      if (fix.axes) {
+        w <- image_info(images[[1]])$width; h <- image_info(images[[1]])$height
+        plot(rst[1:ifelse(h > nrow(rst), nrow(rst), h), 1:ifelse(w > ncol(rst), ncol(rst), w)])
+      } else {
+        plot(rst)
+      }
     }
     par(mfrow = c(1, 1), mar = c(5, 4, 4, 2) + 0.1)
   } else {
@@ -792,6 +798,7 @@ ManualAlignImages.Staffli <- function (
   edges = TRUE,
   verbose = FALSE,
   maxnum = 1e3,
+  fix.axes = FALSE,
   custom.edge.detector = NULL
 ) {
 
@@ -823,40 +830,72 @@ ManualAlignImages.Staffli <- function (
   ui <- fluidPage(
     useShinyjs(),
     fluidRow(
-      column(3,
+      column(4,
              shiny::hr(),
              actionButton(inputId = "info", label = "Instructions"),
              shiny::hr(),
-             sliderInput(
-               inputId = "angle",
-               label = "Rotation angle",
-               value = 0, min = -120, max = 120, step = 0.1
+             fluidRow(
+               column(width = 6, sliderInput(
+                 inputId = "angle",
+                 label = "Rotation angle",
+                 value = 0, min = -120, max = 120, step = 0.1
+               ))
              ),
-             sliderInput(
-               inputId = "shift_x",
-               label = "Move along x axis",
-               value = 0, min = -200, max = 200, step = 1
+             fluidRow(
+               column(width = 6, sliderInput(
+                 inputId = "shift_x",
+                 label = "Move along x axis",
+                 value = 0, min = -200, max = 200, step = 1
+               )),
+               column(width = 6, sliderInput(
+                 inputId = "shift_y",
+                 label = "Move along y axis",
+                 value = 0, min = -200, max = 200, step = 1
+               ))
+              ),
+             h4("stretch along blue axis:"),
+             fluidRow(
+               column(width = 6, sliderInput(
+                 inputId = "stretch_angle1",
+                 label = "angle",
+                 value = 0, min = -180, max = 180, step = 0.1
+               )),
+               column(width = 6, sliderInput(
+                 inputId = "stretch_factor1",
+                 label = "stretch/squeeze",
+                 value = 1, min = 0.1, max = 2, step = 0.01
+               ))
              ),
-             sliderInput(
-               inputId = "shift_y",
-               label = "Move along y axis",
-               value = 0, min = -200, max = 200, step = 1
+             h4("stretch along red axis:"),
+             fluidRow(
+               column(width = 6, sliderInput(
+                 inputId = "stretch_angle2",
+                 label = "angle",
+                 value = 0, min = -180, max = 180, step = 0.1
+               )),
+               column(width = 6, sliderInput(
+                 inputId = "stretch_factor2",
+                 label = "stretch/squeeze",
+                 value = 1, min = 0.1, max = 2, step = 0.01
+               ))
              ),
-             sliderInput(
-               inputId = "size_spot",
-               label = "Change spot size",
-               value = 0.5, min = 0, max = 5, step = 0.1
-             ),
-             sliderInput(
-               inputId = "size_ref",
-               label = "Change reference point size",
-               value = 0.3, min = 0, max = 5, step = 0.05
-             ),
-             sliderInput(
-               inputId = "size_target",
-               label = "Change target sample point size",
-               value = 0.3, min = 0, max = 5, step = 0.05
-             ),
+             fluidRow(
+               column(4, numericInput(
+                 inputId = "size_spot",
+                 label = "spot size",
+                 value = 0.5, min = 0, max = 5, step = 0.1
+               )),
+               column(4, numericInput(
+                 inputId = "          size_ref",
+                 label = "ref. point size",
+                 value = 0.3, min = 0, max = 5, step = 0.05
+               )),
+               column(4, numericInput(
+                 inputId = "size_target",
+                 label = "sample point size",
+                 value = 0.3, min = 0, max = 5, step = 0.05
+               ))
+              ),
              checkboxInput(inputId = "flip_x",
                            label = "Mirror along x axis",
                            value = FALSE),
@@ -867,7 +906,7 @@ ManualAlignImages.Staffli <- function (
              actionButton("myBtn", "Return aligned data")
       ),
 
-      column(8, plotOutput("scatter")
+      column(7, plotOutput("scatter")
       )
     )
   )
@@ -875,7 +914,8 @@ ManualAlignImages.Staffli <- function (
   server <- function(input, output) {
 
     rotation_angle <- reactive({
-      input$angle
+      rot_angle <- input$angle
+      return(rot_angle)
     })
 
     translation_xy <- reactive({
@@ -887,6 +927,27 @@ ManualAlignImages.Staffli <- function (
       mirrxy <- c(input$flip_x, input$flip_y)
       return(mirrxy)
     })
+    
+    stretch_angle1 <- reactive({
+      str_angle1 <- input$stretch_angle1
+      return(str_angle1)
+    })
+    
+    stretch_factor1 <- reactive({
+      str_factor1 <- input$stretch_factor1
+      return(str_factor1)
+    })
+    
+    stretch_angle2 <- reactive({
+      str_angle2 <- input$stretch_angle2
+      return(str_angle2)
+    })
+    
+    stretch_factor2 <- reactive({
+      str_factor2 <- input$stretch_factor2
+      return(str_factor2)
+    })
+    
 
     pt_size <- reactive({
       input$size_spot
@@ -910,6 +971,10 @@ ManualAlignImages.Staffli <- function (
       xt.yt <- translation_xy()
       xy.alpha <- rotation_angle()
       mirrxy <-  mirror_xy()
+      str.alpha1 <- stretch_angle1()
+      str.factor1 <- stretch_factor1()
+      str.alpha2 <- stretch_angle2()
+      str.factor2 <- stretch_factor2()
 
       # Apply reflections
       center <- apply(scatter.t, 2, mean)
@@ -920,9 +985,13 @@ ManualAlignImages.Staffli <- function (
 
       # Apply translation
       tr.translate <- translate(translate.x = xt.yt[1], translate.y = -xt.yt[2])
+      
+      # Apply stretch
+      tr.stretch1 <- stretch(r = str.factor1, alpha = -str.alpha1, center.cur = center)
+      tr.stretch2 <- stretch(r = str.factor2, alpha = -(str.alpha2 + 90), center.cur = center)
 
       # Combine transformations
-      tr <- tr.translate%*%tr.rotate%*%tr.mirror
+      tr <- tr.stretch2%*%tr.stretch1%*%tr.translate%*%tr.rotate%*%tr.mirror
 
 
       # Apply transformations
@@ -938,20 +1007,35 @@ ManualAlignImages.Staffli <- function (
       c(scatter.t, coords.t, tr, xylimit) %<-% coords.ls
 
       d <- round((sqrt(xylimit[1]^2 + xylimit[2]^2) - xylimit[2])/2)
+      
+      center <- apply(coords.t[, 1:2], 2, mean)
+      
+      arrows.1 <- function(x0, y0, length.ar, angle.ar, ...){
+        
+        angle.ar <- 2*pi*(-angle.ar/360)
+        ab <- cos(angle.ar) * length.ar
+        bc <- sign(sin(angle.ar)) * sqrt(length.ar^2 - ab^2)
+        
+        x1 <- x0 + ab
+        y1 <- y0 + bc
+        
+        arrows(x0, y0, x1, y1, ...)
+      }
 
       plot(fixed.scatter[, 1], fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(d + xylimit[2], -d), xaxt = 'n', yaxt = 'n', ann = FALSE, cex = pt_size_ref())
       points(scatter.t[, 1], scatter.t[, 2], col = "gray", cex = pt_size_target())
       points(coords.t[, 1], coords.t[, 2], col = "red", cex = pt_size())
 
+      arrows.1(x0 = center[1], y0 = center[2], angle.ar = stretch_angle1(), length.ar = 100*stretch_factor1(), lwd = 4, col = "blue")
+      arrows.1(x0 = center[1], y0 = center[2], angle.ar = 90 + stretch_angle2(), length.ar = 100*stretch_factor2(), lwd = 4, col = "red")
     }, height = 800, width = 800)
 
     scatter.coords <- eventReactive(input$sample, {
-      reset("angle"); reset("shift_x"); reset("shift_y"); reset("flip_x"); reset("flip_y")
+      reset("angle"); reset("shift_x"); reset("shift_y"); reset("flip_x"); reset("flip_y"); reset("stretch_factor1"); reset("stretch_factor2"); reset("stretch_angle1"); reset("stretch_angle2")
       if (!is.null(counter)) {
         scatters[[counter]] <<- coords.ls[c(1, 2)]
         if (!is.null(tr.matrices[[counter]])) {
           tr.matrices[[counter]] <<- coords.ls[[3]]%*%tr.matrices[[counter]]
-          #cat("Sample:", counter, "\n",  tr.matrices[[counter]][1, ], "\n", tr.matrices[[counter]][2, ], "\n", tr.matrices[[counter]][3, ], "\n\n")
         } else {
           tr.matrices[[counter]] <<- coords.ls[[3]]
         }
@@ -1027,10 +1111,19 @@ ManualAlignImages.Staffli <- function (
     selected.input.image <- "raw"
   }
 
+  mref <- object[selected.input.image][[reference.index]]
+  
   for (i in processed.ids) {
 
     if (verbose) cat(paste0("Loading masked image for sample ", i, " ... \n"))
     m <- object[selected.input.image][[i]]
+    
+    if (fix.axes) {
+      select.rows <- ifelse(nrow(m) > nrow(mref), nrow(mref), nrow(m))
+      select.cols <- ifelse(ncol(m) > ncol(mref), ncol(mref), ncol(m))
+    } else {
+      select.rows <- nrow(m); select.cols <- ncol(m)
+    }
 
     # Obtain alignment matrix
     tr <- alignment.matrices[[i]]
@@ -1044,6 +1137,10 @@ ManualAlignImages.Staffli <- function (
     dims.scaled <- scaled.imdims(object)[[i]]
     sf.xy <- dims.raw[1]/dims.scaled[2]
     pixel_xy <- subset(object[[]], sample == paste0(i))[, c("pixel_x", "pixel_y")]/sf.xy
+    
+    if (fix.axes) {
+      object@dims[[i]]$width <- round(select.cols*sf.xy); object@dims[[i]]$height <- round(select.rows*sf.xy)
+    }
 
     # Warp pixels
     if (verbose) cat(paste0("Warping pixel coordinates for ", i, " ... \n"))
@@ -1052,11 +1149,11 @@ ManualAlignImages.Staffli <- function (
     warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
 
     if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
-    processed.images[[i]] <- Warp(m, map.rot.backward)
+    processed.images[[i]] <- Warp(m, map.rot.backward)[1:select.rows, 1:select.cols]
 
     msk <- masks[[i]]
     if (verbose) cat(paste0("Warping image mask for ", i, " ... \n"))
-    processed.masks[[i]] <- Warp(msk, map.rot.backward, mask = T)
+    processed.masks[[i]] <- Warp(msk, map.rot.backward, mask = T)[1:select.rows, 1:select.cols]
     if (verbose) cat(paste0("Finished alignment for sample ", i, " \n\n"))
   }
 
@@ -1086,11 +1183,12 @@ ManualAlignImages.Seurat <- function (
   edges = TRUE,
   verbose = FALSE,
   maxnum = 1e3,
+  fix.axes = FALSE,
   custom.edge.detector = NULL
 ) {
   # Check if masked images are available
   if (!"masked" %in% rasterlists(object)) warning(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-  object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, maxnum, custom.edge.detector)
+  object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, maxnum, fix.axes, custom.edge.detector)
   return(object)
 }
 

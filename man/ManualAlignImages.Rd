@@ -12,8 +12,9 @@ ManualAlignImages(
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
-  custom.edge.detector = NULL,
-  maxnum = 1000
+  maxnum = 1000,
+  fix.axes = FALSE,
+  custom.edge.detector = NULL
 )
 
 \method{ManualAlignImages}{Staffli}(
@@ -23,6 +24,7 @@ ManualAlignImages(
   edges = TRUE,
   verbose = FALSE,
   maxnum = 1000,
+  fix.axes = FALSE,
   custom.edge.detector = NULL
 )
 
@@ -33,6 +35,7 @@ ManualAlignImages(
   edges = TRUE,
   verbose = FALSE,
   maxnum = 1000,
+  fix.axes = FALSE,
   custom.edge.detector = NULL
 )
 }
@@ -47,10 +50,10 @@ ManualAlignImages(
 
 \item{verbose}{Print messages}
 
+\item{maxnum}{Maximum grid number}
+
 \item{custom.edge.detector}{Custom function used to detect edges in tissue image. If a function is provided, the
 edges option will be overridden.}
-
-\item{maxnum}{Maximum grid number}
 }
 \value{
 A Staffli object

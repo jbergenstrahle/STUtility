@@ -129,6 +129,7 @@ translate <- function (
 #' @param mirror.x,mirror.y Logical specifying whether or not an
 #' object should be reflected
 #' @param center.cur Coordinates of the current center of mass
+#'
 
 mirror <- function (
   mirror.x = FALSE,
@@ -139,6 +140,44 @@ mirror <- function (
   tr <- rigid.transl(-center.cur[1], -center.cur[2])
   tr <- rigid.refl(mirror.x, mirror.y)%*%tr
   tr <- rigid.transl(center.cur[1], center.cur[2])%*%tr
+  return(tr)
+}
+
+
+#' Stretch along angle
+#' 
+#' Creates a transformation matrix that stretches an object
+#' along a specific axis
+#' 
+#' @param r stretching factor
+#' @param alpha angle
+#' @param center.cur Coordinates of the current center of mass
+#' 
+
+stretch <- function(r, alpha, center.cur) {
+  center.cur <- c(center.cur, 0)
+  tr <- rigid.transl(-center.cur[1], -center.cur[2])
+  tr <- rigid.rot(alpha, forward = TRUE)%*%tr
+  tr <- rigid.stretch(r)%*%tr
+  tr <- rigid.rot(alpha, forward = FALSE)%*%tr
+  tr <- rigid.transl(center.cur[1], center.cur[2])%*%tr
+  return(tr)
+}
+
+
+#' Creates a transformation matrix for rotation
+#' 
+#' Creates a transformation matrix for clockwise rotation by 'alpha' degrees
+#' 
+#' @param alpha rotation angle
+#' 
+
+rigid.rot <- function (
+  alpha = 0,
+  forward = TRUE
+) {
+  alpha <- 2*pi*(alpha/360)
+  tr <- matrix(c(cos(alpha), ifelse(forward, -sin(alpha), sin(alpha)), 0, ifelse(forward, sin(alpha), -sin(alpha)), cos(alpha), 0, 0, 0, 1), nrow = 3)
   return(tr)
 }
 
@@ -198,6 +237,20 @@ rigid.refl <- function (
   }
   return(tr)
 }
+
+#' Creates a transformation matrix for stretching
+#' 
+#' Creates a transformation matrix for stretching by a factor of r 
+#' along the x axis.
+#' 
+#' @param r stretching factor
+
+rigid.stretch <- function (
+  r
+) {
+  tr <- matrix(c(r, 0, 0, 0, 1, 0, 0, 0, 1), ncol = 3)
+}
+
 
 #' Combines rigid tranformation matrices
 #'
