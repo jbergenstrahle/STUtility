@@ -44,13 +44,13 @@ ManualAlignImages(
 
 \item{type}{Image type to use as input for alignment [default: 'masked.masks']}
 
-\item{reference.index}{Specifies reference sample image for alignment(default: 1)}
+\item{reference.index}{Specifies reference sample image for alignment [default: 1]}
 
-\item{edges}{Uses the tissue edges as points set for alignment}
+\item{edges}{Uses the tissue edges for alignment}
 
 \item{verbose}{Print messages}
 
-\item{maxnum}{Maximum grid number}
+\item{maxnum}{Maximum number of points to display in the app}
 
 \item{custom.edge.detector}{Custom function used to detect edges in tissue image. If a function is provided, the
 edges option will be overridden.}

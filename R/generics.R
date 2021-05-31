@@ -213,14 +213,14 @@ AlignImages <- function (
 #'
 #' @param object Seurat object
 #' @param type Image type to use as input for alignment [default: 'masked.masks']
-#' @param reference.index Specifies reference sample image for alignment(default: 1)
-#' @param edges Uses the tissue edges as points set for alignment
-#' @param maxnum Maximum grid number
+#' @param reference.index Specifies reference sample image for alignment [default: 1]
+#' @param edges Uses the tissue edges for alignment
+#' @param maxnum Maximum number of points to display in the app
 #' @param custom.edge.detector Custom function used to detect edges in tissue image. If a function is provided, the
 #' edges option will be overridden.
 #' @param verbose Print messages
 #'
-#' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp
+#' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp h4
 #' @importFrom shinyjs useShinyjs reset
 #' @importFrom zeallot %<-%
 #'

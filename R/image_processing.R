@@ -886,7 +886,7 @@ ManualAlignImages.Staffli <- function (
                  value = 0.5, min = 0, max = 5, step = 0.1
                )),
                column(4, numericInput(
-                 inputId = "          size_ref",
+                 inputId = "size_ref",
                  label = "ref. point size",
                  value = 0.3, min = 0, max = 5, step = 0.05
                )),
