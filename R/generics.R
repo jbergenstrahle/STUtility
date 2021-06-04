@@ -215,6 +215,7 @@ AlignImages <- function (
 #' @param type Image type to use as input for alignment [default: 'masked.masks']
 #' @param reference.index Specifies reference sample image for alignment [default: 1]
 #' @param edges Uses the tissue edges for alignment
+#' @param limit Pixel intensity limit for thresholding
 #' @param maxnum Maximum number of points to display in the app
 #' @param custom.edge.detector Custom function used to detect edges in tissue image. If a function is provided, the
 #' edges option will be overridden.
@@ -232,6 +233,7 @@ ManualAlignImages <- function (
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
+  limit = 0.3,
   maxnum = 1e3,
   fix.axes = FALSE,
   custom.edge.detector = NULL

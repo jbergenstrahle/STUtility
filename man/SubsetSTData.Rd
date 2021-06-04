@@ -33,3 +33,13 @@ If you use the default \code{\link{subset}} function there is a risk that images
 are kept in the output Seurat object which will make the STUtility functions
 crash.
 }
+\examples{
+# Subset using meta data to keep spots with more than 1000 unique genes
+se.subset <- SubsetSTData(se, expression = nFeature_RNA >= 1000)
+
+# Subset by a predefined set of spots 
+se.subset <- SubsetSTData(se, spots = keep.spots)
+
+# Subset by a predefined set of features
+se.subset <- SubsetSTData(se, features = keep.features)
+}

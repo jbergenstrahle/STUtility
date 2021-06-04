@@ -31,15 +31,20 @@ scatter_HE <- function (
   } else {
     if (is.null(custom.edge.detector)) {
       im <- as.cimg(object[type][[sample.index]])
-      bw.image <- im[, , 1, 1] %>% as.cimg()
-      #f <- ecdf(bw.image)
-      #bw.image.eq <- f(bw.image) %>% as.cimg(dim = dim(bw.image))
-      #bw.image = grayscale(im)
+      bw.image <- im %>% as.cimg() %>% grayscale()#im[, , 1, 1] %>% as.cimg()
       if (type %in% c("processed.masks", "masked.masks")) {
         xyset = which(bw.image > limit*255, arr.ind = TRUE)
       } else {
-        seg <- imagerExtra::ThresholdAdaptive(bw.image, k = 0.1)
-        xyset = which(!seg, arr.ind = TRUE)
+        #seg <- imagerExtra::ThresholdAdaptive(bw.image, k = 0.1)
+        bw.image <- 255 - bw.image
+        seg <- bw.image > 0.5*255
+        #bw.image <- EBImage::normalize(EBImage::as.Image(bw.image))
+        #f = makeBrush(5, shape='disc', step=FALSE)
+        #f = f/sum(f)
+        #out <- EBImage::normalize(bw.image - EBImage::filter2(bw.image, filter = f))
+        #seg <- out > EBImage::otsu(out)
+        #xyset <- computeFeatures.moment(bwlabel(seg[, , , 1]))[, 1:2]
+        xyset = which(seg, arr.ind = TRUE)
       }
     } else {
       im <- as.cimg(object[type][[sample.index]])

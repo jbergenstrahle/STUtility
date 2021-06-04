@@ -12,6 +12,7 @@ ManualAlignImages(
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
+  limit = 0.3,
   maxnum = 1000,
   fix.axes = FALSE,
   custom.edge.detector = NULL
@@ -23,6 +24,7 @@ ManualAlignImages(
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
+  limit = 0.3,
   maxnum = 1000,
   fix.axes = FALSE,
   custom.edge.detector = NULL
@@ -34,6 +36,7 @@ ManualAlignImages(
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
+  limit = 0.3,
   maxnum = 1000,
   fix.axes = FALSE,
   custom.edge.detector = NULL
@@ -49,6 +52,8 @@ ManualAlignImages(
 \item{edges}{Uses the tissue edges for alignment}
 
 \item{verbose}{Print messages}
+
+\item{limit}{Pixel intensity limit for thresholding}
 
 \item{maxnum}{Maximum number of points to display in the app}
 

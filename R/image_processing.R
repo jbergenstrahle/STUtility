@@ -797,6 +797,7 @@ ManualAlignImages.Staffli <- function (
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
+  limit = 0.3,
   maxnum = 1e3,
   fix.axes = FALSE,
   custom.edge.detector = NULL
@@ -818,7 +819,7 @@ ManualAlignImages.Staffli <- function (
 
   # Obtain point sets from each image
   if (class(custom.edge.detector) == "function") edges <- FALSE
-  scatters <- grid.from.staffli(object, type = type, edges = edges, maxnum = maxnum, custom.edge.detector = custom.edge.detector)
+  scatters <- grid.from.staffli(object, type = type, edges = edges, limit = limit, maxnum = maxnum, custom.edge.detector = custom.edge.detector)
   fixed.scatter <- scatters[[reference.index]]$scatter
   counter <- NULL
   coords.ls <- NULL
@@ -1022,9 +1023,9 @@ ManualAlignImages.Staffli <- function (
         arrows(x0, y0, x1, y1, ...)
       }
 
-      plot(fixed.scatter[, 1], fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(d + xylimit[2], -d), xaxt = 'n', yaxt = 'n', ann = FALSE, cex = pt_size_ref())
-      points(scatter.t[, 1], scatter.t[, 2], col = "gray", cex = pt_size_target())
-      points(coords.t[, 1], coords.t[, 2], col = "red", cex = pt_size())
+      plot(fixed.scatter[, 1], fixed.scatter[, 2], xlim = c(-d, xylimit[1] + d), ylim = c(d + xylimit[2], -d), xaxt = 'n', yaxt = 'n', pch = 19, ann = FALSE, cex = pt_size_ref())
+      points(scatter.t[, 1], scatter.t[, 2], col = "orange", pch = 19, cex = pt_size_target())
+      points(coords.t[, 1], coords.t[, 2], col = "red", pch = 19, cex = pt_size())
 
       arrows.1(x0 = center[1], y0 = center[2], angle.ar = stretch_angle1(), length.ar = 100*stretch_factor1(), lwd = 4, col = "blue")
       arrows.1(x0 = center[1], y0 = center[2], angle.ar = 90 + stretch_angle2(), length.ar = 100*stretch_factor2(), lwd = 4, col = "red")
@@ -1182,13 +1183,14 @@ ManualAlignImages.Seurat <- function (
   reference.index = 1,
   edges = TRUE,
   verbose = FALSE,
+  limit = 0.3,
   maxnum = 1e3,
   fix.axes = FALSE,
   custom.edge.detector = NULL
 ) {
   # Check if masked images are available
   if (!"masked" %in% rasterlists(object)) warning(paste0("Masked images are not present in Seurat object"), call. = FALSE)
-  object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, maxnum, fix.axes, custom.edge.detector)
+  object@tools$Staffli <- ManualAlignImages(GetStaffli(object), type, reference.index, edges, verbose, limit, maxnum, fix.axes, custom.edge.detector)
   return(object)
 }
 
