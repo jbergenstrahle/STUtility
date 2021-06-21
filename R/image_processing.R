@@ -846,12 +846,12 @@ ManualAlignImages.Staffli <- function (
                column(width = 6, sliderInput(
                  inputId = "shift_x",
                  label = "Move along x axis",
-                 value = 0, min = -200, max = 200, step = 1
+                 value = 0, min = -round(object@xdim*(3/4)), max = round(object@xdim*(3/4)), step = 1
                )),
                column(width = 6, sliderInput(
                  inputId = "shift_y",
                  label = "Move along y axis",
-                 value = 0, min = -200, max = 200, step = 1
+                 value = 0, min = -round(object@xdim*(3/4)), max = round(object@xdim*(3/4)), step = 1
                ))
               ),
              h4("stretch along blue axis:"),
