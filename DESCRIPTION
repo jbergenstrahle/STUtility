@@ -47,7 +47,7 @@ Imports:
   Morpho (>= 2.7),
   Rvcg (>= 0.18),
   viridis (>= 0.5.0),
-  spatstat (>= 1.61),
+  spatstat (>= 2.2-0),
 	imagerExtra (>= 1.3.2),
 	scales (>= 1.0.0),
 	data.table (>= 1.12.2),
@@ -84,6 +84,7 @@ Collate:
     'Spatial_genes.R'
     'Visualization_utilities.R'
     'Visualization.R'
+    'Visualization_leaflet.R'
     'facet_grid_SC.R'
     'image_processing_utilities.R'
     'image_processing.R'

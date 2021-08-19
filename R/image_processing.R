@@ -1256,6 +1256,23 @@ CropImages.Staffli <- function (
     crw <- as.numeric(unlist(strsplit(geometry, "x|\\+")))
     if (any(is.na(crw))) stop(paste0("Invalid crop geometry ", geometry, "..."))
     c(width_crop, height_crop, tl_x, tl_y) %<-% as.numeric(unlist(strsplit(geometry, "x|\\+")))
+    
+    # Double check that crop geometry is allowed
+    if (tl_x < 0) {
+      warning(paste0("Top left x coordinate for sample ", i, " outside of image (", tl_x, "). Setting tl_x to 0."))
+      tl_x <- 0
+    } else if (tl_y < 0) {
+      warning(paste0("Top left y coordinate for sample ", i, " outside of image (", tl_y, "). Setting tl_y to 0."))
+      tl_y <- 0
+    } else if ((tl_x + width_crop) > ds$width) {
+      width_crop <- ds$width - tl_x
+      warning(paste0("Bottom right x coordinate for sample ", i, " outside of image. Setting width to ", width_crop, "."))
+    } else if ((tl_y + height_crop) > ds$height) {
+      height_crop <- ds$height - tl_y
+      warning(paste0("Bottom right x coordinate for sample ", i, " outside of image. Setting width to ", height_crop, "."))
+    }
+    geometry <- paste0(width_crop, "x", height_crop, "+", tl_x, "+", tl_y)
+    
     im <- im %>% image_crop(geometry)
 
     # Crop xy coords
@@ -1268,6 +1285,9 @@ CropImages.Staffli <- function (
     imnew_info <- image_info(im)
     ds$width <- imnew_info$width
     ds$height <- imnew_info$height
+    
+    # Save crop info to dims
+    ds$min_x <- tl_x; ds$max_x <- tl_x + width_crop; ds$min_y <- tl_y; ds$max_y <- tl_y + height_crop
 
     # Define spots to keep
     k1 <- 0 > xy$pixel_x | xy$pixel_x > ds$width
@@ -1319,7 +1339,7 @@ CropImages.Staffli <- function (
     object@pixels.per.um <- setNames(object@pixels.per.um[sampleids], nm = new_sampleids)
   }
 
-  object@rasterlists <- object@rasterlists["raw"]
+  #object@rasterlists <- object@rasterlists["raw"]
   object@rasterlists[["raw"]] <- imgs
   object@dims <- dims
   object@xdim <- xdim

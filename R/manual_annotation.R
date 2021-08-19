@@ -38,13 +38,20 @@ NULL
 
 ManualAnnotation <- function (
   object,
+  type = NULL,
   res = 1000,
   verbose = FALSE
 ) {
 
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object not present in Seurat object", call. = FALSE)
   st.object <- GetStaffli(object)
-  img <- st.object@imgs[1]
+  #img <- st.object@imgs[1]
+  type <- type %||% {
+    if (is.null(rasterlists(st.object))) stop("There are no images present in the Seurat object. Run LoadImages() first.", call. = FALSE)
+    choices <- c("processed", "masked", "raw", "processed.masks", "masked.masks")
+    match.arg(choices, rasterlists(st.object), several.ok = T)[1]
+  }
+  img <- st.object@rasterlists[[type]][[1]]
   sampleChoice <- unique(st.object[[, "sample", drop = T]])
 
   # ===================== UI =======================
@@ -84,7 +91,7 @@ ManualAnnotation <- function (
     rv <- reactiveValues(sNr = "1", ann = NULL)
     observeEvent(input$sampleInput, {
       rv$sNr = input$sampleInput
-      rv$ann <- Create_annotation(object, input$sampleInput, res)
+      rv$ann <- Create_annotation(object, type, input$sampleInput, res)
     })
 
     output$Plot1 <- ggiraph::renderGirafe({
@@ -188,18 +195,22 @@ make.plot <- function (
 
 Create_annotation <- function (
   object,
+  type,
   sampleNr,
   res
 ) {
 
   st.object <- GetStaffli(object)
-  st.meta <- subset(cbind(st.object@meta.data[, c("pixel_x", "pixel_y", "sample")], id = object[[]][, "id", drop = T]), sample %in% paste0(sampleNr))
-  coordinates <- setNames(st.meta[, c("pixel_x", "pixel_y", "id")], nm = c("x", "y", "id"))
+  px.ids <- ifelse(rep(type %in% c("raw", "masked", "masked.masks"), 2), c("pixel_x", "pixel_y"), c("warped_x", "warped_y"))
+  st.meta <- subset(cbind(st.object@meta.data[, c(px.ids, "sample")], id = object[[]][, "id", drop = T]), sample %in% paste0(sampleNr))
+  coordinates <- setNames(st.meta[, c(px.ids, "id")], nm = c("x", "y", "id"))
 
-  image <- image_read(st.object@imgs[as.integer(sampleNr)])
-  old_width <- image_info(image)$width
-  image <- image_scale(image, geometry_size_pixels(width = res, preserve_aspect = T))
-  coordinates[, c("x","y")] <- coordinates[, c("x","y")]*(res/old_width)
+  image <- image_read(st.object@rasterlists[[type]][[as.integer(sampleNr)]])
+  old_width <- st.object@dims[[as.integer(sampleNr)]]$width
+  cur_width <- image_info(image)$width
+  #old_width <- image_info(image)$width
+  #image <- image_scale(image, geometry_size_pixels(width = res, preserve_aspect = T))
+  coordinates[, c("x","y")] <- coordinates[, c("x","y")]*(cur_width/old_width)
 
   r <- min(dist(coordinates[, c("x","y")])) / 2
 

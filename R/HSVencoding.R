@@ -247,9 +247,9 @@ HSVPlot <- function (
           data_subset[, c("x", "y")] <- data_subset[, c("x", "y")]/((extents[1]/scale.res)*scale.res/dims[2])
         }
 
-        ow <- spatstat::owin(xrange = c(0, dims[2]*scale.res), yrange = c(0, dims[1]*scale.res))
-        p <- spatstat::ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, ftr])
-        suppressWarnings({s <- spatstat::Smooth(p, sigma*scale.res, dimyx = dims*scale.res)})
+        ow <- spatstat.geom::owin(xrange = c(0, dims[2]*scale.res), yrange = c(0, dims[1]*scale.res))
+        p <- spatstat.geom::ppp(x = data_subset[, "x"], y = data_subset[, "y"], window = ow, marks = data_subset[, ftr])
+        suppressWarnings({s <- spatstat.core::Smooth(p, sigma*scale.res, dimyx = dims*scale.res)})
         m <-  as.matrix(s)
         m[m < 0] <- 0
         m <- m/max(m)
