@@ -6,6 +6,7 @@ vignettes/vignette.Rmd
 vignettes/manual_annotation.Rmd
 vignettes/mouse_olfactory_buld.R
 vignettes/MultiCCA_vignette.Rmd
+R/Visualization_leaflet.R
 vignettes/vignette.Rmd
 .Rhistory
 saved/*

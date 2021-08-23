@@ -14,3 +14,4 @@ inst/rmarkdown
 vignettes/vignette_cache/
 R/CMYK.R
 R/Visualization_leaflet.R
+R_tmp
