@@ -2,22 +2,6 @@
 
 ## Installation
 
-STUtility requires R version >=3.6 and some packages within the Bioconductor suit needs to be installed prior to installing STUtility from github
-
-If you don’t have bioconductor installed:
-
-```
-if (!requireNamespace("BiocManager", quietly = TRUE))
-    install.packages("BiocManager")
-BiocManager::install(version = "3.11") #OBS! Require R >4.0.0
-```
-
-The following packages needs to be manually installed via BiocManager:
-
-```
-BiocManager::install("spdep")
-```
-
 To install STUtility from github (currently only option), you need to have devtools installed:
 
 ```
