@@ -18,7 +18,6 @@ ST.FeaturePlot(
   pt.size = 1,
   pt.alpha = 1,
   pt.border = FALSE,
-  shape.by = NULL,
   palette = NULL,
   cols = NULL,
   dark.theme = FALSE,
@@ -32,7 +31,7 @@ ST.FeaturePlot(
   sb.size = 2.5,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
-  custom.theme = NULL,
+  label.by = NULL,
   ...
 )
 }
@@ -67,9 +66,6 @@ See 'Blending values' below for a more thourough description.}
 \item{pt.alpha}{Adjust point opacity for plotting [default: 1]}
 
 \item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
-
-\item{shape.by}{You can specify any spot attribute (that can be pulled with FetchData) allowing for both different colors
-and different shapes on spots}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
@@ -109,7 +105,11 @@ you have already aligned the sample data (see \code{\link{AlignImages}}, \code{\
 \item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
 scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
 
-\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
+\item{label.by}{Feature to relabel facets by. By default, facets are given a unique section number ranging grom 1 to the number of sections
+available in the `Staffli` object. If you want to relabel these facets you can pass the name of a column that keeps the labels that you 
+want to use. For example, if you wish to rename the facets to use labels defined by a charcater vector in column "section_id" in your
+meta.data slot, you can pass `label.by = "section_id"` to relabel the facets. Only works for categorical group variables with where the 
+number of groups is less than or equal to the number of tissue sections in your Staffli object.}
 
 \item{...}{Extra parameters passed on to \code{\link{t}}}
 }

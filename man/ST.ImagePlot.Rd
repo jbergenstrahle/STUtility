@@ -7,7 +7,6 @@
 ST.ImagePlot(
   data,
   data.type,
-  shape.by,
   variable,
   image,
   dims,
@@ -24,7 +23,7 @@ ST.ImagePlot(
   dark.theme = FALSE,
   pixels.per.um = NULL,
   limits = NULL,
-  custom.theme = NULL,
+  label.by = NULL,
   ...
 )
 }
@@ -33,8 +32,6 @@ ST.ImagePlot(
 and one column with the feature values. Can also include an additional column for shapes.}
 
 \item{data.type}{String specifying the class of the features in data to be plotted}
-
-\item{shape.by}{String specifying the column where the shaping label is stored}
 
 \item{variable}{Name of feature column}
 
@@ -75,7 +72,11 @@ the interpretaion of the output plot.}
 
 \item{limits}{Sets the limits of the colorbar}
 
-\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
+\item{label.by}{Feature to relabel facets by. By default, facets are given a unique section number ranging grom 1 to the number of sections
+available in the `Staffli` object. If you want to relabel these facets you can pass the name of a column that keeps the labels that you 
+want to use. For example, if you wish to rename the facets to use labels defined by a charcater vector in column "section_id" in your
+meta.data slot, you can pass `label.by = "section_id"` to relabel the facets. Only works for categorical group variables with where the 
+number of groups is less than or equal to the number of tissue sections in your Staffli object.}
 
 \item{...}{Parameters passed to geom_point()}
 }

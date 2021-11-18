@@ -50,7 +50,6 @@
 #' @param pt.alpha Adjust opacity of spots.
 #' @param pt.border Should a border be drawn around the spots? [default: TRUE]
 #' @param add.alpha Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter
-#' @param shape.by If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot
 #' @param sigma Smoothing bandwidth; only active if \code{plot.type = 'smooth'}. A single positive number, a numeric vector of length 2, or a function that selects the bandwidth automatically [default: 2].
 #' See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.
 #' @param highlight.edges Highlights the edges of the tissue. Only active if \code{plot.type = 'smooth'} and if the images have been masked.
@@ -90,7 +89,6 @@ HSVPlot <- function (
   pt.alpha = 1,
   pt.border = FALSE,
   add.alpha = FALSE,
-  shape.by = NULL,
   sigma = 2,
   highlight.edges = FALSE,
   cols = NULL,
@@ -98,7 +96,6 @@ HSVPlot <- function (
   grid.ncol = NULL,
   theme = theme_void(),
   scale.res = 1,
-  custom.theme = NULL,
   verbose = FALSE,
   ...
 ) {
@@ -119,14 +116,6 @@ HSVPlot <- function (
 
   # Add group column to data
   data[,  "sample"] <- st.object[[spots, "sample", drop = TRUE]]
-
-  # Add shape column if specified
-  if (!is.null(x = shape.by)) {
-    if (!shape.by %in% colnames(object[[]])) {
-      stop(paste0("Shaping variable (shape.by) ", shape.by, " not found in meta.data slot"), call. = F)
-    }
-    data[, shape.by] <- as.character(object[[shape.by, drop = TRUE]])
-  }
 
   # Obtain array coordinates
   image.type <- "empty"
@@ -199,11 +188,11 @@ HSVPlot <- function (
 
     # Plot combined HSV
     if (!split.hsv) {
-      plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha, pt.border = pt.border,
+      plot <- STPlot(data, data.type, NULL, pt.size, pt.alpha, pt.border = pt.border,
                      palette = "Reds", cols = NULL, ncol = ncol, spot.colors = data$cols,
                      center.zero = F, center.tissue = F, plot.title = "",
                      dims = dims, split.labels = FALSE, dark.theme = dark.theme,
-                     pxum = NULL, sb.size = 2.5, custom.theme = custom.theme, ...)
+                     pxum = NULL, sb.size = 2.5, ...)
       if (dark.theme) {
         plot <- plot + dark_theme()
       }
@@ -214,11 +203,11 @@ HSVPlot <- function (
     } else {
       plots <- lapply(seq_along(data), function (i) {
         data <- data[[i]]
-        plot <- STPlot(data, data.type, shape.by, NULL, pt.size, pt.alpha, pt.border = pt.border,
+        plot <- STPlot(data, data.type, NULL, pt.size, pt.alpha, pt.border = pt.border,
                palette = "Reds", cols = NULL, ncol = ncol, spot.colors = data$cols,
                center.zero = F, center.tissue = F, plot.title = features[i],
                dims = dims, split.labels = FALSE, dark.theme = dark.theme,
-               pxum = NULL, sb.size = 2.5, custom.theme = custom.theme, ...)
+               pxum = NULL, sb.size = 2.5, ...)
         if (dark.theme) {
           plot <- plot + dark_theme()
         }
@@ -430,7 +419,6 @@ spatial_hsv_plot <- function (
   pt.alpha = 1,
   pt.border = FALSE,
   add.alpha = FALSE,
-  shape.by = NULL,
   palette = NULL,
   cols = NULL,
   grid.ncol = NULL,
@@ -438,7 +426,6 @@ spatial_hsv_plot <- function (
   sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
-  custom.theme = NULL,
   verbose = FALSE,
   ...
 ) {
@@ -566,11 +553,11 @@ spatial_hsv_plot <- function (
 
   # Plot combined HSV
   if (!split.hsv) {
-    plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, dims = imdims,
+    plot <- ST.ImagePlot(data, data.type, NULL, image, dims = imdims,
                          pt.size, pt.alpha, pt.border = pt.border, FALSE, palette = "Reds",
                          cols, NULL, spot.colors = data$cols,
                          FALSE, plot.title = "", FALSE, dark.theme,
-                         pixels.per.um, NULL, custom.theme = custom.theme, ...)
+                         pixels.per.um, NULL, ...)
     plot <- plot +
       geom_point(data = data.frame(x = rep(-1, length(features)), y = rep(-1, length(features)), features), aes(x, y, colour = features)) +
       scale_color_manual(values = setNames(ann.cols, features)) +
@@ -582,11 +569,11 @@ spatial_hsv_plot <- function (
   } else {
     plots <- lapply(seq_along(data), function (i) {
       data <- data[[i]]
-      plot <- ST.ImagePlot(data, data.type, shape.by, NULL, image, dims = imdims,
+      plot <- ST.ImagePlot(data, data.type, NULL, image, dims = imdims,
                            pt.size, pt.alpha, pt.border = pt.border, add.alpha = FALSE, palette = "Reds",
                            cols, NULL, spot.colors = data$cols,
                            FALSE, plot.title = features[i], FALSE, dark.theme,
-                           pixels.per.um, NULL, custom.theme = custom.theme, ...)
+                           pixels.per.um, NULL, ...)
       if (dark.theme) {
         plot <- plot + dark_theme()
       }
@@ -673,14 +660,12 @@ HSVOverlay <- function (
   pt.size = 2,
   pt.alpha = 1,
   add.alpha = FALSE,
-  shape.by = NULL,
   palette = NULL,
   cols = NULL,
   split.hsv = FALSE,
   dark.theme = FALSE,
   sample.label = TRUE,
   show.sb = TRUE,
-  custom.theme = NULL,
   verbose = FALSE,
   ...
 ) {
@@ -713,10 +698,10 @@ HSVOverlay <- function (
     spatial_hsv_plot(object = object, features = features, split.hsv = split.hsv,
                      sample.index = s, rescale = rescale, spots = spots, type = type,
                      min.cutoff = min.cutoff, max.cutoff = max.cutoff, slot = slot,
-                     pt.size = pt.size, pt.alpha, pt.border = FALSE, add.alpha = add.alpha, shape.by = shape.by,
+                     pt.size = pt.size, pt.alpha, pt.border = FALSE, add.alpha = add.alpha, 
                      palette = palette, cols = cols, grid.ncol = ncols.features,
                      dark.theme = dark.theme, sample.label = sample.label, show.sb = show.sb,
-                     value.scale = value.scale.list, custom.theme = custom.theme, verbose = verbose)#, ... = ...)
+                     value.scale = value.scale.list, verbose = verbose)#, ... = ...)
   })
 
   p <- cowplot::plot_grid(plotlist = p.list, ncol = ncols.samples)

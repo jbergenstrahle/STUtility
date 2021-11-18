@@ -19,7 +19,6 @@ spatial_hsv_plot(
   pt.alpha = 1,
   pt.border = FALSE,
   add.alpha = FALSE,
-  shape.by = NULL,
   palette = NULL,
   cols = NULL,
   grid.ncol = NULL,
@@ -27,7 +26,6 @@ spatial_hsv_plot(
   sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
-  custom.theme = NULL,
   verbose = FALSE,
   ...
 )
@@ -71,8 +69,6 @@ is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values
 
 \item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
 
-\item{shape.by}{String specifying the column where the shaping label is stored}
-
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 
@@ -90,8 +86,6 @@ option.}
 
 \item{value.scale}{Defines how the dimensionality reduction values should be mapped to the colorbar. `value.scale = "samplewise"` will
 scale each feature independantly while `value.scale = "all"` will use the same value range for all vectors}
-
-\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 

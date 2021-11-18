@@ -60,7 +60,7 @@ CustomFacetWrap <- ggproto (
 
 #' Custom facet wrap function
 #'
-#' @param ... Parameters whcih can be passed to \code{facet_wrap}
+#' @param ... Parameters which can be passed to \code{facet_wrap}
 #' @param scale_overrides List of "scale_override" objects
 #'
 #' @importFrom ggplot2 facet_wrap ggproto

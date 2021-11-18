@@ -18,7 +18,6 @@ spatial_dim_plot(
   pt.border = FALSE,
   add.alpha = FALSE,
   reduction = NULL,
-  shape.by = NULL,
   palette = "MaYl",
   cols = NULL,
   grid.ncol = NULL,
@@ -26,10 +25,9 @@ spatial_dim_plot(
   channels.use = NULL,
   verbose = FALSE,
   dark.theme = FALSE,
-  sample.label = TRUE,
   show.sb = TRUE,
   value.scale = c("samplewise", "all"),
-  custom.theme = NULL,
+  label.by = NULL,
   ...
 )
 }
@@ -66,8 +64,6 @@ See 'Blending values' below for a more thourough description.}
 
 \item{reduction}{Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"}
 
-\item{shape.by}{String specifying the column where the shaping label is stored}
-
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 
@@ -90,14 +86,16 @@ color names specified [default: c("red", "green", "blue)]}
 
 \item{dark.theme}{Switches color of scalebar to 'white'}
 
-\item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
-
 \item{show.sb}{Should the size bar be displayed? [default: TRUE]}
 
 \item{value.scale}{Defines how the feature values should be mapped to the colorbar. If `value.scale = "samplewise"`, each feature will be
 scaled independently and if `value.scale = "all"` the features will all have the same value reange.}
 
-\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
+\item{label.by}{Feature to relabel facets by. By default, facets are given a unique section number ranging grom 1 to the number of sections
+available in the `Staffli` object. If you want to relabel these facets you can pass the name of a column that keeps the labels that you 
+want to use. For example, if you wish to rename the facets to use labels defined by a charcater vector in column "section_id" in your
+meta.data slot, you can pass `label.by = "section_id"` to relabel the facets. Only works for categorical group variables with where the 
+number of groups is less than or equal to the number of tissue sections in your Staffli object.}
 
 \item{...}{Extra parameters passed on to \code{\link{ST.ImagePlot}}}
 }

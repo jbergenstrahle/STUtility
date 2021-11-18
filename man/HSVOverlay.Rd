@@ -19,14 +19,12 @@ HSVOverlay(
   pt.size = 2,
   pt.alpha = 1,
   add.alpha = FALSE,
-  shape.by = NULL,
   palette = NULL,
   cols = NULL,
   split.hsv = FALSE,
   dark.theme = FALSE,
   sample.label = TRUE,
   show.sb = TRUE,
-  custom.theme = NULL,
   verbose = FALSE,
   ...
 )
@@ -75,8 +73,6 @@ is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values
 
 \item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
 
-\item{shape.by}{String specifying the column where the shaping label is stored}
-
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 
@@ -91,8 +87,6 @@ option.}
 \item{sample.label}{Should the sample label be included in the image? [default: TRUE]}
 
 \item{show.sb}{Should a scalebar be drawn? [default: TRUE]}
-
-\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 

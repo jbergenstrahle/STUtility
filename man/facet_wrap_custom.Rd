@@ -7,7 +7,7 @@
 facet_wrap_custom(..., scale_overrides = NULL)
 }
 \arguments{
-\item{...}{Parameters whcih can be passed to \code{facet_wrap}}
+\item{...}{Parameters which can be passed to \code{facet_wrap}}
 
 \item{scale_overrides}{List of "scale_override" objects}
 }

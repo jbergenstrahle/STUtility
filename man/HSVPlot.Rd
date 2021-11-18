@@ -20,7 +20,6 @@ HSVPlot(
   pt.alpha = 1,
   pt.border = FALSE,
   add.alpha = FALSE,
-  shape.by = NULL,
   sigma = 2,
   highlight.edges = FALSE,
   cols = NULL,
@@ -28,7 +27,6 @@ HSVPlot(
   grid.ncol = NULL,
   theme = theme_void(),
   scale.res = 1,
-  custom.theme = NULL,
   verbose = FALSE,
   ...
 )
@@ -68,8 +66,6 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 
 \item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
 
-\item{shape.by}{If NULL, all points are circles (default). You can specify any spot attribute available in the meta.data slot}
-
 \item{sigma}{Smoothing bandwidth; only active if \code{plot.type = 'smooth'}. A single positive number, a numeric vector of length 2, or a function that selects the bandwidth automatically [default: 2].
 See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.}
 
@@ -87,8 +83,6 @@ option.}
 
 \item{scale.res}{Integer value setting the resolution of the output raster image. E.g. scale.res = 2 will double the
 resolution of the output but will also take longer to render. Only active if plot.type is set to 'smooth'.}
-
-\item{custom.theme}{Object of class 'theme' used to change the background theme (see for example \url{https://ggplot2.tidyverse.org/reference/theme.html})}
 
 \item{verbose}{Print messages}
 

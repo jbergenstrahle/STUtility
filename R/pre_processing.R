@@ -92,7 +92,7 @@ Merger <- function(
 getExtension <- function (
   file
 ){
-  ex <- strsplit(basename(file), split="\\.")[[1]]
+  ex <- strsplit(basename(file), split = "\\.")[[1]]
   if (ex[length(ex)] == "gz") suff <- paste(ex[length(ex) - 1], ex[length(ex)], sep = ".") else suff <- ex[length(ex)]
   return(suff)
 }
