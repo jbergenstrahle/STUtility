@@ -46,7 +46,7 @@ Create3DStack <- function (
     s <- st.object@samplenames[i]
     coords <- subset(st.object[[]], sample == s)[, c("warped_x", "warped_y")]
     dims.raw <- st.object@dims[[i]][2:3] %>% as.numeric()
-    dims.scaled <- scaled.imdims(st.object)[[i]]
+    dims.scaled <- lapply(st.object@rasterlists$processed, dim)[[i]]
     sf.xy <- dims.raw[2]/dims.scaled[1]
     coords <- coords/sf.xy
     coords$z <- i

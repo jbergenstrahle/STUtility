@@ -83,6 +83,7 @@ Collate:
     'Spatial_genes.R'
     'Visualization_utilities.R'
     'Visualization.R'
+    'crop_utilities.R'
     'facet_grid_SC.R'
     'image_processing_utilities.R'
     'image_processing.R'

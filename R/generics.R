@@ -217,6 +217,7 @@ AlignImages <- function (
 #' @param edges Uses the tissue edges for alignment
 #' @param limit Pixel intensity limit for thresholding
 #' @param maxnum Maximum number of points to display in the app
+#' @param fix.axes Fix axes of images
 #' @param custom.edge.detector Custom function used to detect edges in tissue image. If a function is provided, the
 #' edges option will be overridden.
 #' @param verbose Print messages

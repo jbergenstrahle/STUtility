@@ -4,12 +4,15 @@
 \alias{SwitchResolution}
 \title{Function used to reload images in different quality and apply image transformations}
 \usage{
-SwitchResolution(object, xdim, verbose = FALSE)
+SwitchResolution(object, xdim, reference.index = 1, verbose = FALSE)
 }
 \arguments{
 \item{object}{Seurat object}
 
 \item{xdim}{Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 2000 pixels)}
+
+\item{reference.index}{Set reference image used for image alignment. This should be the same the reference.index
+used for \code{\link{AlignImages}} or \code{\link{ManualAlignImages}}.}
 
 \item{verbose}{Print messages}
 }

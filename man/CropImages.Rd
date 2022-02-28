@@ -18,6 +18,7 @@ CropImages(
 \method{CropImages}{Staffli}(
   object,
   crop.geometry.list,
+  group.data = NULL,
   xdim = NULL,
   return.spots.vec = FALSE,
   time.resolve = FALSE,

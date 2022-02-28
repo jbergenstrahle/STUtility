@@ -57,6 +57,8 @@ ManualAlignImages(
 
 \item{maxnum}{Maximum number of points to display in the app}
 
+\item{fix.axes}{Fix axes of images}
+
 \item{custom.edge.detector}{Custom function used to detect edges in tissue image. If a function is provided, the
 edges option will be overridden.}
 }

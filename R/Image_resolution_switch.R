@@ -16,6 +16,8 @@
 #'
 #' @param object Seurat object
 #' @param xdim Sets the pixel width for scaling, e.g. 400 (maximum allowed width is 2000 pixels)
+#' @param reference.index Set reference image used for image alignment. This should be the same the reference.index
+#' used for \code{\link{AlignImages}} or \code{\link{ManualAlignImages}}.
 #' @param verbose Print messages
 #'
 #' @importFrom magick image_read image_scale image_info
@@ -39,6 +41,7 @@
 SwitchResolution <- function (
   object,
   xdim,
+  reference.index = 1,
   verbose = FALSE
 ) {
 
@@ -55,20 +58,30 @@ SwitchResolution <- function (
   st.object@xdim <- xdim
   high.res.images <- setNames(lapply(seq_along(names(st.object)), function(i) {
     x <- st.object@imgs[i]
-    im <- image_read(path = x) %>% image_scale(paste0(xdim))
-    if (verbose) cat(paste0("Loaded sample ", i, " image at ", paste0(image_info(im)$width), "x", image_info(im)$height), "resolution ... \n")
+    im <- image_read(path = x)
+    
+    # Check if image has been cropped
+    ds <- st.object@dims[[i]]
+    if (ds$cropped) {
+      crop.geom <- paste0(ds$max_x - ds$min_x, "x", ds$max_y - ds$min_y, "+", ds$min_x, "+", ds$min_y)
+      im <- image_crop(im, geometry = crop.geom)
+    }
+    
+    im <- im %>% image_scale(paste0(xdim))
+    if (verbose) cat(paste0("Loaded section ", i, " image at ", paste0(image_info(im)$width), "x", image_info(im)$height), "resolution ... \n")
+    
     as.raster(im)
   }), nm = names(st.object))
 
   # Blow up masks
   masked.masks <- st.object["masked.masks"]
-  masked.masks <- setNames(lapply(seq_along(masked.masks), function(i) {
-    msk <- masked.masks[[i]]
+  masked.masks <- setNames(lapply(seq_along(masked.masks), function(n) {
+    msk <- masked.masks[[n]]
     msk <- image_read(msk) %>% image_scale(paste0(xdim))
     msk <- msk %>% as.raster()
 
     # Check if dimensions match
-    im <- high.res.images[[i]]
+    im <- high.res.images[[n]]
     diff <- nrow(msk) - nrow(im)
 
     if (diff > 0) {
@@ -81,7 +94,7 @@ SwitchResolution <- function (
       }
     }
 
-    if (verbose) cat(paste0("Scaled sample ", i, " image mask to ", paste0(ncol(msk)), "x", nrow(msk)), "resolution ... \n")
+    if (verbose) cat(paste0("Scaled section ", n, " image mask to ", paste0(ncol(msk)), "x", nrow(msk)), "resolution ... \n")
     return(msk)
   }), nm = names(st.object))
 
@@ -92,23 +105,22 @@ SwitchResolution <- function (
     msked.im <- im*msk
     msked.im <- as.raster(msked.im)
     msked.im[msked.im == "#000000"] <- "#FFFFFF"
-    if (verbose) cat(paste0("Finished masking sample ", i, " image ... \n"))
+    if (verbose) cat(paste0("Finished masking section ", i, " image ... \n"))
     return(msked.im)
   }), nm = names(st.object))
 
   # Transform images if processed images are available
   if ("processed" %in% rasterlists(st.object)) {
     transforms <- st.object@transformations
-    warped_coords <- st.object[[, c("pixel_x", "pixel_y")]]
     processed.images <- masked
     processed.masks <- st.object["processed.masks"]
+    mref <- processed.images[[reference.index]]
     for (i in seq_along(transforms)) {
       s <- unique(st.object@meta.data$sample)[i]
       # Obtain scale factors
       dims.raw <- as.numeric(st.object@dims[[i]][2:3])
       dims.scaled <- dim(high.res.images[[i]])
       sf.xy <- dims.raw[1]/dims.scaled[2]
-      pixel_xy <- subset(st.object[[]], sample == s)[, c("pixel_x", "pixel_y")]/sf.xy
 
       # Define warp functions
       m <- masked[[i]] %>% as.cimg()
@@ -118,16 +130,13 @@ SwitchResolution <- function (
       map.affine.backward <- generate.map.affine(tr)
       map.affine.forward <- generate.map.affine(tr, forward = TRUE)
 
-      # Warp pixels
-      if (verbose) cat(paste0("Warping pixel coordinates for sample ", i, " ... \n"))
-      warped_xy <- sapply(setNames(as.data.frame(do.call(cbind, map.affine.forward(pixel_xy$pixel_x, pixel_xy$pixel_y))), nm = c("warped_x", "warped_y"))*sf.xy, round, digits = 1)
-      warped_coords[rownames(pixel_xy), 1:2] <- warped_xy
+      if (verbose) cat(paste0("Warping image for section ", i, " ... \n"))
+      imat <- Warp(m, map.affine.backward)
+      select_rows <- min(nrow(imat), nrow(mref)); select_cols <- min(ncol(imat), ncol(mref))
+      imat <- imat[1:select_rows, 1:select_cols] %>% as.cimg()
 
-      if (verbose) cat(paste0("Warping image for ", i, " ... \n"))
-      imat <- Warp(m, map.affine.backward) %>% as.cimg()
-      if (verbose) cat(paste0("Scaling processed mask for sample ", i, " image ... \n"))
+      if (verbose) cat(paste0("Scaling processed mask for section ", i, " image ... \n"))
       imat.msk <- image_read(processed.masks[[i]]) %>% image_scale(paste0(xdim)) %>% magick2cimg()*255
-      #inds <- which(imat.msk != 255)
 
       diff <- ncol(imat.msk) - ncol(imat)
 
@@ -142,18 +151,17 @@ SwitchResolution <- function (
         imat.msk <- as.cimg(empty_msk)
       }
 
-      if (verbose) cat(paste0(" Cleaning up background ... \n"))
+      if (verbose) cat(paste0("Cleaning up background ... \n"))
       imat.masked <- imat*threshold(imat.msk, thr = 1)
       imat.masked <- imat.masked + (!threshold(imat.msk, thr = 1))*255
       imat.masked[imat.masked > 255] <- 255
 
-      if (verbose) cat(paste0(" Sample ", i, " image processing complete. \n\n"))
+      if (verbose) cat(paste0("Sample ", i, " image processing complete. \n\n"))
       processed.images[[i]] <- imat.masked %>% as.raster()
       processed.masks[[i]] <- imat.msk %>% as.raster()
     }
     st.object@rasterlists$processed <- processed.images
     st.object@rasterlists$processed.masks <- processed.masks
-    st.object[[, c("warped_x", "warped_y")]] <- warped_coords
   }
 
   # Save values
