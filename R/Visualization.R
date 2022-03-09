@@ -1351,7 +1351,14 @@ spatial_feature_plot <- function (
   if (blend | !is.null(spot.colors)) {
 
     spot.colors <- spot.colors %||% {
-      colored.data <- apply(data[, 1:(ncol(data) - ifelse(!is.null(label.by), 4, 3))], 2, scales::rescale)
+      colored.data <- data[, features] #apply(data[, 1:(ncol(data) - ifelse(!is.null(label.by), 4, 3))], 2, scales::rescale)
+      for (ftr in features) {
+        if (is.list(value.scale) & length(value.scale) == length(features)) {
+          colored.data[, ftr] <- scales::rescale(colored.data[, ftr], from = value.scale[[ftr]])
+        } else {
+          colored.data[, ftr] <- scales::rescale(colored.data[, ftr])
+        }
+      }
       channels.use <- channels.use %||% c("red", "green", "blue")[1:ncol(colored.data)]
 
       if (verbose) cat(paste0("Blending colors from features ", paste(paste(features, channels.use, sep = ":"), collapse = ", ")))

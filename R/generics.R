@@ -222,7 +222,7 @@ AlignImages <- function (
 #' edges option will be overridden.
 #' @param verbose Print messages
 #'
-#' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp h4
+#' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp h4 numericInput
 #' @importFrom shinyjs useShinyjs reset
 #' @importFrom zeallot %<-%
 #'

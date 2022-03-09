@@ -1404,11 +1404,16 @@ CropImages.Seurat <- function (
   
   # Check format of crop.geometry.list
   fmt <- unique(sapply(crop.geometry.list, length))
-  if (fmt == 3) {
-    grps <- sapply(crop.geometry.list, function(x) {x["group"]})
-    group.by <- unique(sapply(crop.geometry.list, function(x) {x["group.by"]}))
-    crop.geometry.list <- setNames(lapply(crop.geometry.list, function(x) {x["geom"]}), nm = names(crop.geometry.list))
-    group.data <- split(colnames(object), object@meta.data[, group.by])[grps]
+  keep.all.spots <- unique(sapply(crop.geometry.list, function(x) x[, "all.spots"]))
+  if (fmt == 4) {
+    grps <- unlist(sapply(crop.geometry.list, function(x) {x[, "group", drop=TRUE]}))
+    group.by <- unlist(unique(sapply(crop.geometry.list, function(x) {x[, "group.by", drop = TRUE]})))
+    crop.geometry.list <- setNames(lapply(crop.geometry.list, function(x) {x[, "geom", drop = TRUE]}), nm = names(crop.geometry.list))
+    if (!keep.all.spots) {
+      group.data <- split(colnames(object), object@meta.data[, group.by])[grps]
+    } else {
+      group.data <- NULL
+    }
   } else {
     group.data <- NULL
   }
@@ -1418,27 +1423,42 @@ CropImages.Seurat <- function (
                                                   xdim = xdim, group.data = group.data, return.spots.vec = TRUE, 
                                                   time.resolve = time.resolve, verbose = verbose)
   
+  # make sure that no spots overlap
+  #overlapping.spots <- Reduce(c, lapply(all_spots, function(x) x$olds))
+  #duplicated.spots <- overlapping.spots[duplicated(overlapping.spots)]
+  #spots.keep <- setdiff(overlapping.spots, duplicated.spots)
+  #if (length(spots.keep) < nrow(st.object@meta.data)) {
+  #  all_spots <- lapply(all_spots, function(x) {
+  #    subset(x, olds %in% spots.keep)
+  #  })
+  #  st.object@meta.data <- st.object@meta.data[spots.keep, ]
+  #}
+  
   # Create new objects
-  new_objects <- lapply(seq_along(all_spots), function(i) {
+  used_spots <- c()
+  new_objects <- list()
+  for (i in seq_along(all_spots)) {
     spots <- all_spots[[i]]
     
-    ob <- subset(object, cells = spots$olds)
+    ob <- subset(object, cells = setdiff(spots$olds, used_spots))
+    
     if ("SCT" %in% names(ob)) {
       DefaultAssay(ob) <- "RNA"
       ob@assays$SCT <- NULL
     }
     ob@assays <- lapply(ob@assays, function(assay) {
-      assay <- RenameCells(object = assay, new.names = spots$news)
+      assay <- RenameCells(object = assay, new.names = setdiff(spots$news, used_spots))
     })
     ob@reductions <- lapply(ob@reductions, function(reduc) {
-      reduc <- RenameCells(object = reduc, new.names = spots$news)
+      reduc <- RenameCells(object = reduc, new.names = setdiff(spots$news, used_spots))
     })
     ob@graphs <- list()
     ob@neighbors <- list()
-    rownames(ob@meta.data) <- spots$news
+    rownames(ob@meta.data) <- setdiff(spots$news, used_spots)
 
-    return(ob)
-  })
+    new_objects <- c(new_objects, list(ob))
+    used_spots <- c(used_spots, spots$olds)
+  }
 
 
   # Merge objects
@@ -1447,6 +1467,9 @@ CropImages.Seurat <- function (
   } else {
     big_ob <- new_objects[[1]]
   }
+  
+  # Subset st.object
+  st.object@meta.data <- st.object@meta.data[colnames(big_ob), ]
   big_ob@tools$Staffli <- st.object
   
   # Reductions

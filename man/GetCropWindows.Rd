@@ -4,7 +4,13 @@
 \alias{GetCropWindows}
 \title{Get crop geometries}
 \usage{
-GetCropWindows(object, group.by = NULL, groups.to.keep = NULL, xy_padding = 50)
+GetCropWindows(
+  object,
+  group.by = NULL,
+  groups.to.keep = NULL,
+  keep.all.spots = FALSE,
+  xy_padding = 50
+)
 }
 \arguments{
 \item{object}{A Seurat object created with STutility}
@@ -13,6 +19,9 @@ GetCropWindows(object, group.by = NULL, groups.to.keep = NULL, xy_padding = 50)
 vector or factors are allowed. Selects "labels" by default.}
 
 \item{groups.to.keep}{Provide a caharcter vector of groups to keep.}
+
+\item{keep.all.spots}{Keep all spots within selected crop windows and not just the spots 
+belonging to the predefined groups. All spots that are present in multiple crop windows will be removed.}
 
 \item{xy_padding}{Increase the crop area in all directions. Given in pixels.}
 }

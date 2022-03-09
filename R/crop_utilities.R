@@ -7,6 +7,8 @@
 #' @param group.by A meta.data column to group the spots by. Only character 
 #' vector or factors are allowed. Selects "labels" by default.
 #' @param groups.to.keep Provide a caharcter vector of groups to keep. 
+#' @param keep.all.spots Keep all spots within selected crop windows and not just the spots 
+#' belonging to the predefined groups. All spots that are present in multiple crop windows will be removed.
 #' @param xy_padding Increase the crop area in all directions. Given in pixels.
 #' @return A list of "crop geometries" to be used with \code{\link{CropImages}})
 #' 
@@ -16,6 +18,7 @@ GetCropWindows <- function (
   object,
   group.by = NULL,
   groups.to.keep = NULL,
+  keep.all.spots = FALSE,
   xy_padding = 50
 ) {
   
@@ -60,7 +63,7 @@ GetCropWindows <- function (
       minxy[2, ] <- minxy[2, ] + xy_padding
       minxy <- round(minxy)
       wh <- apply(minxy, 2, diff)
-      geom <- setNames(c(paste0(wh[1], "x", wh[2], "+", minxy[1, 1], "+", minxy[1, 2]), grp, group.by.keep), nm = c("geom", "group", "group.by"))
+      geom <- setNames(data.frame(paste0(wh[1], "x", wh[2], "+", minxy[1, 1], "+", minxy[1, 2]), grp, group.by.keep, keep.all.spots), nm = c("geom", "group", "group.by", "all.spots"))
     })
     crop.geoms <- crop.geoms[!sapply(crop.geoms, is.null)]
     names(crop.geoms) <- rep(sid, length(crop.geoms))
