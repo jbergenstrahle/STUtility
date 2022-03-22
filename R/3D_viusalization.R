@@ -560,7 +560,7 @@ FeaturePlot3D <- function (
                                    size = pt.size,
                                    opacity = pt.alpha)) %>%
           add_markers() %>%
-          layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
+          layout(title = features, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
                  scene = list(zaxis = list(title = '', range = c(-add.margins, max(interpolated.data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
                               xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
                               yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
@@ -583,7 +583,7 @@ FeaturePlot3D <- function (
                              showscale = FALSE,
                              size = pt.size)) %>%
           add_markers() %>%
-          layout(title = dims, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
+          layout(title = features, paper_bgcolor = ifelse(dark.theme, 'rgb(0, 0, 0)', 'rgb(255, 255, 255)'),
                  scene = list(zaxis = list(title = '', range = c(-add.margins, max(data$z) + add.margins), showticks = FALSE, showticklabels = FALSE),
                               xaxis = list(title = '', showticks = FALSE, showticklabels = FALSE),
                               yaxis = list(title = '', showticks = FALSE, showticklabels = FALSE)))
