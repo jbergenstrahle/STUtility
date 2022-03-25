@@ -11,6 +11,7 @@
 #' @param maxnum Integer value specifying the maximum number of points
 #' @param edges Extracts the coordinates of the edges instead
 #' @param custom.edge.detector Custom function used to detect edges
+#' @importFrom imager grayscale
 
 scatter_HE <- function (
   object,

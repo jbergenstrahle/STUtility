@@ -62,9 +62,11 @@ SwitchResolution <- function (
     
     # Check if image has been cropped
     ds <- st.object@dims[[i]]
-    if (ds$cropped) {
-      crop.geom <- paste0(ds$max_x - ds$min_x, "x", ds$max_y - ds$min_y, "+", ds$min_x, "+", ds$min_y)
-      im <- image_crop(im, geometry = crop.geom)
+    if ("cropped" %in% colnames(ds)) {
+      if (ds$cropped) {
+        crop.geom <- paste0(ds$max_x - ds$min_x, "x", ds$max_y - ds$min_y, "+", ds$min_x, "+", ds$min_y)
+        im <- image_crop(im, geometry = crop.geom)
+      }
     }
     
     im <- im %>% image_scale(paste0(xdim))
