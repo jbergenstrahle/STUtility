@@ -18,6 +18,7 @@ GetCropWindows <- function (
   object,
   group.by = NULL,
   groups.to.keep = NULL,
+  symmetric = TRUE,
   keep.all.spots = FALSE,
   xy_padding = 50
 ) {
@@ -33,7 +34,7 @@ GetCropWindows <- function (
   group.by <- object@meta.data[, group.by]
   if (!class(group.by) %in% c("character", "factor")) stop(paste0("Invalid group.by column of class ", class(group.by)), call. = FALSE)
   group.by <- as.character(group.by)
-  if (length(unique(group.by)) == 1) stop("Only one group provided.")
+  #if (length(unique(group.by)) == 1) stop("Only one group provided.")
   
   coords <- data.frame(st.object@meta.data[, c("pixel_x", "pixel_y")], Var = group.by, section = st.object@meta.data$sample)
   
@@ -63,7 +64,17 @@ GetCropWindows <- function (
       minxy[2, ] <- minxy[2, ] + xy_padding
       minxy <- round(minxy)
       wh <- apply(minxy, 2, diff)
-      geom <- setNames(data.frame(paste0(wh[1], "x", wh[2], "+", minxy[1, 1], "+", minxy[1, 2]), grp, group.by.keep, keep.all.spots), nm = c("geom", "group", "group.by", "all.spots"))
+      if (symmetric) {
+        wh <- rep(max(wh), 2)
+        mid.points <- apply(minxy, 2, mean)
+        minxy <- matrix(c(mid.points[1] - max(wh)/2, 
+                          mid.points[1] + max(wh)/2,
+                          mid.points[2] - max(wh)/2,
+                          mid.points[2] + max(wh)/2), ncol = 2)
+        geom <- setNames(data.frame(paste0(wh[1], "x", wh[2], "+", minxy[1, 1], "+", minxy[1, 2]), grp, group.by.keep, keep.all.spots), nm = c("geom", "group", "group.by", "all.spots"))
+      } else {
+        geom <- setNames(data.frame(paste0(wh[1], "x", wh[2], "+", minxy[1, 1], "+", minxy[1, 2]), grp, group.by.keep, keep.all.spots), nm = c("geom", "group", "group.by", "all.spots"))
+      }
     })
     crop.geoms <- crop.geoms[!sapply(crop.geoms, is.null)]
     names(crop.geoms) <- rep(sid, length(crop.geoms))
