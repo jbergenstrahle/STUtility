@@ -1053,7 +1053,7 @@ spatial_dim_plot <- function (
   }
 
   # Check that selected image type is present in Seurat object
-  msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
+  msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages(), AlignImages() or ManualALignImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
   if (!type %in% names(msgs)) stop(paste0(type, " not a valid type"), call. = FALSE)
   if (!type %in% rasterlists(st.object)) stop(paste0("You need to run ", msgs[type], " before using DimOverlay() on '", type, "' images"), call. = FALSE)
 
@@ -1246,9 +1246,9 @@ spatial_feature_plot <- function (
   }
 
   # Check that selected image type is present in Seurat object
-  msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
+  msgs <- c("raw" = "LoadImages()", "masked" = "MaskImages()", "processed" = "WarpImages(), AlignImages() or ManualALignImages()", "masked.masks" = "MaskImages()", "processed.masks" = "WarpImages()")
   if (!type %in% names(msgs)) stop(paste0(type, " not a valid type"), call. = FALSE)
-  if (!type %in% rasterlists(st.object)) stop(paste0("You need to run ", msgs[type], " before using DimOverlay() on '", type, "' images"), call. = FALSE)
+  if (!type %in% rasterlists(st.object)) stop(paste0("You need to run ", msgs[type], " before using FeatureOverlay() on '", type, "' images"), call. = FALSE)
 
   # Check that sample.index is OK
   if (!sample.index %in% names(st.object)) {

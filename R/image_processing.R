@@ -1228,12 +1228,6 @@ CropImages.Staffli <- function (
   }
   new_sampleids <- paste0(1:length(sampleids))
   
-  # Unpack group data if available
-  if (!is.null(group.data)) {
-    group.df <- group.data[[1]]
-    grps <- group.data[[2]]
-  }
-  
   # Set xdim
   xdim <- xdim %||% {
     object@xdim
@@ -1409,8 +1403,13 @@ CropImages.Seurat <- function (
     grps <- unlist(sapply(crop.geometry.list, function(x) {x[, "group", drop=TRUE]}))
     group.by <- unlist(unique(sapply(crop.geometry.list, function(x) {x[, "group.by", drop = TRUE]})))
     crop.geometry.list <- setNames(lapply(crop.geometry.list, function(x) {x[, "geom", drop = TRUE]}), nm = names(crop.geometry.list))
+    
+    # combine sample ID with groups
+    group.vctr <- paste0(object@meta.data[, group.by], "_", st.object@meta.data$sample)
+    grps <- paste0(grps, "_", names(grps))
+    
     if (!keep.all.spots) {
-      group.data <- split(colnames(object), object@meta.data[, group.by])[grps]
+      group.data <- split(colnames(object), group.vctr)[grps]
     } else {
       group.data <- NULL
     }
