@@ -8,6 +8,7 @@ GetCropWindows(
   object,
   group.by = NULL,
   groups.to.keep = NULL,
+  symmetric = TRUE,
   keep.all.spots = FALSE,
   xy_padding = 50
 )
