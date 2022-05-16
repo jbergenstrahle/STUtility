@@ -23,6 +23,18 @@ labelRGB(
 \item{dimPlot}{A 'ggplot' object created with \code{ST.DimPlot}}
 
 \item{label1, label2}{Optional names of the 1st and 2nd groups of capture-spots}
+
+\item{red1}{Red 1 limits}
+
+\item{green1}{Green 1 limits}
+
+\item{blue1}{Blue 1 limits}
+
+\item{red2}{Red 2 limits}
+
+\item{green2}{Green 2 limits}
+
+\item{blue2}{Blue 2 limits}
 }
 \description{
 Select spots by rgb values after ST.DimPlot

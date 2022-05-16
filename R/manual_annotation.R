@@ -11,13 +11,8 @@ NULL
 #' theme theme_bw theme_minimal
 #' scale_color_manual scale_fill_manual scale_size
 #' scale_x_continuous scale_y_continuous
-#' @importFrom ggiraph girafe renderGirafe
-#' geom_point_interactive ggiraphOutput
-#' girafe_options
 #' @importFrom shiny pageWithSidebar headerPanel sidebarPanel mainPanel textInput strong actionButton radioButtons sliderInput
-#' reactiveValues observeEvent observe hr submitButton
-#' runApp
-#' @importFrom tibble column_to_rownames rownames_to_column
+#' reactiveValues observeEvent observe hr submitButton runApp HTML modalDialog withProgress showModal
 #' @importFrom purrr map
 #' @importFrom grid rasterGrob
 #' @importFrom magick geometry_size_pixels image_read
@@ -29,6 +24,7 @@ NULL
 #' This function takes a seurat object with stored image locations and opens up the manual selection tool in the default browser
 #'
 #' @param object Seurat object
+#' @param type Input image type, e.g. "masked" or "raw"
 #' @param res Tissue HE image width in pixels
 #' @param verbose Print messages
 #'
@@ -42,6 +38,9 @@ ManualAnnotation <- function (
   res = 1000,
   verbose = FALSE
 ) {
+  
+  if (!requireNamespace("ggiraph")) install.packages("ggiraph")
+  if (!requireNamespace("tibble")) install.packages("tibble")
 
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object not present in Seurat object", call. = FALSE)
   st.object <- GetStaffli(object)
@@ -77,7 +76,7 @@ ManualAnnotation <- function (
     ),
     mainPanel(
       #tags$img(src = jsonlite::base64_enc(img)),
-      ggiraphOutput("Plot1", width = "100%", height = paste0(res, "px"))
+      ggiraph::ggiraphOutput("Plot1", width = "100%", height = paste0(res, "px"))
     )
   )
 
@@ -192,7 +191,15 @@ make.plot <- function (
   return(gg)
 }
 
-
+#' Create an annotation
+#' 
+#' @param object Seurat object
+#' @param type Image type, e.g. "raw" or "masked"
+#' @param sampleNr Selected section/sample number
+#' @param res Image resolution
+#' 
+#' @importFrom stats setNames dist
+#' 
 Create_annotation <- function (
   object,
   type,

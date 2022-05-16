@@ -52,6 +52,9 @@ If a numeric value is given, it is assumed that all samples have the same scalin
 column named "scaleVisium" can be provided with a scaling factor for each sample, or a column named "json" with paths to
 the "scalefactors_json.json" files.}
 
+\item{disable.subset}{Set to TRUE if you want to disable spot subsetting to include spots under tissue. Useful if you
+want to load the full expression matrix with spots outside of the tissue.}
+
 \item{verbose}{Print messages}
 
 \item{...}{additional parameters}

@@ -31,7 +31,7 @@ LoadImages <- function (
   crop.to.fiducials = FALSE,
   crop.scale.factors = c(9, 10, 10, 8),
   verbose = TRUE,
-  time.resolve = TRUE
+  time.resolve = FALSE
 ) {
   UseMethod(generic = 'LoadImages', object = object)
 }
@@ -189,6 +189,7 @@ WarpImages <- function (
 #' @importFrom imager as.cimg imwarp
 #' @importFrom grDevices as.raster
 #' @importFrom zeallot %<-%
+#' @importFrom stats setNames
 #'
 #' @export
 
@@ -222,7 +223,8 @@ AlignImages <- function (
 #' edges option will be overridden.
 #' @param verbose Print messages
 #'
-#' @importFrom shiny runApp fluidPage fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive renderPlot eventReactive observe stopApp h4 numericInput
+#' @importFrom shiny runApp fluidPage modalDialog fluidRow column sliderInput checkboxInput selectInput actionButton plotOutput reactive 
+#' renderPlot eventReactive observe stopApp h4 numericInput HTML showModal
 #' @importFrom shinyjs useShinyjs reset
 #' @importFrom zeallot %<-%
 #'
@@ -269,13 +271,14 @@ ManualAlignImages <- function (
 #' will be applied to the original HE images, i.e. the images that were loaded when running `LoadImages`. See details
 #' below for more information.
 #' @param xdim Maximum width of cropped window
-#' @param return.spots.vec Returns a list with `object` as the first element and a list of spots used to convert
-#' between old and new ids.
 #' @param time.resolve Activate to stop R from loading raw images into memory
 #' @param verbose Print messages
+#' @param ... Additional parameters
 #'
 #' @importFrom magick image_read image_crop image_info image_scale
 #' @importFrom zeallot %<-%
+#' @importFrom stats setNames median dist
+#' @importFrom Seurat DefaultAssay RenameCells DefaultAssay<-
 #'
 #' @export
 
@@ -283,9 +286,9 @@ CropImages <- function (
   object,
   crop.geometry.list,
   xdim = NULL,
-  return.spots.vec = FALSE,
   time.resolve = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  ...
 ) {
   UseMethod(generic = "CropImages", object = object)
 }
@@ -299,8 +302,8 @@ CropImages <- function (
 #'
 #' @param object Seurat object
 #' @param index Sample index
+#' @param type image type to run edge detection on [default: 'masked.masks']
 #' @param verbose Print messages
-#' @param Input image type to run edge detection on [default: 'masked.masks']
 #'
 #' @importFrom imager imgradient add map_il
 

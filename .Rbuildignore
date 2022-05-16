@@ -11,3 +11,5 @@ R/SeededNMF.R
 vignettes/vignette.Rmd
 .Rhistory
 saved/*
+R_tmp/
+seeded_NMF.rmd

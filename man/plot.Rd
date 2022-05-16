@@ -2,16 +2,19 @@
 % Please edit documentation in R/Staffli.R
 \name{plot,Staffli,missing-method}
 \alias{plot,Staffli,missing-method}
+\alias{plot,Staffli,Staffli-method}
 \title{Plot method for Staffli objects}
 \usage{
 \S4method{plot}{Staffli,missing}(x, y = NULL, type = NULL, ...)
 }
 \arguments{
-\item{x}{A Staffli object}
+\item{x}{object to use for plotting.}
 
-\item{type}{Image type to draw on}
+\item{y}{missing}
 
-\item{...}{Additional aprameters passed to points}
+\item{type}{type of images to use as background for plot, e.g. "raw", "masked"}
+
+\item{...}{additional parameters passed to \code{points}}
 }
 \description{
 Plot method for Staffli objects

@@ -5,58 +5,46 @@
 \name{STutility-package}
 \alias{STutility}
 \alias{STutility-package}
-\title{STutility: Data analysis and image handing of Spatial Transcriptomics data}
+\title{STutility: Analysis and visualization of Spatial Transcriptomics data}
 \description{
-STutility collects usful tools for Spatial Transcriptomics data analysis workflow within R.
-    The package depends on the Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq).
-	STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context.
-	Best practices for data transformation, QC and typical analysis workflows are demonstrated.
+STutility collects useful tools for Spatial Transcriptomics data analysis within R. The package is built on top of popular Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq). STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context. Tutorials for data transformation, QC, analysis and visualization can be found on our website: https://ludvigla.github.io/STUtility_web_site/.
 
-STutility collects usful tools for Spatial Transcriptomics data analysis workflow within R.
-    The package depends on the Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq).
-	STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context.
-	Best practices for data transformation, QC and typical analysis workflows are demonstrated.
+STutility collects useful tools for Spatial Transcriptomics data analysis within R. The package is built on top of popular Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq). STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context. Tutorials for data transformation, QC, analysis and visualization can be found on our website: https://ludvigla.github.io/STUtility_web_site/.
 
-STutility collects usful tools for Spatial Transcriptomics data analysis workflow within R.
-    The package depends on the Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq).
-	STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context.
-	Best practices for data transformation, QC and typical analysis workflows are demonstrated.
+STutility collects useful tools for Spatial Transcriptomics data analysis within R. The package is built on top of popular Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq). STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context. Tutorials for data transformation, QC, analysis and visualization can be found on our website: https://ludvigla.github.io/STUtility_web_site/.
 
-STutility collects usful tools for Spatial Transcriptomics data analysis workflow within R.
-    The package depends on the Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq).
-	STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context.
-	Best practices for data transformation, QC and typical analysis workflows are demonstrated.
+STutility collects useful tools for Spatial Transcriptomics data analysis within R. The package is built on top of popular Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq). STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context. Tutorials for data transformation, QC, analysis and visualization can be found on our website: https://ludvigla.github.io/STUtility_web_site/.
 }
 \author{
-\strong{Maintainer}: Joseph Bergenstraahle \email{j.bergenstrahle@scilifelab.se}
+\strong{Maintainer}: Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
 
 Authors:
 \itemize{
-  \item Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
+  \item Joseph Bergenstraahle
 }
 
 
-\strong{Maintainer}: Joseph Bergenstraahle \email{j.bergenstrahle@scilifelab.se}
+\strong{Maintainer}: Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
 
 Authors:
 \itemize{
-  \item Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
+  \item Joseph Bergenstraahle
 }
 
 
-\strong{Maintainer}: Joseph Bergenstraahle \email{j.bergenstrahle@scilifelab.se}
+\strong{Maintainer}: Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
 
 Authors:
 \itemize{
-  \item Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
+  \item Joseph Bergenstraahle
 }
 
 
-\strong{Maintainer}: Joseph Bergenstraahle \email{j.bergenstrahle@scilifelab.se}
+\strong{Maintainer}: Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
 
 Authors:
 \itemize{
-  \item Ludvig Larsson \email{ludvig.larsson@scilifelab.se}
+  \item Joseph Bergenstraahle
 }
 
 }

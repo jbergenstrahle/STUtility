@@ -10,10 +10,12 @@ NULL
 #'
 #' @return  A list of data.frames with edge coordinates
 #' @examples
+#' \dontrun{
 #' # Create a new Staffli object, mask, align and plot edges for image 2
 #' st.obj <- CreateStaffliObject(imgs, meta.data)
 #' edges <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% get.edges(index = 2)
 #' plot(as.raster(edges) %>% as.cimg())
+#' }
 
 get.edges.Staffli <- function (
   object,
@@ -49,9 +51,11 @@ get.edges.Staffli <- function (
 #'
 #' @return  A list of data.frames with edge coordinates
 #' @examples
+#' \dontrun{
 #' # Mask, align and plot edges for image 2 from a Seurat object
 #' edges <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% get.edges(index = 2)
 #' plot(as.raster(edges) %>% as.cimg())
+#' }
 
 get.edges.Seurat <- function (
   object,
@@ -65,78 +69,6 @@ get.edges.Seurat <- function (
 }
 
 
-#' Match two point sets using iterative closest point search
-#'
-#' @param set1 Point set from image to be aligned with reference
-#' @param set2 Point set from reference image
-#' @param iterations Number of iterations
-#' @param mindist Minimum distance that definces valid points
-#' @param type Select type of transform to be applied
-#' @param threads number of trheads to use
-#' @return list with transformed x, y coordinates and list of transformation matrices
-#'
-#' @importFrom Rvcg vcgCreateKDtree vcgSearchKDtree
-#' @importFrom Morpho computeTransform applyTransform
-
-icpmat <- function (
-  set1,
-  set2,
-  iterations,
-  mindist = 1e+15,
-  type = c("rigid", "similarity", "affine"),
-  threads = 1
-) {
-  set1 <- cbind(set1, 0)
-  set2 <- cbind(set2, 0)
-  xtmp <- set1
-  yKD <- vcgCreateKDtree(set2)
-  transformations <- list()
-
-  for (i in 1:iterations) {
-    clost <- vcgSearchKDtree(yKD, xtmp, 1, threads = threads)
-    good <- which(clost$distance < mindist)
-    trafo <- computeTransform(set2[clost$index[good], ], xtmp[good, ], type = type, weights = NULL, centerweight = FALSE)
-    xtmp <- applyTransform(xtmp[, ], trafo)
-    transformations[[i]] <- trafo
-  }
-  xtmp <- xtmp[, 1:2]
-  return(list(xy = xtmp, map =  Reduce(`%*%`, transformations)))
-}
-
-
-
-#' Finds optimal transform based on RMSE
-#'
-#' Tests different types of reflection settings and return the optimal solution
-#' based on RMSE between the transformed points and thre reference set
-#'
-#' @param set1,set2 Point set from image to be aligned with reference and point set from reference image
-#' @param xdim,ydim Width and height of image
-#' @return list with the list of tranformation matrices, reflection coordinates and rmse score
-#' for the optimal transformation
-#'
-#' @importFrom Rvcg vcgKDtree
-
-find.optimal.transform <- function (
-  set1,
-  set2,
-  xdim,
-  ydim
-) {
-  os <- matrix(c(c(0, 1, 0, 1)*xdim, c(0, 0, 1, 1)*ydim), ncol = 2)
-  trf <- lapply(1:nrow(os), function(i) {
-    p <- set1
-    px_dims <- os[i, ]
-    p <- t(abs(t(p) - px_dims))
-    icpr <- icpmat(p, set2, iterations = 10)
-    RMSE <- sqrt(sum(vcgKDtree(set2, icpr$xy, k = 1)$distance^2))
-    return(list(icp = icpr, os = px_dims, rmse = RMSE))
-  })
-
-  rmses <- unlist(lapply(trf, function(x) x$rmse))
-  return(trf[[which.min(rmses)]])
-}
-
 #' Apply rigid transformation to a set of points
 #'
 #' Takes a list of obtained with \code{\link{find.optimal.transform}} and
@@ -144,14 +76,16 @@ find.optimal.transform <- function (
 #'
 #' @param map List containing transformation matrices
 #' @param set Matrix of x, y coordinates to be transformed
+#' 
 #' @return Matrix of transformed x, y coordinates
 
 apply.transform <- function (
   map,
   set
 ) {
+  if (!requireNamespace("Morpho")) install.packages("Morpho")
   set.new <- cbind(as.matrix(set), 0)
-  set.new <- applyTransform(x = set.new, map)
+  set.new <- Morpho::applyTransform(x = set.new, map)
   return(set.new[, 1:2])
 }
 

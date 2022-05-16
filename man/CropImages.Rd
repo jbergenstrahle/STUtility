@@ -10,19 +10,18 @@ CropImages(
   object,
   crop.geometry.list,
   xdim = NULL,
-  return.spots.vec = FALSE,
   time.resolve = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  ...
 )
 
 \method{CropImages}{Staffli}(
   object,
   crop.geometry.list,
-  group.data = NULL,
   xdim = NULL,
-  return.spots.vec = FALSE,
   time.resolve = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  ...
 )
 
 \method{CropImages}{Seurat}(
@@ -30,7 +29,8 @@ CropImages(
   crop.geometry.list,
   xdim = NULL,
   time.resolve = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  ...
 )
 }
 \arguments{
@@ -44,12 +44,11 @@ below for more information.}
 
 \item{xdim}{Maximum width of cropped window}
 
-\item{return.spots.vec}{Returns a list with `object` as the first element and a list of spots used to convert
-between old and new ids.}
-
 \item{time.resolve}{Activate to stop R from loading raw images into memory}
 
 \item{verbose}{Print messages}
+
+\item{...}{Additional parameters}
 }
 \value{
 A Staffli object
@@ -71,16 +70,19 @@ the output image will still be downscaled to a width of `xdim` to keep the outpu
 resolution.
 }
 \examples{
+\dontrun{
 # Load images
 st.object <- GetStaffli(se)
 
 # Crop section 1 to a size of 500x500 pixels offset by (500, 500) pixels from the top left corner
 st.object<- CropImages(st.object, crop.geometry.list = list("1" = "500x500+500+500"))
-
+}
+\dontrun{
 # Load images
 se <- LoadImages(se)
 
 # Crop section 1 to a size of 500x500 pixels offset by (500, 500) pixels from the top left corner
 se <- CropImages(se, crop.geometry.list = list("1" = "500x500+500+500"))
+}
 
 }

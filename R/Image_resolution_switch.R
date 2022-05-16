@@ -27,7 +27,7 @@
 #' @export
 #'
 #' @examples
-#'
+#' \dontrun{
 #' # Create Seurat object, load, mask and align images at low resolution
 #' se <- InputFromTable(infoTable) %>%
 #'    LoadImages() %>%
@@ -36,6 +36,7 @@
 #'
 #' # Reload images and apply transformations to higher resolution images, e.g. 2000 pixels width
 #' se <- SwitchResolution(se, 2000)
+#' }
 #'
 
 SwitchResolution <- function (

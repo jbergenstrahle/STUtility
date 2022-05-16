@@ -1,93 +1,90 @@
 Package: STutility
 Type: Package
-Title: Data analysis and image handing of Spatial Transcriptomics data
+Title: Analysis and visualization of Spatial Transcriptomics data
 Version: 0.1.0
 Authors@R:
     c(person(
-        "Joseph", "Bergenstraahle",
-        email = "j.bergenstrahle@scilifelab.se",
-        role = c("aut", "cre")
-    ),
-	person(
         "Ludvig", "Larsson",
         email = "ludvig.larsson@scilifelab.se",
+        role = c("aut", "cre")
+    ),
+    person(
+        "Joseph", "Bergenstraahle",
         role = c("aut")
     ))
-Description: STutility collects usful tools for Spatial Transcriptomics data analysis workflow within R.
-    The package depends on the Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq).
+Description: STutility collects useful tools for Spatial Transcriptomics data analysis within R.
+    The package is built on top of popular Seurat R package, which is a toolkit for analysis and exploration of single cell RNA sequencing data (scRNAseq).
 	STutility adds image functionallity to the Seurat workflow, allowing RNAseq data to be put in a spatial tissue context.
-	Best practices for data transformation, QC and typical analysis workflows are demonstrated. 
+	Tutorials for data transformation, QC, analysis and visualization can be found on our website: https://ludvigla.github.io/STUtility_web_site/. 
 License: MIT + file LICENSE
 Encoding: UTF-8
-LazyData: true
 Depends:
   Seurat (>= 3.0.0),
   ggplot2 (>= 3.2.0)
 Imports:
-  RColorBrewer,
+  methods,
   cowplot,
   dplyr,
-  rlang,
   purrr,
   zeallot,
-  tibble,
   magrittr,
   jsonlite,
-  ica (>= 1.0),
-  irlba (>= 2.3.3),
-  dbscan (>= 1.1),
   igraph (>= 1.2.4),
   plotly (>= 4.9.0),
   Matrix (>= 1.2),
-  akima (>= 0.6),
   imager (>= 0.41),
   shiny (>= 1.3.0),
   raster (>= 3.0),
   magick (>= 2.0),
-  Morpho (>= 2.7),
-  Rvcg (>= 0.18),
-  viridis (>= 0.5.0),
-  spatstat (>= 2.2-0),
-	imagerExtra (>= 1.3.2),
-	scales (>= 1.0.0),
-	data.table (>= 1.12.2),
-	reshape2 (>= 1.4.3),
-  shinyjs (>= 1.0),
-  ggiraph (>= 0.6),
-  spdep (>= 1.1)
+  scales (>= 1.0.0),
+  data.table (>= 1.12.2),
+  reshape2 (>= 1.4.3),
+  NNLM,
+  patchwork,
+  spatstat.core,
+  spatstat.geom,
+  shinyjs
 Remotes:
   linxihui/NNLM
 Suggests: 
   knitr,
   rmarkdown,
   reticulate,
-	shinyjs (>= 1.0),
-	Giotto (>= 0.1.4),
-	adespatial (>= 0.3),
 	sp (>= 1.3),
-	spData (>= 0.3.2)
+	spData (>= 0.3.2),
+	dbscan (>= 1.1),
+	RColorBrewer,
+	ggiraph (>= 0.6),
+	viridis (>= 0.5.0),
+	Morpho (>= 2.7),
+  Rvcg (>= 0.18),
+  tibble,
+  ica (>= 1.0),
+  irlba (>= 2.3.3),
+  akima (>= 0.6),
+  spdep (>= 1.1)
 VignetteBuilder: knitr
-RoxygenNote: 7.1.1
+RoxygenNote: 7.1.2
 Collate: 
-    '2D_point_pattern.R'
-    '3D_viusalization.R'
-    'HSVencoding.R'
-    'Image_resolution_switch.R'
-    'Mask_functions.R'
-    'QC.R'
-    'RegionNeighbours.R'
-    'Rigid_transformation.R'
-    'generics.R'
-    'Staffli.R'
-    'RunNMF.R'
-    'Spatial_genes.R'
-    'Visualization_utilities.R'
-    'Visualization.R'
-    'crop_utilities.R'
-    'facet_grid_SC.R'
-    'image_processing_utilities.R'
-    'image_processing.R'
-    'manual_annotation.R'
-    'pre_processing.R'
-    'process_from_table.R'
-    'utilities.R'
+  '2D_point_pattern.R'
+  '3D_viusalization.R'
+  'HSVencoding.R'
+  'Image_resolution_switch.R'
+  'Mask_functions.R'
+  'QC.R'
+  'RegionNeighbours.R'
+  'Rigid_transformation.R'
+  'generics.R'
+  'Staffli.R'
+  'RunNMF.R'
+  'Spatial_genes.R'
+  'Visualization_utilities.R'
+  'Visualization.R'
+  'crop_utilities.R'
+  'facet_grid_SC.R'
+  'image_processing_utilities.R'
+  'image_processing.R'
+  'manual_annotation.R'
+  'pre_processing.R'
+  'process_from_table.R'
+  'utilities.R'

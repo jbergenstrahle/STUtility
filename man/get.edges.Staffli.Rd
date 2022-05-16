@@ -13,6 +13,8 @@ aligned along the edges}
 \item{index}{Sample index}
 
 \item{verbose}{Print messages}
+
+\item{type}{image type to run edge detection on [default: 'masked.masks']}
 }
 \value{
 A list of data.frames with edge coordinates
@@ -22,8 +24,10 @@ Finds edges of a mask and returns a set of x,y coordinates
 aligned along the edges
 }
 \examples{
+\dontrun{
 # Create a new Staffli object, mask, align and plot edges for image 2
 st.obj <- CreateStaffliObject(imgs, meta.data)
 edges <- LoadImages(st.obj, verbose = TRUE) \%>\% MaskImages() \%>\% get.edges(index = 2)
 plot(as.raster(edges) \%>\% as.cimg())
+}
 }

@@ -2,13 +2,14 @@
 % Please edit documentation in R/Staffli.R
 \name{show,Staffli-method}
 \alias{show,Staffli-method}
-\title{Show metho for Staffli objects}
+\alias{show,Staffli,Staffli-method}
+\title{Show method for Staffli objects}
 \usage{
 \S4method{show}{Staffli}(object)
 }
 \arguments{
-\item{object}{A Staffli object}
+\item{object}{object to print preselected attributes for}
 }
 \description{
-Show metho for Staffli objects
+Show method for Staffli objects
 }

@@ -104,6 +104,9 @@ qcSamples <- function(
 #'
 #' @param x x coordinate
 #' @param y y coordinate
+#' 
+#' @importFrom grDevices densCols
+#' 
 #' @return panel for pairs function
 #' @keywords internal
 

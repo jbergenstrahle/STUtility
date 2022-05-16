@@ -13,8 +13,6 @@ apply.transform(map, set)
 \item{map}{List containing transformation matrices}
 
 \item{set}{Matrix of x, y coordinates to be transformed}
-
-\item{icp}{List containing transformation matrices}
 }
 \value{
 Matrix of transformed x, y coordinates

@@ -13,7 +13,7 @@ LoadImages(
   crop.to.fiducials = FALSE,
   crop.scale.factors = c(9, 10, 10, 8),
   verbose = TRUE,
-  time.resolve = TRUE
+  time.resolve = FALSE
 )
 
 \method{LoadImages}{Staffli}(
@@ -63,13 +63,16 @@ A Seurat object
 Function used to read HE images in jpeg or png format
 }
 \examples{
+\dontrun{
 # Create a new Staffli object and plot images
 st.obj <- CreateStaffliObject(imgs, meta.data)
 st.obj <- LoadImages(st.obj, verbose = TRUE)
 plot(st.obj)
+}
 
-
+\dontrun{
 # Load images into a Seurat object and plot images
 se <- LoadImages(se, verbose = TRUE)
 ImagePlot(se)
+}
 }

@@ -41,14 +41,18 @@ When multiple transformations are passed, they are applied in the following orde
 rotation -> reflection -> translation.
 }
 \examples{
+\dontrun{
 # Create a new Staffli object, mask, warp and plot images
 st.obj <- CreateStaffliObject(imgs, meta.data)
 transforms <- list("2" = list("mirror.y" = TRUE))
 st.obj <- LoadImages(st.obj, verbose = TRUE) \%>\% MaskImages() \%>\% WarpImages(transforms)
 plot(st.obj)
+}
+\dontrun{
 # Load, mask, warp and plot images in a Seurat object
 # Mirror y axis in sample '2' and rotate sample '3' 10 degrees
 transforms <- list("2" = list("mirror.y" = TRUE), "3" = list("angle" = 10))
 se <- LoadImages(se, verbose = TRUE) \%>\% MaskImages() \%>\% WarpImages(transforms)
 ImagePlot(se)
+}
 }

@@ -3,6 +3,9 @@
 #' @param data data.frame containing feature values and coordinates
 #' @param channels.use Select channels to use for blending. Default is red, green and blue but the order can be shuffled.
 #' For 2 features, the default is red and green. (options: "red", "green" and "blue")
+#' 
+#' @importFrom stats setNames
+#' @importFrom grDevices rgb
 
 ColorBlender <- function (
   data,
@@ -162,6 +165,15 @@ ST.rgbDimPlot <- function(
 #' @param object A Seurat object
 #' @param dimPlot A 'ggplot' object created with \code{ST.DimPlot}
 #' @param label1,label2 Optional names of the 1st and 2nd groups of capture-spots
+#' @param red1 Red 1 limits
+#' @param green1 Green 1 limits
+#' @param blue1 Blue 1 limits
+#' @param red2 Red 2 limits
+#' @param green2 Green 2 limits
+#' @param blue2 Blue 2 limits
+#' 
+#' @importFrom Seurat Idents<-
+#' @importFrom grDevices col2rgb
 #'
 #' @export
 
@@ -257,7 +269,7 @@ g_legend <- function (
 
 #' Obtain array coordinates
 #'
-#' @param object A Seurat object
+#' @param st.object A Staffli object
 #' @param data Data.frame with array coordinates
 #' @param image.type One of "raw", "masked" or "processed"
 #' @param spots Spots to subset data on
@@ -302,7 +314,7 @@ obtain.array.coords <- function (
 #'
 #' @return An object of class 'ggplot' with a scalebar drawn on top of it
 #'
-#' @importFrom ggplot2 geom_segment annotate aes
+#' @importFrom ggplot2 geom_segment annotate aes geom_text
 #'
 
 draw_scalebar <- function (

@@ -48,6 +48,8 @@ FeatureOverlay(
 \item{ncols}{Number of columns in the subplot layout grid. 
 (see \emph{Arrange plots} for a detailed description)}
 
+\item{layout.by.feature}{Flip the arrangement of the subplot layout grid.}
+
 \item{type}{Image type to plot on. Here you can specify any of the images available in your Seurat object. To get this list you can
 run the \code{\link{rasterlists}} function on your Seurat object. If the type is not specified, the images will be prioritized in the following
 order if they are available; "processed", "masked" and "raw".}
@@ -70,6 +72,8 @@ See 'Blending values' below for a more thourough description.}
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
 
 \item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
+
+\item{add.alpha}{Scale spot opacity by selected feature. Higher values get more opaque while lower values make spots transparent.}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
@@ -109,8 +113,6 @@ number of groups is less than or equal to the number of tissue sections in your 
 \item{verbose}{Print messages}
 
 \item{...}{Parameters passed to FeatureOverlay}
-
-\item{layout.by.features}{Flip the arrangement of the subplot layout grid.}
 }
 \description{
 Graphs the selected features on a 2D grid of spots overlaid on top of an HE images.
@@ -145,7 +147,7 @@ so that the sections are put in columns and dimensions along rows.
 }
 
 \examples{
-
+\dontrun{
 # Load images
 se <- LoadImages(se)
 
@@ -167,6 +169,7 @@ FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2,
 # Mask images and plot plot the slected genes on the masked images for samples 1 and 2
 se <- MaskImages(se)
 FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, type = "masked")
+}
 
 }
 \seealso{

@@ -117,13 +117,16 @@ below is a couple of examples of common problems.
 }
 
 \examples{
+\dontrun{
 # Create a new Staffli object, mask and plot images
 st.obj <- CreateStaffliObject(imgs, meta.data)
 st.obj <- LoadImages(st.obj, verbose = TRUE) \%>\% MaskImages()
 plot(st.obj)
+}
 
-
+\dontrun{
 # Load images into a Seurat objectm, mask and plot images
 se <- LoadImages(se, verbose = TRUE) \%>\% MaskImages()
 ImagePlot(se)
+}
 }

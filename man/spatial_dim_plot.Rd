@@ -62,6 +62,8 @@ See 'Blending values' below for a more thourough description.}
 
 \item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
+\item{add.alpha}{Scale spot opacity by selected feature. Higher values get more opaque while lower values make spots transparent.}
+
 \item{reduction}{Which dimensionality reduction to use. If not specified, first searches for "umap", then "tsne", then "pca"}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).

@@ -141,7 +141,7 @@ where a 50/50 mixture gives yellow color. The amplitude if the values will also 
 }
 
 \examples{
-
+\dontrun{
 # Plot the number of unique genes and the number of UMIs per spot
 ST.featurePlot(se, features = c("nFeature_RNA", "nCount_RNA"))
 
@@ -162,6 +162,7 @@ se <- se \%>\% RunPCA()
 ST.featurePlot(se, features = "seurat_clusters")
 # Split cluster labels into facets
 ST.featurePlot(se, features = "seurat_clusters", split.labels = TRUE)
+}
 
 }
 \seealso{

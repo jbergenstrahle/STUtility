@@ -8,8 +8,6 @@
 #'
 #' @return list with transformed x, y coordinates and list of transformation matrices
 #'
-#' @importFrom Rvcg vcgCreateKDtree vcgSearchKDtree
-#' @importFrom Morpho computeTransform applyTransform
 
 icpmat <- function (
   set1,
@@ -19,17 +17,21 @@ icpmat <- function (
   type = c("rigid", "similarity", "affine"),
   threads = 1
 ) {
+  
+  if (!requireNamespace("Morpho")) install.packages("Morpho")
+  if (!requireNamespace("Rvcg")) install.packages("Rvcg")
+  
   set1 <- cbind(set1, 0)
   set2 <- cbind(set2, 0)
   xtmp <- set1
-  yKD <- vcgCreateKDtree(set2)
+  yKD <- Rvcg::vcgCreateKDtree(set2)
   transformations <- list()
 
   for (i in 1:iterations) {
-    clost <- vcgSearchKDtree(yKD, xtmp, 1, threads = threads)
+    clost <- Rvcg::vcgSearchKDtree(yKD, xtmp, 1, threads = threads)
     good <- which(clost$distance < mindist)
-    trafo <- computeTransform(set2[clost$index[good], ], xtmp[good, ], type = type, weights = NULL, centerweight = FALSE)
-    xtmp <- applyTransform(xtmp[, ], trafo)
+    trafo <- Morpho::computeTransform(set2[clost$index[good], ], xtmp[good, ], type = type, weights = NULL, centerweight = FALSE)
+    xtmp <- Morpho::applyTransform(xtmp[, ], trafo)
     transformations[[i]] <- trafo
   }
   xtmp <- xtmp[, 1:2]
@@ -48,7 +50,6 @@ icpmat <- function (
 #' @return list with the list of tranformation matrices, reflection coordinates and rmse score
 #' for the optimal transformation
 #'
-#' @importFrom Rvcg vcgKDtree
 
 find.optimal.transform <- function (
   set1,
@@ -56,13 +57,16 @@ find.optimal.transform <- function (
   xdim,
   ydim
 ) {
+  
+  if (!requireNamespace("Rvcg")) install.packages("Rvcg")
+  
   os <- matrix(c(c(0, 1, 0, 1)*xdim, c(0, 0, 1, 1)*ydim), ncol = 2)
   trf <- lapply(1:nrow(os), function(i) {
     p <- set1
     px_dims <- os[i, ]
     p <- t(abs(t(p) - px_dims))
     icpr <- icpmat(p, set2, iterations = 10)
-    RMSE <- sqrt(sum(vcgKDtree(set2, icpr$xy, k = 1)$distance^2))
+    RMSE <- sqrt(sum(Rvcg::vcgKDtree(set2, icpr$xy, k = 1)$distance^2))
     return(list(icp = icpr, os = px_dims, rmse = RMSE))
   })
 
@@ -75,7 +79,7 @@ find.optimal.transform <- function (
 #' Takes a list obtained with \code{\link{find.optimal.transform}} and
 #' a matrix of x, y coordinates and returns the transformed x, y coordinates
 #'
-#' @param icp List containing transformation matrices
+#' @param map Map function
 #' @param set Matrix of x, y coordinates to be transformed
 #' @return Matrix of transformed x, y coordinates
 
@@ -83,8 +87,11 @@ apply.transform <- function (
   map,
   set
 ) {
+  
+  if (!requireNamespace("Morpho")) install.packages("Morpho")
+  
   set.new <- cbind(as.matrix(set), 0)
-  set.new <- applyTransform(x = set.new, map)
+  set.new <- Morpho::applyTransform(x = set.new, map)
   return(set.new[, 1:2])
 }
 
@@ -170,6 +177,7 @@ stretch <- function(r, alpha, center.cur) {
 #' Creates a transformation matrix for clockwise rotation by 'alpha' degrees
 #' 
 #' @param alpha rotation angle
+#' @param forward should the rotation be done in forward direction?
 #' 
 
 rigid.rot <- function (
@@ -267,6 +275,7 @@ rigid.stretch <- function (
 #' @inheritParams rigid.refl
 #'
 #' @examples
+#' \dontrun{
 #' library(imager)
 #' library(tidyverse)
 #' im <- load.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Aster_Tataricus.JPG/1024px-Aster_Tataricus.JPG")
@@ -300,6 +309,7 @@ rigid.stretch <- function (
 #' points(t(tr1%*%t(edges.px[, 1:3])), cex = 0.1, col = "red")
 #' points(t(tr2%*%t(edges.px[, 1:3])), cex = 0.1, col = "yellow")
 #' points(t(tr3%*%t(edges.px[, 1:3])), cex = 0.1, col = "blue")
+#' }
 #'
 #' @export
 

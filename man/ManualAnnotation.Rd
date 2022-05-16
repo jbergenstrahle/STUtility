@@ -10,6 +10,8 @@ ManualAnnotation(object, type = NULL, res = 1000, verbose = FALSE)
 \arguments{
 \item{object}{Seurat object}
 
+\item{type}{Input image type, e.g. "masked" or "raw"}
+
 \item{res}{Tissue HE image width in pixels}
 
 \item{verbose}{Print messages}

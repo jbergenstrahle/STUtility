@@ -70,6 +70,8 @@ See 'Blending values' below for a more thourough description.}
 
 \item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
+\item{add.alpha}{Scale spot opacity by selected feature. Higher values get more opaque while lower values make spots transparent.}
+
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 
@@ -132,7 +134,7 @@ so that the sections are put in columns and dimensions along rows.
 }
 
 \examples{
-
+\dontrun{
 # Load images and run PCA
 se <- LoadImages(se) \%>\%
    RunPCA()
@@ -149,9 +151,10 @@ DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, min.cutoff = 'q1'
 # Mask images and plot the first 2 dimensions on the masked images for samples 1 and 2
 se <- MaskImages(se)
 DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, type = "masked")
+}
 
 }
 \seealso{
-\code{\link{turePlot}} and \code{\link{ST.DimPlot}} for how to plot features
+\code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
 without the HE image and \code{\link{FeatureOverlay}} for how to overlay feature plots on the HE images.
 }

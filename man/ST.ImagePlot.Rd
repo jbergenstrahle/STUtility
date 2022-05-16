@@ -46,6 +46,8 @@ should be a vector of length 2 specifying the dimensions of the original HE imag
 
 \item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
+\item{add.alpha}{Scale spot opacity by selected feature. Higher values get more opaque while lower values make spots transparent.}
+
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
 

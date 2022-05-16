@@ -24,6 +24,8 @@ RunNMF(
 
 \item{assay}{Assay Name of Assay NMF is being run on}
 
+\item{slot}{Slot to pull data from.}
+
 \item{features}{Features to compute the NMF for. Note that these features must be present in the
 slot used to compute the NMF. By default, the `features` is set to `VariableFeatures(object)`
 to include the most variable features selected in the normalization step.}
@@ -40,6 +42,10 @@ to include the most variable features selected in the normalization step.}
 \item{n.cores}{Number of threads to use in computation}
 
 \item{order.by.spcor}{Order factors by spatial correlation}
+
+\item{sort.spcor.by.var}{Sort factors by decreasing variance}
+
+\item{...}{Additional parameters}
 }
 \description{
 Decompose an expression matrix A with non-negative elements into matrices WxH, also with

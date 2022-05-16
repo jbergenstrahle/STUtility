@@ -67,7 +67,7 @@ may specify quantile in the form of 'q##' where '##' is the quantile (eg, 'q1', 
 \item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
 
 \item{sigma}{Smoothing bandwidth; only active if \code{plot.type = 'smooth'}. A single positive number, a numeric vector of length 2, or a function that selects the bandwidth automatically [default: 2].
-See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.}
+See \code{\link{density.ppp}} function from the \code{\link{spatstat.core}} package for more details.}
 
 \item{highlight.edges}{Highlights the edges of the tissue. Only active if \code{plot.type = 'smooth'} and if the images have been masked.}
 

@@ -42,6 +42,7 @@ You can also activate the `keep.within.id` parameter to include all spots of the
 otherwise only the spots along the region border will be kept.
 }
 \examples{
+\dontrun{
 # Cluster data, find neighbours to cluster 10 and then plot the results
 se <- FindNeighbours(se) \%>\% FindClusters()
 se <- RegionNeighbours(se, id = 10)
@@ -50,5 +51,6 @@ ST.FeaturePlot(se, features = "nbs_10")
 # Find neighbours to cluster 10 and keep all id spots
 se <- RegionNeighbours(se, id = 10)
 ST.FeaturePlot(se, features = "nbs_10", keep.within.id = TRUE)
+}
 
 }

@@ -7,10 +7,12 @@ NULL
 #' @export
 #' @return  A Staffli object
 #' @examples
+#' \dontrun{
 #' # Create a new Staffli object and plot images
 #' st.obj <- CreateStaffliObject(imgs, meta.data)
 #' st.obj <- LoadImages(st.obj, verbose = TRUE)
 #' plot(st.obj)
+#' }
 #'
 
 LoadImages.Staffli <- function (
@@ -162,10 +164,11 @@ LoadImages.Staffli <- function (
 #' @export
 #' @return A Seurat object
 #' @examples
-#'
+#' \dontrun{
 #' # Load images into a Seurat object and plot images
 #' se <- LoadImages(se, verbose = TRUE)
 #' ImagePlot(se)
+#' }
 
 LoadImages.Seurat <- function (
   object,
@@ -208,7 +211,7 @@ ImagePlot <- function (
   object,
   indices = NULL,
   type = NULL,
-  method = "viewer",
+  method = "raster",
   ncols = NULL,
   annotate = TRUE,
   darken = FALSE,
@@ -305,10 +308,12 @@ ImagePlot <- function (
 #' @export
 #' @return  A Staffli object
 #' @examples
+#' \dontrun{
 #' # Create a new Staffli object, mask and plot images
 #' st.obj <- CreateStaffliObject(imgs, meta.data)
 #' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages()
 #' plot(st.obj)
+#' }
 #'
 
 MaskImages.Staffli <- function (
@@ -444,10 +449,11 @@ MaskImages.Staffli <- function (
 #' @export
 #' @return A Seurat object
 #' @examples
-#'
+#' \dontrun{
 #' # Load images into a Seurat objectm, mask and plot images
 #' se <- LoadImages(se, verbose = TRUE) %>% MaskImages()
 #' ImagePlot(se)
+#' }
 
 MaskImages.Seurat <- function (
   object,
@@ -475,11 +481,13 @@ MaskImages.Seurat <- function (
 #' @export
 #' @return  A Staffli object
 #' @examples
+#' \dontrun{
 #' # Create a new Staffli object, mask, warp and plot images
 #' st.obj <- CreateStaffliObject(imgs, meta.data)
 #' transforms <- list("2" = list("mirror.y" = TRUE))
 #' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% WarpImages(transforms)
 #' plot(st.obj)
+#' }
 
 WarpImages.Staffli <- function (
   object,
@@ -602,11 +610,13 @@ WarpImages.Staffli <- function (
 #' @export
 #' @return A Seurat object
 #' @examples
+#' \dontrun{
 #' # Load, mask, warp and plot images in a Seurat object
 #' # Mirror y axis in sample '2' and rotate sample '3' 10 degrees
 #' transforms <- list("2" = list("mirror.y" = TRUE), "3" = list("angle" = 10))
 #' se <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% WarpImages(transforms)
 #' ImagePlot(se)
+#' }
 
 WarpImages.Seurat <- function (
   object,
@@ -632,10 +642,12 @@ WarpImages.Seurat <- function (
 #' @export
 #' @return  A Staffli object
 #' @examples
+#' \dontrun{
 #' # Create a new Staffli object, mask, align and plot images
 #' st.obj <- CreateStaffliObject(imgs, meta.data)
 #' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% AlignImages()
 #' plot(st.obj)
+#' }
 
 AlignImages.Staffli <- function (
   object,
@@ -714,8 +726,8 @@ AlignImages.Staffli <- function (
 
     # Warp images
     if (verbose) cat(paste0(" Applying rigid transformation ... \n"))
-    imat = imwarp(ima, map = map.affine.backward, dir = "backward", interpolation = "cubic")
-    imat.msk = imwarp(ima.msk, map = map.affine.backward, dir = "backward", interpolation = "linear")
+    imat = imwarp(ima, map = map.affine.backward, direction = "backward", interpolation = "cubic")
+    imat.msk = imwarp(ima.msk, map = map.affine.backward, direction = "backward", interpolation = "linear")
     inds <- which(imat.msk != 255)
 
     # Obtain scale factors
@@ -756,9 +768,11 @@ AlignImages.Staffli <- function (
 #' @export
 #' @return  A Seurat object
 #' @examples
+#' \dontrun{
 #' # Load, mask, align and plot images
 #' se <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% AlignImages()
 #' ImagePlot(se)
+#' }
 
 AlignImages.Seurat <- function (
   object,
@@ -784,12 +798,14 @@ AlignImages.Seurat <- function (
 #' @method ManualAlignImages Staffli
 #'
 #' @export
-#' @return  A Staffli object
+#' @return A Staffli object
 #' @examples
+#' \dontrun{
 #' # Create a new Staffli object, mask, align and plot images (will start an interactive shiny session)
 #' st.obj <- CreateStaffliObject(imgs, meta.data)
 #' st.obj <- LoadImages(st.obj, verbose = TRUE) %>% MaskImages() %>% ManualAlignImages()
 #' plot(st.obj)
+#' }
 
 ManualAlignImages.Staffli <- function (
   object,
@@ -1178,9 +1194,11 @@ ManualAlignImages.Staffli <- function (
 #' @export
 #' @return A Seurat object
 #' @examples
+#' \dontrun{
 #' # Load, mask, align and plot images (will start an interactive shiny session)
 #' se <- LoadImages(se, verbose = TRUE) %>% MaskImages() %>% ManualAlignImages()
 #' ImagePlot(se)
+#' }
 
 ManualAlignImages.Seurat <- function (
   object,
@@ -1206,21 +1224,27 @@ ManualAlignImages.Seurat <- function (
 #' @export
 #' @return A Staffli object
 #' @examples
+#' \dontrun{
 #' # Load images
 #' st.object <- GetStaffli(se)
 #'
 #' # Crop section 1 to a size of 500x500 pixels offset by (500, 500) pixels from the top left corner
 #' st.object<- CropImages(st.object, crop.geometry.list = list("1" = "500x500+500+500"))
-#'
+#' }
+
 CropImages.Staffli <- function (
   object,
   crop.geometry.list,
-  group.data = NULL,
   xdim = NULL,
-  return.spots.vec = FALSE,
   time.resolve = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  ...
 ) {
+  
+  # Check dynamic arguments
+  dotargs <- rlang::dots_list(...)
+  if ("group.data" %in% names(dotargs)) group.data <- dotargs[["group.data"]]
+  if ("return.spots.vec" %in% names(dotargs)) return.spots.vec <- dotargs[["return.spots.vec"]]
 
   sampleids <- names(crop.geometry.list)
   if (!all(sampleids %in% object@samplenames)) {
@@ -1355,7 +1379,6 @@ CropImages.Staffli <- function (
     object@pixels.per.um <- setNames(object@pixels.per.um[sampleids], nm = new_sampleids)
   }
 
-  #object@rasterlists <- object@rasterlists["raw"]
   object@imgs <- new_img_files
   object@rasterlists[["raw"]] <- imgs
   object@dims <- dims
@@ -1379,18 +1402,21 @@ CropImages.Staffli <- function (
 #' @export
 #' @return A Seurat object
 #' @examples
+#' \dontrun{
 #' # Load images
 #' se <- LoadImages(se)
 #'
 #' # Crop section 1 to a size of 500x500 pixels offset by (500, 500) pixels from the top left corner
 #' se <- CropImages(se, crop.geometry.list = list("1" = "500x500+500+500"))
+#' }
 #'
 CropImages.Seurat <- function (
   object,
   crop.geometry.list,
   xdim = NULL,
   time.resolve = FALSE,
-  verbose = FALSE
+  verbose = FALSE,
+  ...
 ) {
 
   if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. Cannot plot without coordinates", call. = FALSE)
@@ -1398,7 +1424,11 @@ CropImages.Seurat <- function (
   
   # Check format of crop.geometry.list
   fmt <- unique(sapply(crop.geometry.list, length))
-  keep.all.spots <- unique(sapply(crop.geometry.list, function(x) x[, "all.spots"]))
+  
+  if (unique(sapply(crop.geometry.list, class)) == "data.frame") {
+    keep.all.spots <- unique(sapply(crop.geometry.list, function(x) x[, "all.spots"]))
+  }
+  
   if (fmt == 4) {
     grps <- unlist(sapply(crop.geometry.list, function(x) {x[, "group", drop=TRUE]}))
     group.by <- unlist(unique(sapply(crop.geometry.list, function(x) {x[, "group.by", drop = TRUE]})))
@@ -1421,17 +1451,6 @@ CropImages.Seurat <- function (
                                                   crop.geometry.list = crop.geometry.list,
                                                   xdim = xdim, group.data = group.data, return.spots.vec = TRUE, 
                                                   time.resolve = time.resolve, verbose = verbose)
-  
-  # make sure that no spots overlap
-  #overlapping.spots <- Reduce(c, lapply(all_spots, function(x) x$olds))
-  #duplicated.spots <- overlapping.spots[duplicated(overlapping.spots)]
-  #spots.keep <- setdiff(overlapping.spots, duplicated.spots)
-  #if (length(spots.keep) < nrow(st.object@meta.data)) {
-  #  all_spots <- lapply(all_spots, function(x) {
-  #    subset(x, olds %in% spots.keep)
-  #  })
-  #  st.object@meta.data <- st.object@meta.data[spots.keep, ]
-  #}
   
   # Create new objects
   used_spots <- c()

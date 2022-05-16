@@ -11,6 +11,10 @@ NULL
 #' @param factor Factor to plot gene loadings for [default: 1]
 #' @param topn Top genes to show [default: 20]
 #' @param dark.theme Use a dark theme for the plot
+#' 
+#' @importFrom ggplot2 geom_bar coord_flip 
+#' @importFrom Seurat DarkTheme
+#' @importFrom stats reorder
 #'
 #' @export
 #'
@@ -50,6 +54,7 @@ FactorGeneLoadingPlot <- function (
 #'
 #' @param object Seurat object
 #' @param assay Assay Name of Assay NMF is being run on
+#' @param slot Slot to pull data from.
 #' @param features Features to compute the NMF for. Note that these features must be present in the
 #' slot used to compute the NMF. By default, the `features` is set to `VariableFeatures(object)`
 #' to include the most variable features selected in the normalization step.
@@ -60,8 +65,11 @@ FactorGeneLoadingPlot <- function (
 #' "factor_1", "factor_2", etc.
 #' @param n.cores Number of threads to use in computation
 #' @param order.by.spcor Order factors by spatial correlation
+#' @param sort.spcor.by.var Sort factors by decreasing variance
+#' @param ... Additional parameters
 #'
 #' @importFrom parallel detectCores
+#' @importFrom Seurat CreateDimReducObject DefaultAssay VariableFeatures GetAssayData
 #'
 #' @export
 #'
@@ -103,8 +111,8 @@ RunNMF <- function (
     colnames(resCN) <- gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))
     colnames(resCN) <- gsub(pattern = "^X", replacement = "", x = colnames(resCN))
     empty.CN[rownames(resCN), colnames(resCN)] <- resCN
-    listw <- mat2listw(empty.CN)
-    fun <- function (x) lag.listw(listw, x, TRUE)
+    listw <- spdep::mat2listw(empty.CN)
+    fun <- function (x) spdep::lag.listw(listw, x, TRUE)
 
     # Calculate the lag matrix from the network
     tablag <- apply(cell.embeddings, 2, fun)
@@ -145,7 +153,19 @@ RunNMF <- function (
 }
 
 
-
+#' Run NMF with ica init
+#' 
+#' @param A Expression matrix
+#' @param k = Number of factors
+#' @param alpha Alpha parameter value
+#' @param init Method to initiate NMF by
+#' @param n.cores Number of threads to run
+#' @param loss Loss method
+#' @param max.iter Maximum number of iterations for NMF
+#' @param ica.fast Should fast ica be run?
+#' 
+#' @importFrom stats runif
+#' 
 rnmf <- function (
   A,
   k,
@@ -266,21 +286,26 @@ SummarizeAssocFeatures <- function (
 #' @param k number of components to compute
 #' @param ica.fast Should a fast implementation of ICA be used?
 #'
-#' @importFrom irlba irlba
-#' @importFrom ica icafast
 
-ica_init <- function (A, k, ica.fast = F)
-{
+ica_init <- function (
+    A, 
+    k, 
+    ica.fast = F
+) {
+  
+  if (!requireNamespace("irlba")) install.packages("irlba")
+  if (!requireNamespace("ica")) install.packages("ica")
+  
   if (ica.fast) {
-    pc.res.h <- irlba(t(A), nv = 50, maxit = 100,
+    pc.res.h <- irlba::irlba(t(A), nv = 50, maxit = 100,
                              center = rowMeans(A))
-    ica.res.h <- icafast(pc.res.h$u, nc = k, maxit = 25,
+    ica.res.h <- ica::icafast(pc.res.h$u, nc = k, maxit = 25,
                               tol = 1e-04)
     return(list(W = (A - Matrix::rowMeans(A)) %*% ica.res.h$S,
                 H = t(ica.res.h$S)))
   }
   else {
-    ica.res <- icafast(t(A), nc = k, maxit = 25, tol = 1e-04)
+    ica.res <- ica::icafast(t(A), nc = k, maxit = 25, tol = 1e-04)
     return(list(W = ica.res$M, H = t(ica.res$S)))
   }
 }

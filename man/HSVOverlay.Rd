@@ -71,7 +71,7 @@ is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values
 
 \item{pt.alpha}{Opacity of each ST spot [default: 1]}
 
-\item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
+\item{add.alpha}{Scale spot opacity by selected feature. Higher values get more opaque while lower values make spots transparent.}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}
@@ -129,10 +129,12 @@ This is very useful if you have many different labels which can make it difficul
 }
 
 \examples{
+\dontrun{
 # Load images
 se <- se \%>\% SCTransfrom() \%>\% LoadImages() \%>\% RunNMF()
 
 # Overlay first two NMF factors on the first two tissue sections
 HSVPlot(se, features = c("factor_1", "factor_2"), sampleids = 1:2)
+}
 
 }

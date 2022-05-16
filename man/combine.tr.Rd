@@ -23,6 +23,7 @@ translation of points to origin (0, 0) -> reflection of points
 -> rotation by alpha degrees and translation of points to new center
 }
 \examples{
+\dontrun{
 library(imager)
 library(tidyverse)
 im <- load.image("https://upload.wikimedia.org/wikipedia/commons/thumb/f/fd/Aster_Tataricus.JPG/1024px-Aster_Tataricus.JPG")
@@ -56,5 +57,6 @@ plot(edges.px, xlim = c(0, 1700), ylim = c(0, 1700), cex = 0.1)
 points(t(tr1\%*\%t(edges.px[, 1:3])), cex = 0.1, col = "red")
 points(t(tr2\%*\%t(edges.px[, 1:3])), cex = 0.1, col = "yellow")
 points(t(tr3\%*\%t(edges.px[, 1:3])), cex = 0.1, col = "blue")
+}
 
 }

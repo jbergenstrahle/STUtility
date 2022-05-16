@@ -128,7 +128,7 @@ if you are plotting factor from the Non-negative Matrix Factorization (NMF) meth
 }
 
 \examples{
-
+\dontrun{
 se <- RunPCA(se)
 
 # Plot the first 5 dimensions
@@ -142,6 +142,7 @@ ST.DimPlot(se, dims = 1:2, reduction = "pca", blend = T)
 
 # Plot the first 5 dimensions and trim off 1st percentile values
 ST.DimPlot(se, dims = 1:5, reduction = "pca", min.cutoff = 'q1')
+}
 
 }
 \seealso{

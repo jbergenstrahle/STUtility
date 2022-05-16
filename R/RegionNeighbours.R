@@ -19,10 +19,13 @@
 #' neighbours will be named 'nbs_id' where id is the group label defined by the aprameter `ìd` [default: FALSE]
 #' @param keep.within.id If set to TRUE, all id spots are kept, otherwise only the spots with outside neighbours are kept
 #' @param verbose Print messages
+#' 
+#' @importFrom Seurat Idents
 #'
 #' @export
 #'
 #' @examples
+#' \dontrun{
 #' # Cluster data, find neighbours to cluster 10 and then plot the results
 #' se <- FindNeighbours(se) %>% FindClusters()
 #' se <- RegionNeighbours(se, id = 10)
@@ -31,6 +34,7 @@
 #' # Find neighbours to cluster 10 and keep all id spots
 #' se <- RegionNeighbours(se, id = 10)
 #' ST.FeaturePlot(se, features = "nbs_10", keep.within.id = TRUE)
+#' }
 #'
 RegionNeighbours <- function (
   object,

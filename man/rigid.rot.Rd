@@ -8,6 +8,8 @@ rigid.rot(alpha = 0, forward = TRUE)
 }
 \arguments{
 \item{alpha}{rotation angle}
+
+\item{forward}{should the rotation be done in forward direction?}
 }
 \description{
 Creates a transformation matrix for clockwise rotation by 'alpha' degrees

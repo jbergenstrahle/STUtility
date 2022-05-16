@@ -10,12 +10,13 @@
 #' @param minK Minimum nearest neigbhours if maxdist is not provided [default: 0]
 #'
 #' @importFrom dplyr group_by mutate ungroup
-#' @importFrom dbscan kNN
 #' @importFrom igraph graph_from_data_frame
 #'
 #' @export
 #' @examples
+#' \dontrun{
 #' spatial.networks <- GetSpatNet(se)
+#' }
 
 GetSpatNet <- function (
   object,
@@ -54,7 +55,8 @@ GetSpatNet <- function (
     nNeighbours <- nNeighbours %||% ifelse(platforms[i] == "Visium", 6, 4)
     maxdist <- maxdist %||% ifelse(platforms[i] == "1k", 270*sdist, 150*sdist)
 
-    knn_spatial <- kNN(x = xys[, c("x", "y")] %>% as.matrix(), k = nNeighbours)
+    if (!requireNamespace("dbscan")) install.packages("dbscan")
+    knn_spatial <- dbscan::kNN(x = xys[, c("x", "y")] %>% as.matrix(), k = nNeighbours)
     knn_spatial.norm <- data.frame(from = rep(1:nrow(knn_spatial$id), nNeighbours),
                                  to = as.vector(knn_spatial$id),
                                  weight = 1/(1 + as.vector(knn_spatial$dist)),
@@ -79,8 +81,6 @@ GetSpatNet <- function (
   return(knn_spatial.norm.list)
 }
 
-
-# TODO: fix imported libs (spdep not loaded), fix factor in output
 
 #' Find genes with high spatial autocorrelation
 #'
@@ -126,7 +126,8 @@ GetSpatNet <- function (
 #' @return data.frame with gene names and correlation scores
 #'
 #' @importFrom Matrix bdiag
-#' @importFrom spdep mat2listw
+#' @importFrom Seurat DefaultAssay GetAssayData VariableFeatures
+#' @importFrom stats cor
 #'
 #' @export
 #'
@@ -139,9 +140,7 @@ CorSpatialGenes <- function (
   maxdist = NULL
 ) {
 
-  # Check if adespatial is installed
-  #if (!requireNamespace("adespatial")) stop("R package adespatial is required to run this function ... \n")
-  #if (!requireNamespace("spdep")) stop("R package spdep is required to run this function ... \n")
+  if (!requireNamespace("spdep")) install.packages("spdep")
 
   # Collect Staffli object
   if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
@@ -162,8 +161,8 @@ CorSpatialGenes <- function (
   colnames(resCN) <- gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))
   colnames(resCN) <- gsub(pattern = "^X", replacement = "", x = colnames(resCN))
   empty.CN[rownames(resCN), colnames(resCN)] <- resCN
-  listw <- mat2listw(empty.CN)
-  fun <- function (x) lag.listw(listw, x, TRUE)
+  listw <- spdep::mat2listw(empty.CN)
+  fun <- function (x) spdep::lag.listw(listw, x, TRUE)
 
   # Calculate the lag matrix from the network
   #tablag <- apply(t(data.use), 2, fun)
@@ -181,9 +180,6 @@ CorSpatialGenes <- function (
   return(res)
 }
 
-
-
-# TODO: fix imported libs (spdep not loaded), fix factor in output
 
 #' Find dims with high spatial autocorrelation
 #'
@@ -227,7 +223,8 @@ CorSpatialGenes <- function (
 #' @return data.frame with gene names and correlation scores
 #'
 #' @importFrom Matrix bdiag
-#' @importFrom spdep mat2listw
+#' @importFrom Seurat Reductions DefaultAssay GetAssayData
+#' @importFrom stats cor
 #'
 CorSpatialDims <- function (
   object,
@@ -237,9 +234,7 @@ CorSpatialDims <- function (
   maxdist = NULL
 ) {
 
-  # Check if adespatial is installed
-  #if (!requireNamespace("adespatial")) stop("R package adespatial is required to run this function ... \n")
-  #if (!requireNamespace("spdep")) stop("R package spdep is required to run this function ... \n")
+  if (!requireNamespace("spdep")) install.packages("spdep")
 
   # Collect Staffli object
   if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
@@ -257,8 +252,8 @@ CorSpatialDims <- function (
   colnames(resCN) <- gsub(pattern = "\\.", replacement = "-", x = colnames(resCN))
   colnames(resCN) <- gsub(pattern = "^X", replacement = "", x = colnames(resCN))
   empty.CN[rownames(resCN), colnames(resCN)] <- resCN
-  listw <- mat2listw(empty.CN)
-  fun <- function (x) lag.listw(listw, x, TRUE)
+  listw <- spdep::mat2listw(empty.CN)
+  fun <- function (x) spdep::lag.listw(listw, x, TRUE)
 
   # Calculate the lag matrix from the network
   #tablag <- apply(t(data.use), 2, fun)

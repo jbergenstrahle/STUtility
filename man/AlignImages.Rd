@@ -59,11 +59,15 @@ the edges of the tissue for alignment, you might end up with strange results if 
 shape is symmetrical.
 }
 \examples{
+\dontrun{
 # Create a new Staffli object, mask, align and plot images
 st.obj <- CreateStaffliObject(imgs, meta.data)
 st.obj <- LoadImages(st.obj, verbose = TRUE) \%>\% MaskImages() \%>\% AlignImages()
 plot(st.obj)
+}
+\dontrun{
 # Load, mask, align and plot images
 se <- LoadImages(se, verbose = TRUE) \%>\% MaskImages() \%>\% AlignImages()
 ImagePlot(se)
+}
 }

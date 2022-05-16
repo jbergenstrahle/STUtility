@@ -7,6 +7,7 @@
 #' @param group.by A meta.data column to group the spots by. Only character 
 #' vector or factors are allowed. Selects "labels" by default.
 #' @param groups.to.keep Provide a caharcter vector of groups to keep. 
+#' @param symmetric Make crop window square. This will mkae it easier to align images in dowstream processing steps.
 #' @param keep.all.spots Keep all spots within selected crop windows and not just the spots 
 #' belonging to the predefined groups. All spots that are present in multiple crop windows will be removed.
 #' @param xy_padding Increase the crop area in all directions. Given in pixels.

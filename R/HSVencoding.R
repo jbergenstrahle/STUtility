@@ -51,7 +51,7 @@
 #' @param pt.border Should a border be drawn around the spots? [default: TRUE]
 #' @param add.alpha Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter
 #' @param sigma Smoothing bandwidth; only active if \code{plot.type = 'smooth'}. A single positive number, a numeric vector of length 2, or a function that selects the bandwidth automatically [default: 2].
-#' See \code{\link{density.ppp}} function from the \code{\link{spatstat}} package for more details.
+#' See \code{\link{density.ppp}} function from the \code{\link{spatstat.core}} package for more details.
 #' @param highlight.edges Highlights the edges of the tissue. Only active if \code{plot.type = 'smooth'} and if the images have been masked.
 #' @param grid.ncol Number of columns for display when combining plots
 #' @param dark.theme Use a dark theme for plotting
@@ -66,7 +66,7 @@
 #' @importFrom scales rescale
 #' @importFrom ggplot2 ggplot theme theme_void
 #' @importFrom zeallot %<-%
-#' @importFrom grDevices hsv
+#' @importFrom grDevices hsv dev.off png
 #' @importFrom imager imgradient enorm as.cimg
 #' @importFrom magick image_crop image_info image_read image_composite image_border image_scale
 #'
@@ -636,12 +636,14 @@ spatial_hsv_plot <- function (
 #' @inheritParams HSVPlot
 #'
 #' @examples
+#' \dontrun{
 #' # Load images
 #' se <- se %>% SCTransfrom() %>% LoadImages() %>% RunNMF()
 #'
 #' # Overlay first two NMF factors on the first two tissue sections
 #' HSVPlot(se, features = c("factor_1", "factor_2"), sampleids = 1:2)
-#'
+#' }
+#' 
 #' @export
 #'
 

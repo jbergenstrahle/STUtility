@@ -16,3 +16,4 @@ R/CMYK.R
 R/Visualization_leaflet.R
 R/SeededNMF.R
 R_tmp
+seeded_NMF.Rmd

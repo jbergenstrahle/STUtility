@@ -12,7 +12,6 @@
 #'
 #' @return Seurat object
 #'
-#' @importFrom akima interp
 #' @importFrom raster raster
 #'
 #' @export
@@ -24,6 +23,8 @@ Create3DStack <- function (
   nx = 200,
   verbose = TRUE
 ) {
+  
+  if (!requireNamespace("akima")) install.packages("akima")
 
   # Check limit
   if (!0 < limit & limit < 1) stop("limit has to been in the 0-1 range ... \n", call. = FALSE)
@@ -132,6 +133,9 @@ Create3DStack <- function (
 #' @param verbose Print messages
 #'
 #' @importFrom plotly plot_ly add_markers layout
+#' @importFrom Seurat Key
+#' @importFrom stats na.omit setNames
+#' @importFrom grDevices colorRamp rgb 
 #'
 #' @export
 
@@ -954,6 +958,8 @@ HSVPlot3D <- function (
 #' Create a plotly compatible colorscale
 #'
 #' @param cols Vector of colors
+#' 
+#' @importFrom grDevices col2rgb
 cscale <- function (cols) {
   rgbs <- do.call(cbind, lapply(cols, col2rgb))
   breaks <- seq(0, 1, length.out = length(cols))

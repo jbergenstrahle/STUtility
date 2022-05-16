@@ -21,6 +21,8 @@ vector or factors are allowed. Selects "labels" by default.}
 
 \item{groups.to.keep}{Provide a caharcter vector of groups to keep.}
 
+\item{symmetric}{Make crop window square. This will mkae it easier to align images in dowstream processing steps.}
+
 \item{keep.all.spots}{Keep all spots within selected crop windows and not just the spots 
 belonging to the predefined groups. All spots that are present in multiple crop windows will be removed.}
 

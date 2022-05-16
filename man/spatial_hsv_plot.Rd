@@ -67,7 +67,7 @@ is the quantile (eg, 'q1', 'q10'). This can be useful if you have outlier values
 
 \item{pt.border}{Should a border be drawn around the spots? [default: TRUE]}
 
-\item{add.alpha}{Adds opacity to spots scaled by feature values. This will disable the pt.alpha parameter}
+\item{add.alpha}{Scale spot opacity by selected feature. Higher values get more opaque while lower values make spots transparent.}
 
 \item{palette}{Color palette used for spatial heatmap (see \code{palette.select(info = T)} for available options).
 Disabled if a color vector is provided (see \code{cols} below).}

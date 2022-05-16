@@ -21,5 +21,7 @@ number of neighbours is 6 for the 'Visium' platform and 4 for the '1k' and '2k' 
 Create spatial networks based on spot center to center distances from a Seurat object.
 }
 \examples{
+\dontrun{
 spatial.networks <- GetSpatNet(se)
+}
 }

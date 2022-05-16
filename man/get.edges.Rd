@@ -13,7 +13,7 @@ get.edges(object, index = 1, verbose = FALSE, type = "masked.masks")
 
 \item{verbose}{Print messages}
 
-\item{Input}{image type to run edge detection on [default: 'masked.masks']}
+\item{type}{image type to run edge detection on [default: 'masked.masks']}
 }
 \description{
 Obtain edges of binary mask stores in masked.masks list

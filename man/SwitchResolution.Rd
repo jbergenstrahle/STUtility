@@ -29,7 +29,7 @@ for images of higher resolution. For this reson we recommend users to use this f
 instead.
 }
 \examples{
-
+\dontrun{
 # Create Seurat object, load, mask and align images at low resolution
 se <- InputFromTable(infoTable) \%>\%
    LoadImages() \%>\%
@@ -38,5 +38,6 @@ se <- InputFromTable(infoTable) \%>\%
 
 # Reload images and apply transformations to higher resolution images, e.g. 2000 pixels width
 se <- SwitchResolution(se, 2000)
+}
 
 }

@@ -9,6 +9,7 @@ NULL
 #'
 #' @slot imgs A character vector of paths to the raw HE images.
 #' @slot rasterlists A list of lists containing images in 'raster' format
+#' @slot scatter.data Data.frame holding x, y, z coordinates for 3D interpolation and visualization
 #' @slot transformations A list of 3x3 transformation matrices used to transform (x,y)-coordinates
 #' of an aligned image to a reference image.
 #' @slot meta.data Contains meta-information about each spot, starting with regular (x,y)-coordinates
@@ -20,13 +21,14 @@ NULL
 #' @slot limits Specifies the limits of the array (e.g. limits = c(100, 100) means that the array
 #' is a 100 spots wide and a 100 spots high)
 #' @slot dims List of numerical vectors specifying the dimensions of the original images.
-#' @slot platform Specify the platform used to generate the ST data [options: 'Visium', '2k', '1k']
+#' @slot platforms Specify the platform used to generate the ST data [options: 'Visium', '2k', '1k']
 #' @slot samplenames Character specifying the samplenames.
+#' @slot pixels.per.um Numeric vector specifying the number of pixels per micron
 #' @slot version Package version.
 #'
 #' @name Staffli-class
 #' @rdname Staffli-class
-#' @exportClass Seurat
+#' @exportClass Staffli
 #'
 Staffli <- setClass (
   Class = 'Staffli',
@@ -60,6 +62,8 @@ Staffli <- setClass (
 #'
 #' @importFrom utils packageVersion
 #' @importFrom Matrix colSums
+#' @importFrom stats setNames
+#' 
 #' @export
 #'
 CreateStaffliObject <- function (
@@ -120,10 +124,13 @@ CreateStaffliObject <- function (
 #' @param expression Logical expression indicating features/variables to keep
 #' @param idents A vector of identity classes to keep
 #' @param ... Extra parameters passed to WhichCells, such as slot, invert, or downsample
+#' 
+#' @importFrom Seurat WhichCells
 #'
 #' @rdname SubsetSTData
 #' @export
 #' @examples
+#' \dontrun{
 #' # Subset using meta data to keep spots with more than 1000 unique genes
 #' se.subset <- SubsetSTData(se, expression = nFeature_RNA >= 1000)
 #' 
@@ -132,6 +139,7 @@ CreateStaffliObject <- function (
 #'
 #' # Subset by a predefined set of features
 #' se.subset <- SubsetSTData(se, features = keep.features)
+#' }
 SubsetSTData <- function (
   object,
   expression,
@@ -382,12 +390,21 @@ MergeSTData <- function (
 # Staffli methods
 #%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
 
+#' Method for extracting the HE image dimensions from a 'Staffli' object
+#' 
+#' @param object A Staffli object
+#' @export
+#' @docType methods
+#' @rdname iminfo
 setGeneric("iminfo", function(object) {
   standardGeneric("iminfo")
 })
 
-#' Method for extracting the HE image dimensions from a 'Staffli' object
-#'  @param object A Staffli object
+#' @rdname iminfo
+#' @aliases iminfo,Staffli,Staffli-method
+#' 
+#' @export
+#' 
 setMethod (
   f = "iminfo",
   signature = "Staffli",
@@ -397,14 +414,22 @@ setMethod (
 )
 
 
-setGeneric("scaled.imdims", function(object, type = "raw") {
-  standardGeneric("scaled.imdims")
-})
-
 #' Method for extracting the scaled HE image dimensions from a 'Staffli' object
 #'
 #' @param object A Staffli object
 #' @param type Image type [choices: 'raw', 'masked', 'processed']
+#' @export
+#' @docType methods
+#' @rdname scaled.imdims
+#' 
+setGeneric("scaled.imdims", function(object, type = "raw") {
+  standardGeneric("scaled.imdims")
+})
+#' @rdname scaled.imdims
+#' @aliases scaled.imdims,Staffli,Staffli-method
+#' 
+#' @export
+#' 
 setMethod (
   f = "scaled.imdims",
   signature = "Staffli",
@@ -414,8 +439,14 @@ setMethod (
 )
 
 #' Method used to get samplenames from a Staffli object
-#'
-#' @param object A Staffli object
+#' 
+#' @rdname names
+#' @aliases names,Staffli,Staffli-method
+#' 
+#' @param x object to get names from.
+#' 
+#' @export
+#' 
 setMethod (
   f = "names",
   signature = "Staffli",
@@ -425,12 +456,20 @@ setMethod (
 )
 
 
+#' Method to extract the available image types from a Staffli object
+#' @param object A Staffli or Seurat object
+#' @export
+#' @docType methods
+#' @rdname rasterlists
+#' 
 setGeneric("rasterlists", function(object) {
   standardGeneric("rasterlists")
 })
-
-#' Method to extract the available image types from a Staffli object
-#' @param object A Staffli object
+#' @rdname rasterlists
+#' @aliases rasterlists,Staffli,Staffli-method
+#' 
+#' @export
+#' 
 setMethod (
   f = "rasterlists",
   signature = "Staffli",
@@ -438,10 +477,11 @@ setMethod (
     names(object@rasterlists)
   }
 )
-
-#' Method to extract the available image types from a Seurat object
-#'
-#' @param object A Seurat object
+#' @rdname rasterlists
+#' @aliases rasterlists,Seurat,Seurat-method
+#' 
+#' @export
+#' 
 setMethod (
   f = "rasterlists",
   signature = "Seurat",
@@ -453,13 +493,22 @@ setMethod (
 )
 
 
+#' Method used to get samplenames from a Staffli or Seurat object processed using STutility
+#'
+#' @param object A Staffli object
+#' 
+#' @export
+#' @docType methods
+#' @rdname samplenames
+#' 
 setGeneric("samplenames", function(object) {
   standardGeneric("samplenames")
 })
-
-#' Method used to get samplenames from a Staffli object
-#'
-#' @param A Seurat object
+#' @rdname samplenames
+#' @aliases samplenames,Staffli,Staffli-method
+#' 
+#' @export
+#' 
 setMethod (
   f = "samplenames",
   signature = "Staffli",
@@ -467,10 +516,11 @@ setMethod (
     object@samplenames
   }
 )
-
-#' Method used to get samplenames from a Staffli object
-#'
-#' @param A Seurat object
+#' @rdname samplenames
+#' @aliases samplenames,Seurat,Seurat-method
+#' 
+#' @export
+#' 
 setMethod (
   f = "samplenames",
   signature = "Seurat",
@@ -482,14 +532,20 @@ setMethod (
 )
 
 
-setGeneric("GetStaffli", function(object) {
-  standardGeneric("GetStaffli")
-})
-
 #' Method used to extract a Staffli object from the tools slot of a
 #' Seurat object
 #'
 #' @param object A Seurat object
+#' 
+#' @export
+#' @docType methods
+#' @rdname GetStaffli
+#' 
+setGeneric("GetStaffli", function(object) {
+  standardGeneric("GetStaffli")
+})
+#' @rdname GetStaffli
+#' @aliases GetStaffli,Seurat,Seurat-method
 setMethod (
   f = "GetStaffli",
   signature = "Seurat",
@@ -500,10 +556,17 @@ setMethod (
 )
 
 #' Method used to get meta data from a Staffli object
-#'
-#' @param x A Staffli object
-#' @param i Row names or indices to subset x on
-#' @param j Column names or indices to subset x on
+#' @rdname Staffli-get-methods
+#' @aliases `[[`,Staffli,Staffli-method
+#' 
+#' @param x object from which to extract element(s).
+#' @param i row indices specifying elements to extract.
+#' @param j column indices specifying elements to extract.
+#' @param drop If TRUE the result is coerced to the lowest possible dimension. 
+#' This only works for extracting elements, not for the replacement.
+#' 
+#' @export
+#' 
 setMethod (
   f = "[[",
   signature = "Staffli",
@@ -513,11 +576,17 @@ setMethod (
 )
 
 #' Method used to set meta data in a Staffli object
-#'
-#' @param x A Staffli object
-#' @param i Row names or indices to subset x on
-#' @param j Column names or indices to subset x on
-#' @param value Value to save into Staffli meta data
+#' @rdname Staffli-set-methods
+#' @aliases `[[<-`,Staffli,Staffli-method
+#' 
+#' @param x object in which to replace element(s).
+#' @param i row indices specifying elements to replace.
+#' @param j column indices specifying elements to replace.
+#' @param value Data to add to meta data data.frame.
+#' @param ... additional parameters
+#' 
+#' @export
+#' 
 setMethod (
   f = "[[<-",
   signature = "Staffli",
@@ -529,10 +598,15 @@ setMethod (
 
 #' Method used to get list of scaled images
 #' from selected type
-#'
-#' @param x A Staffli object
-#' @param i A characetr string specifying the name of the
-#' images to extract; "raw", "masked" or "processed"
+#' 
+#' @rdname Staffli-get-methods
+#' @aliases `[`,Staffli,Staffli-method
+#' 
+#' @param x Staffli bject from which to get image from.
+#' @param i index for image to get.
+#' 
+#' @export
+#' 
 setMethod (
   f = "[",
   signature = "Staffli",
@@ -543,10 +617,15 @@ setMethod (
 
 #' Method used to set list of scaled images
 #' of selected type
-#'
-#' @param x A Staffli object
-#' @param i A characetr string specifying the name of the
-#' images to set; "raw", "masked" or "processed"
+#' 
+#' @rdname Staffli-set-methods
+#' @aliases `[<-`,Staffli,Staffli-method
+#' 
+#' @param x Staffli object in which to replace image.
+#' @param i index for image to replace.
+#' 
+#' @export
+#' 
 setMethod (
   f = "[<-",
   signature = "Staffli",
@@ -559,9 +638,15 @@ setMethod (
   }
 )
 
-#' Show metho for Staffli objects
+#' Show method for Staffli objects
 #'
-#' @param object A Staffli object
+#' @rdname show
+#' @aliases show,Staffli,Staffli-method
+#' 
+#' @param object object to print preselected attributes for
+#' 
+#' @export
+#' 
 setMethod (
   f = "show",
   signature = "Staffli",
@@ -584,11 +669,16 @@ setMethod (
 )
 
 #' Plot method for Staffli objects
-#'
-#' @param x A Staffli object
-#' @param type Image type to draw on
-#' @param ... Additional aprameters passed to points
+#' @rdname plot
+#' @aliases plot,Staffli,Staffli-method
+#' 
+#' @param x object to use for plotting.
+#' @param y missing
+#' @param type type of images to use as background for plot, e.g. "raw", "masked"
+#' @param ... additional parameters passed to \code{points}
+#' 
 #' @export
+#' 
 setMethod (
   f = "plot",
   signature = signature(x = "Staffli", y = "missing"),
@@ -632,7 +722,3 @@ setMethod (
     }
   }
 )
-
-
-
-

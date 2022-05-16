@@ -2,12 +2,13 @@
 % Please edit documentation in R/Staffli.R
 \name{names,Staffli-method}
 \alias{names,Staffli-method}
+\alias{names,Staffli,Staffli-method}
 \title{Method used to get samplenames from a Staffli object}
 \usage{
 \S4method{names}{Staffli}(x)
 }
 \arguments{
-\item{object}{A Staffli object}
+\item{x}{object to get names from.}
 }
 \description{
 Method used to get samplenames from a Staffli object

@@ -8,7 +8,7 @@ ImagePlot(
   object,
   indices = NULL,
   type = NULL,
-  method = "viewer",
+  method = "raster",
   ncols = NULL,
   annotate = TRUE,
   darken = FALSE,

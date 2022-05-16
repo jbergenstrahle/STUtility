@@ -71,11 +71,15 @@ A Seurat object
 Creates an interactive shiny application to align images manually
 }
 \examples{
+\dontrun{
 # Create a new Staffli object, mask, align and plot images (will start an interactive shiny session)
 st.obj <- CreateStaffliObject(imgs, meta.data)
 st.obj <- LoadImages(st.obj, verbose = TRUE) \%>\% MaskImages() \%>\% ManualAlignImages()
 plot(st.obj)
+}
+\dontrun{
 # Load, mask, align and plot images (will start an interactive shiny session)
 se <- LoadImages(se, verbose = TRUE) \%>\% MaskImages() \%>\% ManualAlignImages()
 ImagePlot(se)
+}
 }

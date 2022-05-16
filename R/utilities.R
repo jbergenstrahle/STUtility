@@ -89,35 +89,35 @@ FilterObjects <- function(object, classes.keep = c('Assay', 'DimReduc')) {
 #' Palette selection
 #'
 #' @param palette Palette choice for plotting spatial expression histology heatmap
-#' @importFrom viridis viridis cividis magma plasma
-#' @importFrom RColorBrewer brewer.pal
 #' @keywords internal
 #'
 #' @export
 #'
 
 palette.select <- function(palette, info = F) {
+  if (!requireNamespace("RColorBrewer")) install.packages("RColorBrewer")
+  if (!requireNamespace("viridis")) install.packages("viridis")
   palettes <- list(
-    Reds = brewer.pal(n = 9, name = "Reds"),
+    Reds = RColorBrewer::brewer.pal(n = 9, name = "Reds"),
     LgBu = c("grey", "lightblue", "blue"),
     GnRd = c("green", "black", "red"),
     BuRd = c("blue", "black", "red"),
     GrRd = c("lightgray", "mistyrose", "red", "dark red"),
-    magma = magma(9),
-    GnBu = rev(brewer.pal(9,"GnBu")),
+    magma = viridis::magma(9),
+    GnBu = rev(RColorBrewer::brewer.pal(9,"GnBu")),
     the.cols = c(rgb(255,255,217, maxColorValue=255),
                                   rgb(65,182,196, maxColorValue=255),
                                   rgb(8, 29, 88, maxColorValue=255)),
     offwhite.to.black = c(rgb(220,220,220, maxColorValue=255),
                                            rgb(0, 0, 0, maxColorValue=255)),
-    viridis = viridis(9),
-    cividis = cividis(9),
-    plasma = plasma(9),
+    viridis = viridis::viridis(9),
+    cividis = viridis::cividis(9),
+    plasma = viridis::plasma(9),
     heat = c("dark blue", "cyan", "yellow", "red"),
-    Spectral = rev(brewer.pal(11,"Spectral")),
-    RdBu = rev(brewer.pal(11,"RdBu")),
+    Spectral = rev(RColorBrewer::brewer.pal(11,"Spectral")),
+    RdBu = rev(RColorBrewer::brewer.pal(11,"RdBu")),
     MaYl = c("#FF00FF", "black", "#FFFF00"),
-    RdYlBu = rev(brewer.pal(n = 11, name = "RdYlBu"))
+    RdYlBu = rev(RColorBrewer::brewer.pal(n = 11, name = "RdYlBu"))
   )
   if (info) {
     return(data.frame(palette = names(palettes), category = c("seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "seq", "div", "div", "div", "div", "div"),

@@ -36,15 +36,8 @@ scatter_HE <- function (
       if (type %in% c("processed.masks", "masked.masks")) {
         xyset = which(bw.image > limit*255, arr.ind = TRUE)
       } else {
-        #seg <- imagerExtra::ThresholdAdaptive(bw.image, k = 0.1)
         bw.image <- 255 - bw.image
         seg <- bw.image > 0.5*255
-        #bw.image <- EBImage::normalize(EBImage::as.Image(bw.image))
-        #f = makeBrush(5, shape='disc', step=FALSE)
-        #f = f/sum(f)
-        #out <- EBImage::normalize(bw.image - EBImage::filter2(bw.image, filter = f))
-        #seg <- out > EBImage::otsu(out)
-        #xyset <- computeFeatures.moment(bwlabel(seg[, , , 1]))[, 1:2]
         xyset = which(seg, arr.ind = TRUE)
       }
     } else {

@@ -112,10 +112,10 @@ parse.spot.file = function(path, delim = "\t") {
 #' If a numeric value is given, it is assumed that all samples have the same scaling factor. Alternatively, an additional
 #' column named "scaleVisium" can be provided with a scaling factor for each sample, or a column named "json" with paths to
 #' the "scalefactors_json.json" files.
+#' @param disable.subset Set to TRUE if you want to disable spot subsetting to include spots under tissue. Useful if you
+#' want to load the full expression matrix with spots outside of the tissue.
 #' @param verbose Print messages
 #' @param ... additional parameters
-#'
-#' @inheritParams ConvertGeneNames
 #'
 #' @importFrom jsonlite read_json
 #'

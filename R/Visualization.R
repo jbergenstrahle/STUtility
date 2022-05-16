@@ -53,14 +53,12 @@ NULL
 #'
 #' @return A ggplot object
 #'
-#' @importFrom rlang !!
 #' @importFrom ggplot2 ggplot facet_wrap vars sym
-#' @importFrom viridis magma
 #' @importFrom Seurat FetchData Embeddings
 #' @importFrom zeallot %<-%
 #'
 #' @examples
-#'
+#' \dontrun{
 #' se <- RunPCA(se)
 #'
 #' # Plot the first 5 dimensions
@@ -74,6 +72,7 @@ NULL
 #'
 #' # Plot the first 5 dimensions and trim off 1st percentile values
 #' ST.DimPlot(se, dims = 1:5, reduction = "pca", min.cutoff = 'q1')
+#' }
 #'
 #' @export
 #'
@@ -321,7 +320,7 @@ ST.DimPlot <- function (
 #' @return A ggplot object
 #'
 #' @examples
-#'
+#' \dontrun{
 #' # Plot the number of unique genes and the number of UMIs per spot
 #' ST.featurePlot(se, features = c("nFeature_RNA", "nCount_RNA"))
 #'
@@ -342,7 +341,8 @@ ST.DimPlot <- function (
 #' ST.featurePlot(se, features = "seurat_clusters")
 #' # Split cluster labels into facets
 #' ST.featurePlot(se, features = "seurat_clusters", split.labels = TRUE)
-#'
+#' }
+#' 
 #' @export
 #'
 #' @seealso \code{\link{ST.DimPlot}} for how to plot dimensionality reduction output,
@@ -581,6 +581,7 @@ ST.FeaturePlot <- function (
 #' @inheritParams draw_scalebar
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn scale_color_manual as_labeller
+#' @importFrom grDevices hcl
 #'
 #' @export
 
@@ -800,7 +801,7 @@ STPlot <- function (
 #' @importFrom ggplot2 ggplot aes geom_raster scale_x_continuous scale_y_continuous theme_void guides scale_fill_gradient2 labs scale_fill_gradientn ggsave
 #' @importFrom magick image_read image_border image_annotate image_composite
 #' @importFrom imager as.cimg
-#' @importFrom grDevices as.raster
+#' @importFrom grDevices as.raster dev.off png
 
 SmoothPlot <- function (
   st.object,
@@ -1410,11 +1411,12 @@ spatial_feature_plot <- function (
 #'
 #' @param pixels.per.um Defines the number of pixels per micrometer to draw the scale bar
 #' @param limits Sets the limits of the colorbar
+#' @param add.alpha Scale spot opacity by selected feature. Higher values get more opaque while lower values make spots transparent.
 #'
 #' @importFrom ggplot2 geom_point aes_string scale_x_continuous scale_y_continuous theme_void theme_void labs scale_color_gradient2 scale_color_gradientn annotation_custom scale_color_manual
 #' @importFrom magick image_info
 #' @importFrom grid rasterGrob unit
-#' @importFrom grDevices as.raster
+#' @importFrom grDevices as.raster hcl
 #'
 #' @param image Image of class "raster" to use as background for plotting
 #' @param dims List of dimensions for original images. This list has to contain one element for each sample and each element
@@ -1614,7 +1616,7 @@ ST.ImagePlot <- function (
 #' @inheritParams spatial_dim_plot
 #'
 #' @examples
-#'
+#' \dontrun{
 #' # Load images and run PCA
 #' se <- LoadImages(se) %>%
 #'    RunPCA()
@@ -1631,10 +1633,11 @@ ST.ImagePlot <- function (
 #' # Mask images and plot the first 2 dimensions on the masked images for samples 1 and 2
 #' se <- MaskImages(se)
 #' DimOverlay(se, dims = 1:2, reduction = "pca", sampleids = 1:2, type = "masked")
-#'
+#' }
+#' 
 #' @export
 #'
-#' @seealso \code{\link{turePlot}} and \code{\link{ST.DimPlot}} for how to plot features
+#' @seealso \code{\link{ST.FeaturePlot}} and \code{\link{ST.DimPlot}} for how to plot features
 #' without the HE image and \code{\link{FeatureOverlay}} for how to overlay feature plots on the HE images.
 #'
 
@@ -1752,7 +1755,7 @@ DimOverlay <- function (
 #' @param sampleids Names of samples to plot
 #' @param ncols Number of columns in the subplot layout grid. 
 #' (see \emph{Arrange plots} for a detailed description)
-#' @param layout.by.features Flip the arrangement of the subplot layout grid. 
+#' @param layout.by.feature Flip the arrangement of the subplot layout grid. 
 #' @param spot.colors A data.frame with custom colors for each spot. The data.frame must have rownames
 #' which are matched with the spot ids and matching dimensions. Note that the data.rame must also match
 #' the `sampleids` provided, e.g. if you set `sampleids` to 1 the spot.colors data.frame must match the
@@ -1760,9 +1763,11 @@ DimOverlay <- function (
 #' the first column will be used.
 #' @param ... Parameters passed to FeatureOverlay
 #' @inheritParams spatial_feature_plot
+#' 
+#' @importFrom stats setNames
 #'
 #' @examples
-#'
+#' \dontrun{
 #' # Load images
 #' se <- LoadImages(se)
 #'
@@ -1784,6 +1789,7 @@ DimOverlay <- function (
 #' # Mask images and plot plot the slected genes on the masked images for samples 1 and 2
 #' se <- MaskImages(se)
 #' FeatureOverlay(se, features = c("Cck", "Dcn"), sampleids = 1:2, type = "masked")
+#' }
 #'
 #' @export
 #'
