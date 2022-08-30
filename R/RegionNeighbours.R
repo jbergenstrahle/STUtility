@@ -64,7 +64,7 @@ RegionNeighbours <- function (
     if (verbose) cat(paste0(nrow(spatnet), " neighbours left ... \n"))
   }
 
-  column.key <- paste0("nbs_", id)
+  column.key <- paste0(column.key, id)
   column.value <- setNames(rep(NA, ncol(object)), nm = colnames(object))
   column.value[unique(union(spatnet$from, spatnet$to))] <- Idents(object)[unique(union(spatnet$from, spatnet$to))] %>% as.character()
   if (keep.idents) {
