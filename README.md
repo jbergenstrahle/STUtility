@@ -5,7 +5,7 @@
 To install STUtility from github (currently only option), you need to have devtools installed:
 
 ```
-install.packages("devtools")
+install.packages("remotes")
 ```
 
 Finally, install STUtility:
