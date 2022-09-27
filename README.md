@@ -11,7 +11,7 @@ install.packages("devtools")
 Finally, install STUtility:
 
 ```
-devtools::install_github(
+remotes::install_github(
     "jbergenstrahle/STUtility"
 )
 ```
