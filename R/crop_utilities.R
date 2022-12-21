@@ -25,7 +25,7 @@ GetCropWindows <- function (
 ) {
   
   # Check to see if Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object. ", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- object@tools$Staffli
   
   # Check group.by
