@@ -150,9 +150,8 @@ SubsetSTData <- function (
 ) {
 
   # Check that a Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) {
-    stop("This Seurat object does not contain any Staffli image object", call. = FALSE)
-  }
+  .check_seurat_object(object)
+  
   # Obtain Staffli object
   st.object <- GetStaffli(object)
 
@@ -249,14 +248,10 @@ MergeSTData <- function (
   }
 
   # Check that a Staffli object is present
-  if (!"Staffli" %in% names(x@tools)) {
-    stop("The first Seurat object does not contain any Staffli image object", call. = FALSE)
-  }
+  .check_seurat_object(x, message = "The first Seurat object does not appear to have been processed with STutility.")
   i <- 1
   for (obj in y) {
-    if (!"Staffli" %in% names(obj@tools)) {
-      stop(paste0("Seurat object ", i, " does not contain any Staffli image object"), call. = FALSE)
-    }
+    .check_seurat_object(x, message = paste0("Seurat object ", i, " does not appear to have been processed with STutility."))
     i <- i + 1
   }
 
@@ -486,7 +481,7 @@ setMethod (
   f = "rasterlists",
   signature = "Seurat",
   definition = function(object) {
-    if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+    .check_seurat_object(object)
     st.object <- object@tools$Staffli
     names(st.object@rasterlists)
   }
@@ -525,7 +520,7 @@ setMethod (
   f = "samplenames",
   signature = "Seurat",
   definition = function(object) {
-    if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+    .check_seurat_object(object)
     st.object <- object@tools$Staffli
     st.object@samplenames
   }
@@ -550,7 +545,7 @@ setMethod (
   f = "GetStaffli",
   signature = "Seurat",
   definition = function(object) {
-    if (!"Staffli" %in% names(object@tools)) stop("Staffli not present in Seurat object ... \n", call. = FALSE)
+    .check_seurat_object(object)
     object@tools$Staffli
   }
 )
