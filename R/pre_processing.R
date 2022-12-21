@@ -25,13 +25,13 @@ st.load.matrix = function (
   } else { #10X Visium loading
     suff <- getExtension(path)
     if (dir.exists(path) & suff == basename(path)) {
-      tmp = suppressWarnings({try({x = Seurat::Read10X(data.dir = path)})})
+      tmp = try({x = Seurat::Read10X(data.dir = path)})
     } else {
-      tmp = suppressWarnings({try({x = Seurat::Read10X_h5(filename = path)})})
+      tmp = try({x = Seurat::Read10X_h5(filename = path)})
     }
   }
   if(inherits(tmp, 'try-error')) {
-    return(as(c(), "dgCMatrix"))
+    stop("Failed to read data.")
   } else {
     return(as(as.matrix(x), "dgCMatrix"))
   }
