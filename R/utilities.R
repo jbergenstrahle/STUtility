@@ -153,3 +153,16 @@ ConvertGeneNames <- function (
   rownames(exprMat) <- annotation[rownames(exprMat), ]$gene_name
   return(exprMat)
 }
+
+
+#' Check if a Seurat object has been processed with STutility
+#' 
+#' @param object A Seurat object
+#' @param message An error message
+#' 
+.check_seurat_object <- function (
+  object,
+  message = "This Seurat object does not appear to have been processed with STutility."
+) {
+  if (!"Staffli" %in% names(object@tools)) stop("This Seurat object does not appear to have been processed with STutility.")
+}
