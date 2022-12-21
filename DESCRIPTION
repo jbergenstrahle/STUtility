@@ -41,8 +41,6 @@ Imports:
   reshape2 (>= 1.4.3),
   NNLM,
   patchwork,
-  spatstat.core,
-  spatstat.geom,
   shinyjs
 Remotes:
   linxihui/NNLM
@@ -62,9 +60,11 @@ Suggests:
   ica (>= 1.0),
   irlba (>= 2.3.3),
   akima (>= 0.6),
-  spdep (>= 1.1)
+  spdep (>= 1.1),
+  spatstat.explore,
+  spatstat.model
 VignetteBuilder: knitr
-RoxygenNote: 7.1.2
+RoxygenNote: 7.2.1
 Collate: 
   '2D_point_pattern.R'
   '3D_viusalization.R'
