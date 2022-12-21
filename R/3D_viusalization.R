@@ -30,7 +30,7 @@ Create3DStack <- function (
   if (!0 < limit & limit < 1) stop("limit has to been in the 0-1 range ... \n", call. = FALSE)
 
   # Check to see if Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object... \n", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- GetStaffli(object)
 
   # Check if processed images are present
@@ -163,7 +163,7 @@ DimPlot3D <- function (
 ) {
 
   # Check to see if Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object ... \n", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- GetStaffli(object)
 
   # Set mode
@@ -466,7 +466,7 @@ FeaturePlot3D <- function (
 ) {
 
   # Check to see if Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object ... \n", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- GetStaffli(object)
 
   # Set mode
@@ -742,7 +742,7 @@ HSVPlot3D <- function (
 ) {
 
   # Check to see if Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object ... \n", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- GetStaffli(object)
 
   # Set mode
