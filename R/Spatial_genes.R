@@ -26,7 +26,7 @@ GetSpatNet <- function (
 ) {
 
   # Check to see if Staffli object is present
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object is missing from Seurat object... \n", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- object@tools$Staffli
 
   # Check if images are loaded
@@ -143,7 +143,7 @@ CorSpatialGenes <- function (
   if (!requireNamespace("spdep")) install.packages("spdep")
 
   # Collect Staffli object
-  if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
+.check_seurat_object(object)
   st.object <- GetStaffli(object)
 
   # Obtain data
@@ -237,7 +237,7 @@ CorSpatialDims <- function (
   if (!requireNamespace("spdep")) install.packages("spdep")
 
   # Collect Staffli object
-  if (!"Staffli" %in% names(object@tools)) stop("There is no 'Staffli' object present in this 'Seurat' object ...", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- GetStaffli(object)
 
   # Obtain data
