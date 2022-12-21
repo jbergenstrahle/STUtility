@@ -39,10 +39,11 @@ ManualAnnotation <- function (
   verbose = FALSE
 ) {
   
+  # Load required packages or install them if missing
   if (!requireNamespace("ggiraph")) install.packages("ggiraph")
   if (!requireNamespace("tibble")) install.packages("tibble")
 
-  if (!"Staffli" %in% names(object@tools)) stop("Staffli object not present in Seurat object", call. = FALSE)
+  .check_seurat_object(object)
   st.object <- GetStaffli(object)
   #img <- st.object@imgs[1]
   type <- type %||% {
