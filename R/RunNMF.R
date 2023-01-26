@@ -25,6 +25,11 @@ FactorGeneLoadingPlot <- function (
   dark.theme = FALSE
 ) {
 
+  # require NNLM
+  if (!requireNamespace("NNLM")) {
+    devtools::install_github('linxihui/NNLM')
+  }
+  
   # Check if NMF has been computed
   if (!"NMF" %in% names(object@reductions)) stop("NMF has not been computed ... \n", call. = FALSE)
 

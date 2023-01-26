@@ -39,11 +39,8 @@ Imports:
   scales (>= 1.0.0),
   data.table (>= 1.12.2),
   reshape2 (>= 1.4.3),
-  NNLM,
   patchwork,
   shinyjs
-Remotes:
-  linxihui/NNLM
 Suggests: 
   knitr,
   rmarkdown,
@@ -62,9 +59,10 @@ Suggests:
   akima (>= 0.6),
   spdep (>= 1.1),
   spatstat.explore,
-  spatstat.model
+  spatstat.model,
+  NNLM
 VignetteBuilder: knitr
-RoxygenNote: 7.2.1
+RoxygenNote: 7.2.3
 Collate: 
   '2D_point_pattern.R'
   '3D_viusalization.R'
