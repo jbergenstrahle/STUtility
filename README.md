@@ -1,5 +1,10 @@
 # STUtility
 
+## STUtility becomes `semla`
+
+STUtility will no longer be maintained and instead you can use our new R package 
+`semla` which is available at https://github.com/ludvigla/semla.
+
 ## Installation
 
 To install STUtility from github (currently only option), you need to have devtools installed:
